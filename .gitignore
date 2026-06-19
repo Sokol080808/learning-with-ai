@@ -37,7 +37,9 @@ compile_commands.json
 !/graphify-out/wiki/
 !/graphify-out/wiki/**
 
-# --- learning-logs: данные диалогов локальные, в git не идут (README отслеживается) ---
-learning-logs/journal.jsonl
-learning-logs/journal-*.md
-learning-logs/.last_captured
+# --- learning-logs: данные диалогов локальные, в git не идут (README в корне отслеживается).
+# Префикс **/ ловит learning-logs в ЛЮБОЙ папке: capture-хук иногда пишет в подкаталог
+# (напр. rust/learning-logs/, когда cwd был внутри rust/), а не только в корневой learning-logs/. ---
+**/learning-logs/journal.jsonl
+**/learning-logs/journal-*.md
+**/learning-logs/.last_captured
