@@ -1,7 +1,12 @@
 #include "calc.hpp"
 
+// ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference) — на main здесь стаб с // TODO.
 double calc(double a, char op, double b) {
-    // TODO: реализуй через switch по op: '+', '-', '*', '/'.
-    (void)a; (void)op; (void)b;
-    return 0.0;
+    switch (op) {
+        case '+': return a + b;
+        case '-': return a - b;
+        case '*': return a * b;
+        case '/': return a / b;
+        default:  return 0.0;
+    }
 }

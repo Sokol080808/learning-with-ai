@@ -5,6 +5,7 @@
 #include <stdexcept>
 #include <variant>
 #include <string>
+#include <functional>  // std::bad_function_call
 
 // =====================================================================
 // Модуль 18 — Стирание типов (type erasure)
@@ -40,9 +41,8 @@ class Function<R(Args...)> {
         F f_;
         explicit Model(F f) : f_(std::move(f)) {}
         R invoke(Args... args) const override {
-            // TODO: вызвать сохранённый f_ с переданными аргументами
-            //       и вернуть результат (с учётом R == void).
-            throw std::logic_error("TODO: Function::Model::invoke");
+            // Эталонный ответ: вызвать f_; return с выражением типа void допустим.
+            return f_(std::forward<Args>(args)...);
         }
     };
 
@@ -53,21 +53,17 @@ public:
 
     // Принимаем любой вызываемый объект и стираем его тип.
     template <class F>
-    Function(F f) {
-        // TODO: создать Model<F> и положить в self_.
-        (void)f;
-    }
+    Function(F f) : self_(std::make_unique<Model<F>>(std::move(f))) {}
 
     // Есть ли внутри сохранённый вызываемый объект.
     explicit operator bool() const {
-        // TODO
-        return false;
+        return self_ != nullptr;
     }
 
     // Вызов. Если внутри пусто — бросить std::bad_function_call.
     R operator()(Args... args) const {
-        // TODO: проверить self_, иначе бросить; иначе делегировать invoke.
-        throw std::logic_error("TODO: Function::operator()");
+        if (!self_) throw std::bad_function_call{};
+        return self_->invoke(std::forward<Args>(args)...);
     }
 };
 
@@ -91,12 +87,10 @@ class Any {
         T value_;
         explicit Model(T v) : value_(std::move(v)) {}
         const std::type_info& type() const override {
-            // TODO: вернуть typeid(T)
-            throw std::logic_error("TODO: Any::Model::type");
+            return typeid(T);
         }
         std::unique_ptr<Concept> clone() const override {
-            // TODO: глубокая копия — новая Model<T> с тем же значением
-            throw std::logic_error("TODO: Any::Model::clone");
+            return std::make_unique<Model<T>>(value_);
         }
     };
 
@@ -110,20 +104,15 @@ public:
     Any() = default;
 
     template <class T>
-    Any(T v) {
-        // TODO: завернуть значение в Model<T>
-        (void)v;
-    }
+    Any(T v) : self_(std::make_unique<Model<T>>(std::move(v))) {}
 
     // Корректное копирование: Any владеет указателем, копия должна быть
     // независимой. Используй clone().
-    Any(const Any& other) {
-        // TODO
-        (void)other;
-    }
+    Any(const Any& other)
+        : self_(other.self_ ? other.self_->clone() : nullptr) {}
     Any& operator=(const Any& other) {
-        // TODO
-        (void)other;
+        Any tmp(other);          // copy-and-swap
+        std::swap(self_, tmp.self_);
         return *this;
     }
 
@@ -131,14 +120,12 @@ public:
     Any& operator=(Any&&) noexcept = default;
 
     bool has_value() const {
-        // TODO
-        return false;
+        return self_ != nullptr;
     }
 
     // typeid хранимого типа; если пусто — typeid(void).
     const std::type_info& type() const {
-        // TODO
-        return typeid(void);
+        return self_ ? self_->type() : typeid(void);
     }
 };
 
@@ -146,10 +133,10 @@ public:
 // Иначе (и если Any пуст) — бросает std::bad_cast.
 template <class T>
 T any_cast(const Any& a) {
-    // TODO: сравнить a.type() с typeid(T); при совпадении достать value_
-    //       из Any::Model<T>; иначе throw std::bad_cast{}.
-    (void)a;
-    throw std::logic_error("TODO: any_cast");
+    if (a.self_ && a.type() == typeid(T)) {
+        return static_cast<const Any::Model<T>*>(a.self_.get())->value_;
+    }
+    throw std::bad_cast{};
 }
 
 
@@ -179,9 +166,11 @@ overloaded(Ts...) -> overloaded<Ts...>;
 // Площадь фигуры: круг — pi*r*r, квадрат — side*side.
 // Используй число pi = 3.141592653589793.
 inline double area(const Shape& s) {
-    // TODO: std::visit с overloaded{...} по двум альтернативам.
-    (void)s;
-    throw std::logic_error("TODO: area");
+    constexpr double pi = 3.141592653589793;
+    return std::visit(overloaded{
+        [](const Circle& c) -> double { return pi * c.r * c.r; },
+        [](const Square& sq) -> double { return sq.side * sq.side; },
+    }, s);
 }
 
 
@@ -203,8 +192,7 @@ class Drawable {
         T obj_;
         explicit Model(T o) : obj_(std::move(o)) {}
         std::string draw() const override {
-            // TODO: вызвать obj_.draw()
-            throw std::logic_error("TODO: Drawable::Model::draw");
+            return obj_.draw();
         }
     };
 
@@ -212,13 +200,9 @@ class Drawable {
 
 public:
     template <class T>
-    Drawable(T obj) {
-        // TODO: завернуть obj в Model<T>
-        (void)obj;
-    }
+    Drawable(T obj) : self_(std::make_unique<Model<T>>(std::move(obj))) {}
 
     std::string draw() const {
-        // TODO: делегировать self_->draw()
-        throw std::logic_error("TODO: Drawable::draw");
+        return self_->draw();
     }
 };

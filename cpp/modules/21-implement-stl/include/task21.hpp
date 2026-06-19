@@ -44,8 +44,8 @@ public:
     Vector() = default;
 
     ~Vector() {
-        // Корректная заглушка: ничего не освобождаем — учебная цель в том,
-        // чтобы ты сам управлял временем жизни. Реализуешь — допиши деструктор.
+        // Эталонная реализация: разрушаем живые элементы и возвращаем сырьё.
+        clear_and_free();
     }
 
     // Запрещаем копирование/перемещение по умолчанию, пока ты не реализуешь
@@ -55,51 +55,60 @@ public:
     Vector& operator=(const Vector&) = delete;
 
     void push_back(const T& value) {
-        (void)value;
-        throw std::logic_error("TODO: Vector::push_back");
+        if (size_ == cap_)
+            reserve(cap_ == 0 ? 1 : cap_ * 2);
+        new (data_ + size_) T(value);   // placement new в сырой ячейке
+        ++size_;
     }
 
     void pop_back() {
-        throw std::logic_error("TODO: Vector::pop_back");
+        --size_;
+        data_[size_].~T();              // явно разрушаем последний элемент
     }
 
-    T& operator[](size_type i) {
-        // Неправильная заглушка: возвращает ссылку на статический мусор.
-        (void)i;
-        static T dummy{};
-        return dummy;
-    }
-    const T& operator[](size_type i) const {
-        (void)i;
-        static T dummy{};
-        return dummy;
-    }
+    T& operator[](size_type i)             { return data_[i]; }
+    const T& operator[](size_type i) const { return data_[i]; }
 
     T& at(size_type i) {
-        (void)i;
-        throw std::logic_error("TODO: Vector::at");
+        if (i >= size_) throw std::out_of_range("Vector::at");
+        return data_[i];
     }
     const T& at(size_type i) const {
-        (void)i;
-        throw std::logic_error("TODO: Vector::at");
+        if (i >= size_) throw std::out_of_range("Vector::at");
+        return data_[i];
     }
 
-    size_type size() const {
-        return 0;  // неправильная заглушка
-    }
-    size_type capacity() const {
-        return 0;  // неправильная заглушка
-    }
-    bool empty() const {
-        return true;  // неправильная заглушка
-    }
+    size_type size() const     { return size_; }
+    size_type capacity() const { return cap_; }
+    bool empty() const         { return size_ == 0; }
 
     iterator       begin()        { return data_; }
-    iterator       end()          { return data_; }   // неправильная заглушка
+    iterator       end()          { return data_ + size_; }
     const_iterator begin() const  { return data_; }
-    const_iterator end()   const  { return data_; }   // неправильная заглушка
+    const_iterator end()   const  { return data_ + size_; }
 
 private:
+    // Выделяет новый блок ёмкостью new_cap, переносит туда живые элементы,
+    // освобождает старый блок. new_cap всегда строго больше size_.
+    void reserve(size_type new_cap) {
+        T* raw = static_cast<T*>(::operator new(new_cap * sizeof(T)));
+        for (size_type i = 0; i < size_; ++i) {
+            new (raw + i) T(std::move(data_[i]));  // переносим
+            data_[i].~T();                         // разрушаем исходник
+        }
+        ::operator delete(data_);
+        data_ = raw;
+        cap_  = new_cap;
+    }
+
+    void clear_and_free() {
+        for (size_type i = 0; i < size_; ++i)
+            data_[i].~T();
+        ::operator delete(data_);
+        data_ = nullptr;
+        size_ = cap_ = 0;
+    }
+
     T*        data_ = nullptr;
     size_type size_ = 0;
     size_type cap_  = 0;
@@ -125,41 +134,50 @@ public:
 
     SmallVector() = default;
     ~SmallVector() {
-        // см. Vector::~Vector — реализуешь сам.
+        // Эталонная реализация: heap-блок (если есть) выделен через new[],
+        // потому освобождаем его симметрично через delete[]. Встроенный
+        // буфер разрушится сам как обычное поле объекта.
+        delete[] heap_;
     }
 
     SmallVector(const SmallVector&)            = delete;
     SmallVector& operator=(const SmallVector&) = delete;
 
     void push_back(const T& value) {
-        (void)value;
-        throw std::logic_error("TODO: SmallVector::push_back");
+        if (size_ == cap_)
+            grow();
+        data()[size_] = value;
+        ++size_;
     }
     void pop_back() {
-        throw std::logic_error("TODO: SmallVector::pop_back");
+        --size_;
+        data()[size_] = T{};   // «забываем» хвост (логически снят)
     }
 
-    T& operator[](size_type i) {
-        (void)i;
-        static T dummy{};
-        return dummy;  // неправильная заглушка
-    }
-    const T& operator[](size_type i) const {
-        (void)i;
-        static T dummy{};
-        return dummy;
-    }
+    T& operator[](size_type i)             { return data()[i]; }
+    const T& operator[](size_type i) const { return data()[i]; }
 
-    size_type size() const     { return 0; }      // неправильная заглушка
-    size_type capacity() const { return 0; }      // неправильная заглушка
-    bool on_heap() const       { return true; }   // неправильная заглушка
+    size_type size() const     { return size_; }
+    size_type capacity() const { return cap_; }
+    bool on_heap() const       { return heap_ != nullptr; }
 
 private:
-    // Подсказка по полям (можешь поменять под свою реализацию):
-    //   T            inline_[N];   // встроенный буфер
-    //   T*           heap_ = nullptr;
-    //   size_type    size_ = 0;
-    //   size_type    cap_  = N;
+    // Единая точка истины: где сейчас лежат данные.
+    T*       data()       { return heap_ ? heap_ : inline_; }
+    const T* data() const { return heap_ ? heap_ : inline_; }
+
+    // Переезжаем в кучу побольше (или растим уже-кучный буфер ×2).
+    void grow() {
+        size_type new_cap = cap_ == 0 ? 1 : cap_ * 2;
+        T* fresh = new T[new_cap];
+        T* old   = data();
+        for (size_type i = 0; i < size_; ++i)
+            fresh[i] = std::move(old[i]);
+        delete[] heap_;        // nullptr при первом переезде из inline_ — безопасно
+        heap_ = fresh;
+        cap_  = new_cap;
+    }
+
     T         inline_[N] {};
     T*        heap_ = nullptr;
     size_type size_ = 0;
@@ -199,24 +217,28 @@ public:
     IntrusiveList& operator=(const IntrusiveList&) = delete;
 
     void push_back(Node<T>* node) {
-        (void)node;
-        throw std::logic_error("TODO: IntrusiveList::push_back");
+        node->next = nullptr;
+        node->prev = tail_;
+        if (tail_) tail_->next = node;
+        else       head_ = node;     // список был пуст — узел стал и головой
+        tail_ = node;
+        ++size_;
     }
 
     void erase(Node<T>* node) {
-        (void)node;
-        throw std::logic_error("TODO: IntrusiveList::erase");
+        if (node->prev) node->prev->next = node->next;
+        else            head_ = node->next;   // node — голова
+        if (node->next) node->next->prev = node->prev;
+        else            tail_ = node->prev;   // node — хвост
+        node->next = node->prev = nullptr;     // гигиена вынутого узла
+        --size_;
     }
 
-    size_type size() const { return 0; }  // неправильная заглушка
-    bool empty() const     { return true; }
+    size_type size() const { return size_; }
+    bool empty() const     { return size_ == 0; }
 
-    T& front() {
-        throw std::logic_error("TODO: IntrusiveList::front");
-    }
-    T& back() {
-        throw std::logic_error("TODO: IntrusiveList::back");
-    }
+    T& front() { return head_->value; }
+    T& back()  { return tail_->value; }
 
 private:
     Node<T>*  head_ = nullptr;
@@ -247,26 +269,39 @@ class LRUCache {
 public:
     using size_type = std::size_t;
 
-    explicit LRUCache(size_type capacity) {
-        (void)capacity;
-        throw std::logic_error("TODO: LRUCache(capacity)");
+    explicit LRUCache(size_type capacity) : capacity_(capacity) {
+        if (capacity == 0)
+            throw std::out_of_range("LRUCache: capacity must be > 0");
     }
 
     void put(const K& key, const V& value) {
-        (void)key; (void)value;
-        throw std::logic_error("TODO: LRUCache::put");
+        auto it = index_.find(key);
+        if (it != index_.end()) {
+            // Ключ уже есть: обновляем значение и делаем его самым свежим.
+            it->second->second = value;
+            order_.splice(order_.begin(), order_, it->second);
+            return;
+        }
+        // Новый ключ — вставляем во front.
+        order_.emplace_front(key, value);
+        index_[key] = order_.begin();
+        // Переполнение — вытесняем самый давно использованный (back).
+        if (index_.size() > capacity_) {
+            const auto& victim = order_.back();
+            index_.erase(victim.first);
+            order_.pop_back();
+        }
     }
 
     // Если ключа нет — std::nullopt.
     // (Возвращаем по значению, чтобы не зависеть от <optional> в сигнатуре
     //  заглушки; см. определение get ниже.)
     bool contains(const K& key) const {
-        (void)key;
-        return false;  // неправильная заглушка
+        return index_.find(key) != index_.end();
     }
 
-    size_type size() const     { return 0; }  // неправильная заглушка
-    size_type capacity() const { return 0; }  // неправильная заглушка
+    size_type size() const     { return index_.size(); }
+    size_type capacity() const { return capacity_; }
 
     // get объявлен ниже как шаблонный метод, чтобы вернуть std::optional<V>.
     // Реализацию пиши там же.
@@ -305,23 +340,26 @@ public:
     RingBuffer() = default;
 
     bool try_push(const T& value) {
-        (void)value;
-        return false;  // неправильная заглушка: «всегда переполнено»
+        if (full()) return false;
+        buf_[tail_] = value;
+        tail_ = (tail_ + 1) % N;
+        ++size_;
+        return true;
     }
 
     void push(const T& value) {
-        (void)value;
-        throw std::logic_error("TODO: RingBuffer::push");
+        if (!try_push(value))
+            throw std::out_of_range("RingBuffer::push: buffer is full");
     }
 
     // try_pop объявлен ниже (возвращает std::optional<T>).
     template <class Self = RingBuffer>
     auto try_pop();
 
-    size_type size() const     { return 0; }      // неправильная заглушка
+    size_type size() const     { return size_; }
     constexpr size_type capacity() const { return N; }
-    bool empty() const         { return true; }   // неправильная заглушка
-    bool full()  const         { return true; }   // неправильная заглушка
+    bool empty() const         { return size_ == 0; }
+    bool full()  const         { return size_ == N; }
 
 private:
     T         buf_[N] {};
@@ -339,14 +377,21 @@ private:
 template <class K, class V>
 template <class Self>
 auto LRUCache<K, V>::get(const K& key) {
-    (void)key;
-    // Неправильная заглушка: всегда «промах».
-    return std::optional<V>{std::nullopt};
+    auto it = index_.find(key);
+    if (it == index_.end())
+        return std::optional<V>{std::nullopt};
+    // Попадание: делаем ключ самым свежим и возвращаем значение.
+    order_.splice(order_.begin(), order_, it->second);
+    return std::optional<V>{it->second->second};
 }
 
 template <class T, std::size_t N>
 template <class Self>
 auto RingBuffer<T, N>::try_pop() {
-    // Неправильная заглушка: всегда «пусто».
-    return std::optional<T>{std::nullopt};
+    if (empty())
+        return std::optional<T>{std::nullopt};
+    std::optional<T> result{buf_[head_]};
+    head_ = (head_ + 1) % N;
+    --size_;
+    return result;
 }

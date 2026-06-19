@@ -71,26 +71,25 @@ public:
         return e;
     }
 
+    // Эталонный ключ к ответам (reference answer key).
+
     bool has_value() const noexcept {
-        // TODO: вернуть true, если внутри лежит T, а не E.
-        // (noexcept — не бросай отсюда; верни пока неверное значение.)
-        return false;
+        return data_.index() == 0;
     }
 
     explicit operator bool() const noexcept {
-        // TODO: синоним has_value().
-        return false;
+        return has_value();
     }
 
     const T& value() const {
-        // TODO: если has_value() — вернуть T; иначе бросить std::logic_error.
-        // Заглушка возвращает «то, что лежит по index 0» без проверки —
-        // тесты на корректное поведение должны падать.
+        if (!has_value())
+            throw std::logic_error("Expected::value() called on an error");
         return std::get<0>(data_);
     }
 
     const E& error() const {
-        // TODO: если ошибка — вернуть E; иначе бросить std::logic_error.
+        if (has_value())
+            throw std::logic_error("Expected::error() called on a value");
         return std::get<1>(data_);
     }
 

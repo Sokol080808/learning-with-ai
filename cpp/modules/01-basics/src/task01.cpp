@@ -1,68 +1,63 @@
 #include "task01.hpp"
 
-// Реализуй функции ниже. Сейчас это стабы-заглушки — тесты красные.
+#include <limits>
+
+// Эталонный ключ ответов (reference answer key) — не поставляется учащимся.
 
 double to_fahrenheit(double c) {
-    // TODO: F = C * 9/5 + 32 (следи за дробным делением)
-    (void)c;
-    return 0.0;
+    // Приводим коэффициенты к дробным, чтобы деление было дробным, а не целочисленным.
+    return c * 9.0 / 5.0 + 32.0;
 }
 
 bool is_even(int n) {
-    // TODO
-    (void)n;
-    return false;
+    return n % 2 == 0;
 }
 
 int min_of_three(int a, int b, int c) {
-    // TODO
-    (void)a; (void)b; (void)c;
-    return 0;
+    int m = a;
+    if (b < m) m = b;
+    if (c < m) m = c;
+    return m;
 }
 
 void triple(int& x) {
-    // TODO: измени x на месте
-    (void)x;
+    x *= 3;
 }
 
 double average3(int a, int b, int c) {
-    // TODO: верни дробное среднее
-    (void)a; (void)b; (void)c;
-    return 0.0;
+    // Приводим к double ДО деления, иначе сумма int делилась бы нацело.
+    return static_cast<double>(a + b + c) / 3.0;
 }
 
 std::optional<int> safe_add(int a, int b) {
-    // TODO: проверь переполнение ДО сложения (см. <limits>: INT_MAX / INT_MIN).
-    // Если переполнение — верни std::nullopt, иначе std::optional с суммой.
-    (void)a; (void)b;
-    return std::nullopt;
+    constexpr int kMax = std::numeric_limits<int>::max();
+    constexpr int kMin = std::numeric_limits<int>::min();
+
+    // Проверяем переполнение ДО сложения: знаковое переполнение int — это UB.
+    if (b > 0 && a > kMax - b) return std::nullopt;  // переполнение вверх
+    if (b < 0 && a < kMin - b) return std::nullopt;  // переполнение вниз
+    return a + b;
 }
 
 unsigned int set_bit(unsigned int value, int pos) {
-    // TODO: установи бит pos в 1 (подумай про 1u << pos и |).
-    (void)pos;
-    return value;
+    return value | (1u << pos);
 }
 
 unsigned int clear_bit(unsigned int value, int pos) {
-    // TODO: сбрось бит pos в 0 (маска и ~).
-    (void)pos;
-    return value;
+    return value & ~(1u << pos);
 }
 
 unsigned int toggle_bit(unsigned int value, int pos) {
-    // TODO: инвертируй бит pos (^).
-    (void)pos;
-    return value;
+    return value ^ (1u << pos);
 }
 
 bool get_bit(unsigned int value, int pos) {
-    // TODO: верни true, если бит pos равен 1.
-    (void)value; (void)pos;
-    return false;
+    return (value >> pos) & 1u;
 }
 
 void swap_ints(int& a, int& b) {
-    // TODO: поменяй значения a и b местами (без std::swap).
-    (void)a; (void)b;
+    // Через временную переменную — корректно работает и когда a и b — одна переменная.
+    int tmp = a;
+    a = b;
+    b = tmp;
 }

@@ -1,23 +1,44 @@
 #include "geometry/textstats.hpp"
-// #include <cctype>   // std::isspace, std::toupper — пригодятся
+#include <cctype>   // std::isspace, std::toupper
 
 namespace textstats {
 
 int word_count(std::string_view text) {
-    // TODO: посчитать слова — группы непробельных символов.
-    (void)text;
-    return -1;  // заведомо неверное значение, чтобы тест был красным
+    int count = 0;
+    bool in_word = false;
+    for (unsigned char ch : text) {
+        if (std::isspace(ch)) {
+            in_word = false;
+        } else if (!in_word) {
+            in_word = true;
+            ++count;
+        }
+    }
+    return count;
 }
 
 int longest_word(std::string_view text) {
-    // TODO: пройти по словам, вернуть максимальную длину.
-    (void)text;
-    return -1;
+    int best = 0;
+    int current = 0;
+    for (unsigned char ch : text) {
+        if (std::isspace(ch)) {
+            current = 0;
+        } else {
+            ++current;
+            if (current > best) {
+                best = current;
+            }
+        }
+    }
+    return best;
 }
 
 std::string to_upper(std::string_view text) {
-    // TODO: вернуть копию text, где ASCII-буквы переведены в верхний регистр.
-    return std::string{text};  // неверно: ничего не меняем
+    std::string result{text};
+    for (char& ch : result) {
+        ch = static_cast<char>(std::toupper(static_cast<unsigned char>(ch)));
+    }
+    return result;
 }
 
 }  // namespace textstats

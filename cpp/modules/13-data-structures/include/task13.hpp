@@ -11,23 +11,19 @@ template <class T>
 class Stack {
 public:
     void push(const T& value) {
-        // TODO
-        (void)value;
+        data_.push_back(value);
     }
     void pop() {
-        // TODO: убрать верхний элемент
+        data_.pop_back();
     }
     const T& top() const {
-        // TODO: вернуть верхний элемент
-        throw std::logic_error("TODO: Stack::top");
+        return data_.back();
     }
     bool empty() const {
-        // TODO
-        return true;
+        return data_.empty();
     }
     std::size_t size() const {
-        // TODO
-        return 0;
+        return data_.size();
     }
 
 private:
@@ -55,36 +51,55 @@ public:
 
     // Добавить элемент в НАЧАЛО списка. O(1).
     void push_front(const T& value) {
-        // TODO
-        (void)value;
+        auto node = std::make_unique<Node>(value);
+        node->next = std::move(head_);
+        head_ = std::move(node);
+        ++size_;
     }
 
     // Добавить элемент в КОНЕЦ списка. O(n) (или O(1), если держишь tail_).
     void push_back(const T& value) {
-        // TODO
-        (void)value;
+        if (!head_) {
+            push_front(value);
+            return;
+        }
+        Node* p = head_.get();
+        while (p->next) {
+            p = p->next.get();
+        }
+        p->next = std::make_unique<Node>(value);
+        ++size_;
     }
 
     // Сколько элементов в списке.
     std::size_t size() const {
-        // TODO
-        return 0;
+        return size_;
     }
 
     bool empty() const {
-        // TODO
-        return true;
+        return size_ == 0;
     }
 
     // Перенести элементы в vector в порядке от головы к хвосту.
     std::vector<T> to_vector() const {
-        // TODO
-        return {};
+        std::vector<T> out;
+        out.reserve(size_);
+        for (const Node* p = head_.get(); p != nullptr; p = p->next.get()) {
+            out.push_back(p->value);
+        }
+        return out;
     }
 
     // Развернуть список на месте: голова становится хвостом и наоборот. O(n), без копий.
     void reverse() {
-        // TODO
+        std::unique_ptr<Node> result;  // накопленный развёрнутый список
+        while (head_) {
+            std::unique_ptr<Node> node = std::move(head_);  // оторвать голову
+            head_ = std::move(node->next);                  // сдвинуть head_ на следующий
+            node->next = std::move(result);                 // пристегнуть перед результатом
+            result = std::move(node);
+        }
+        head_ = std::move(result);
     }
 
 private:
@@ -108,29 +123,29 @@ class ArrayStack {
 public:
     // Положить элемент наверх.
     void push(const T& value) {
-        // TODO
-        (void)value;
+        buf_.push_back(value);
     }
 
     // Снять верхний элемент. Если стек пуст — бросить std::out_of_range.
     void pop() {
-        // TODO: на пустом — throw std::out_of_range("ArrayStack::pop on empty")
+        if (buf_.empty())
+            throw std::out_of_range("ArrayStack::pop on empty");
+        buf_.pop_back();
     }
 
     // Верхний элемент (без снятия). Если пуст — бросить std::out_of_range.
     const T& top() const {
-        // TODO: на пустом — throw std::out_of_range("ArrayStack::top on empty")
-        throw std::logic_error("TODO: ArrayStack::top");
+        if (buf_.empty())
+            throw std::out_of_range("ArrayStack::top on empty");
+        return buf_.back();
     }
 
     bool empty() const {
-        // TODO
-        return true;
+        return buf_.empty();
     }
 
     std::size_t size() const {
-        // TODO
-        return 0;
+        return buf_.size();
     }
 
 private:

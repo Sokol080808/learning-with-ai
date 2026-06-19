@@ -1,29 +1,26 @@
 #include "geometry/shapes.hpp"
-// #include <cmath>   // std::sqrt
+#include <cmath>   // std::sqrt, std::abs
 
 namespace geometry {
 
 double distance(Point a, Point b) {
-    // TODO: sqrt((a.x-b.x)^2 + (a.y-b.y)^2)
-    (void)a; (void)b;
-    return 0.0;
+    const double dx = a.x - b.x;
+    const double dy = a.y - b.y;
+    return std::sqrt(dx * dx + dy * dy);
 }
 
 namespace metric {
 
 double distance(Point a, Point b) {
-    // TODO: манхэттенское расстояние |a.x-b.x| + |a.y-b.y|
-    (void)a; (void)b;
-    return 0.0;
+    return std::abs(a.x - b.x) + std::abs(a.y - b.y);
 }
 
 }  // namespace metric
 
 double euclid_plus_manhattan(Point a, Point b) {
-    // TODO: вернуть geometry::distance(a,b) + geometry::metric::distance(a,b).
-    // Здесь видны ОБА имени `distance` — выбери нужное явно (полным именем или using).
-    (void)a; (void)b;
-    return 0.0;
+    // Оба имени `distance` видны по короткому имени, поэтому зовём каждое
+    // полным именем — компилятор не угадывает, выбор делаем явно.
+    return geometry::distance(a, b) + geometry::metric::distance(a, b);
 }
 
 }  // namespace geometry

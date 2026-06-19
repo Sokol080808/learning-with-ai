@@ -6,8 +6,9 @@
 # В ветке main этого файла НЕТ намеренно: там стабы не заполнены, и «всё зелёное» недостижимо
 # by design (courses-ci.yml проверяет main иначе — что скелет лишь компилируется/собирается).
 #
-# Пока в reference заполнен только курс Python (пилот). По мере появления эталонов других
-# курсов сюда добавляются их шаги.
+# Заполнены эталонами: Python (все модули + капстоун) и C++ (все 23 модуля; капстоун MiniDB —
+# отдельный заход, поэтому исключён). По мере появления эталонов rust/deep-learning/caos сюда
+# добавляются их шаги.
 name: Reference green
 
 on:
@@ -31,3 +32,16 @@ jobs:
         run: python -m pip install -U pip pytest hypothesis
       - name: Все тесты должны пройти на эталонном решении
         run: python -m pytest python -p no:cacheprovider -q
+
+  cpp:
+    name: C++ (эталон — все 23 модуля зелёные)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Инструменты
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - name: Сборка + все тесты модулей должны пройти (капстоун пока исключён)
+        run: |
+          cmake -S cpp -B cpp/build
+          cmake --build cpp/build -j"$(nproc)"
+          ctest --test-dir cpp/build -LE capstone --output-on-failure -j"$(nproc)"

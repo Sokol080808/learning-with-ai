@@ -3,76 +3,111 @@
 #include <stdexcept>
 
 int sum_array(const int* arr, int n) {
-    // TODO
-    (void)arr; (void)n;
-    return 0;
+    int total = 0;
+    for (int i = 0; i < n; ++i) {
+        total += arr[i];
+    }
+    return total;
 }
 
 void swap_ints(int* a, int* b) {
-    // TODO: поменять *a и *b местами
-    (void)a; (void)b;
+    int tmp = *a;
+    *a = *b;
+    *b = tmp;
 }
 
 int count_value(const int* arr, int n, int value) {
-    // TODO
-    (void)arr; (void)n; (void)value;
-    return 0;
+    int count = 0;
+    for (int i = 0; i < n; ++i) {
+        if (arr[i] == value) {
+            ++count;
+        }
+    }
+    return count;
 }
 
 const int* max_element_ptr(const int* arr, int n) {
-    // TODO: вернуть указатель на максимум; nullptr если n == 0
-    (void)arr; (void)n;
-    return nullptr;
+    if (n == 0) {
+        return nullptr;
+    }
+    const int* best = arr;
+    for (int i = 1; i < n; ++i) {
+        if (arr[i] > *best) {
+            best = arr + i;
+        }
+    }
+    return best;
 }
 
 void reverse_in_place(int* arr, int n) {
-    // TODO: развернуть на месте
-    (void)arr; (void)n;
+    for (int i = 0, j = n - 1; i < j; ++i, --j) {
+        int tmp = arr[i];
+        arr[i] = arr[j];
+        arr[j] = tmp;
+    }
 }
 
 // ── Задание 6 ────────────────────────────────────────────────────────────────
 void reverse_with_pointers(int* arr, int n) {
-    // TODO: завести два указателя (на начало и на конец) и сходиться к центру,
-    // меняя *left и *right местами. Без arr[i], без выделения памяти.
-    (void)arr; (void)n;
+    if (n <= 0) {
+        return;  // нечего разворачивать; и не считаем arr + n - 1 на nullptr
+    }
+    int* left = arr;
+    int* right = arr + n - 1;
+    while (left < right) {
+        int tmp = *left;
+        *left = *right;
+        *right = tmp;
+        ++left;
+        --right;
+    }
 }
 
 // ── Задание 7: DynArray ──────────────────────────────────────────────────────
 DynArray::DynArray(int n, int fill) : data_(nullptr), size_(0) {
-    // TODO: выделить буфер на n элементов (new int[n]) и заполнить значением fill.
-    // Не забудь сохранить size_. Для n == 0 буфер можно не выделять.
-    (void)n; (void)fill;
+    if (n > 0) {
+        data_ = new int[n];
+        size_ = n;
+        for (int i = 0; i < n; ++i) {
+            data_[i] = fill;
+        }
+    }
 }
 
 DynArray::~DynArray() {
-    // TODO: освободить буфер парным delete[] (а не delete).
+    delete[] data_;
 }
 
 int DynArray::size() const {
-    // TODO
-    return 0;
+    return size_;
 }
 
 int& DynArray::at(int i) {
-    // TODO: проверить диапазон, иначе бросить std::out_of_range; вернуть data_[i].
-    (void)i;
-    throw std::logic_error("TODO: DynArray::at (неконстантный) не реализован");
+    if (i < 0 || i >= size_) {
+        throw std::out_of_range("DynArray::at: index out of range");
+    }
+    return data_[i];
 }
 
 int DynArray::at(int i) const {
-    // TODO: проверить диапазон, иначе бросить std::out_of_range; вернуть data_[i].
-    (void)i;
-    throw std::logic_error("TODO: DynArray::at (const) не реализован");
+    if (i < 0 || i >= size_) {
+        throw std::out_of_range("DynArray::at: index out of range");
+    }
+    return data_[i];
 }
 
 int DynArray::sum() const {
-    // TODO: сложить все элементы.
-    return 0;
+    int total = 0;
+    for (int i = 0; i < size_; ++i) {
+        total += data_[i];
+    }
+    return total;
 }
 
 void DynArray::fill(int value) {
-    // TODO: записать value во все элементы.
-    (void)value;
+    for (int i = 0; i < size_; ++i) {
+        data_[i] = value;
+    }
 }
 
 // ── Задание 8: OwnedInt (глубокое vs поверхностное копирование) ───────────────
@@ -80,16 +115,15 @@ OwnedInt::OwnedInt(int value) : ptr_(new int(value)) {
     // Конструктор уже корректен: один int на куче.
 }
 
-OwnedInt::OwnedInt(const OwnedInt& other) : ptr_(new int(0)) {
-    // TODO: сделать копию ГЛУБОКОЙ — скопировать ЗНАЧЕНИЕ other в свой буфер.
-    // Сейчас буфер свой, но значение не скопировано — тест это поймает.
-    (void)other;
+OwnedInt::OwnedInt(const OwnedInt& other) : ptr_(new int(*other.ptr_)) {
+    // Глубокое копирование: свой буфер на куче со ЗНАЧЕНИЕМ оригинала.
 }
 
 OwnedInt& OwnedInt::operator=(const OwnedInt& other) {
-    // TODO: глубокое присваивание. Защитись от self-assignment,
-    // скопируй значение в СВОЙ буфер (не дели указатель, не теки).
-    (void)other;
+    if (this == &other) {
+        return *this;  // защита от самоприсваивания
+    }
+    *ptr_ = *other.ptr_;  // свой буфер уже выделен — переписываем значение
     return *this;
 }
 

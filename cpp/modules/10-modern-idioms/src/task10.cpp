@@ -1,43 +1,62 @@
+// Эталонный ответ (answer key) — реализация заданий модуля 10.
 #include "task10.hpp"
 #include <stdexcept>
-// #include <ranges>
-// #include <algorithm>
+#include <ranges>
+#include <algorithm>
 
 std::pair<int, int> minmax_of(const std::vector<int>& v) {
-    // TODO: вернуть {min, max}
-    (void)v;
-    return {0, 0};
+    auto [lo, hi] = std::minmax_element(v.begin(), v.end());
+    return {*lo, *hi};
 }
 
 std::string color_name(Color c) {
-    // TODO
-    (void)c;
+    switch (c) {
+        case Color::Red:   return "Red";
+        case Color::Green: return "Green";
+        case Color::Blue:  return "Blue";
+    }
     return "";
 }
 
 std::vector<int> evens_squared(const std::vector<int>& v) {
-    // TODO: std::views::filter | std::views::transform, затем материализовать
-    (void)v;
-    return {};
+    namespace rv = std::views;
+    auto pipeline = v
+        | rv::filter([](int x) { return x % 2 == 0; })
+        | rv::transform([](int x) { return x * x; });
+    std::vector<int> out;
+    for (int x : pipeline) {
+        out.push_back(x);
+    }
+    return out;
 }
 
 int sum_values(const std::map<std::string, int>& m) {
-    // TODO: for (const auto& [k, val] : m)
-    (void)m;
-    return 0;
+    int total = 0;
+    for (const auto& [k, val] : m) {
+        (void)k;
+        total += val;
+    }
+    return total;
 }
 
 std::vector<std::string_view> split_view(std::string_view s, char sep) {
-    // TODO: пройди по s, находя позиции sep (s.find(sep, pos)); каждый кусок —
-    // s.substr(start, len) (это снова string_view, без копии). Сохраняй пустые куски.
-    (void)s;
-    (void)sep;
-    return {};
+    std::vector<std::string_view> parts;
+    std::size_t start = 0;
+    while (true) {
+        std::size_t p = s.find(sep, start);
+        if (p == std::string_view::npos) {
+            parts.push_back(s.substr(start));
+            break;
+        }
+        parts.push_back(s.substr(start, p - start));
+        start = p + 1;
+    }
+    return parts;
 }
 
 std::pair<int, int> divmod(int a, int b) {
-    // TODO: при b == 0 -> throw std::invalid_argument("..."); иначе {a / b, a % b}.
-    (void)a;
-    (void)b;
-    return {0, 0};
+    if (b == 0) {
+        throw std::invalid_argument("divmod: деление на ноль");
+    }
+    return {a / b, a % b};
 }

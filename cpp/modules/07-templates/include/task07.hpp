@@ -7,31 +7,29 @@
 #include <stdexcept>
 #include <string>
 
-// ВЕСЬ код шаблонов пишется здесь, в заголовке (см. README, идея 2).
-// Сейчас — стабы. Реализуй тела так, чтобы тесты модуля 07 стали зелёными.
+// Эталонный ответ (answer key) — реализация шаблонов модуля 07.
+// Весь код шаблонов живёт в заголовке (см. README, идея 2).
 
 // 1. Больший из двух.
 template <class T>
 T my_max(const T& a, const T& b) {
-    // TODO
-    (void)b;
-    return a;
+    return (a < b) ? b : a;
 }
 
 // 2. Зажать v в диапазон [lo, hi].
 template <class T>
 T clamp_value(const T& v, const T& lo, const T& hi) {
-    // TODO
-    (void)lo; (void)hi;
+    if (v < lo) return lo;
+    if (hi < v) return hi;
     return v;
 }
 
 // 3. Сумма элементов вектора (для пустого — T{}).
 template <class T>
 T sum_vector(const std::vector<T>& v) {
-    // TODO
-    (void)v;
-    return T{};
+    T total{};
+    for (const T& x : v) total += x;
+    return total;
 }
 
 // 4. Шаблон пары с методом swapped().
@@ -43,17 +41,14 @@ struct Pair {
     Pair(First f, Second s) : first(f), second(s) {}
 
     Pair<Second, First> swapped() const {
-        // TODO: вернуть пару с переставленными значениями (и типами)
-        return Pair<Second, First>(Second{}, First{});
+        return Pair<Second, First>(second, first);
     }
 };
 
 // 5. Является ли x положительной степенью двойки. Ограничено целочисленными типами.
 template <std::integral T>
 bool is_power_of_two(T x) {
-    // TODO
-    (void)x;
-    return false;
+    return x > 0 && (x & (x - 1)) == 0;
 }
 
 // ============================================================================
@@ -75,21 +70,22 @@ struct Matrix {
 
     // Доступ к элементу (r, c). Должен бросать std::out_of_range, если индекс вне границ.
     T& at(std::size_t r, std::size_t c) {
-        // TODO: проверить границы (иначе std::out_of_range) и вернуть ссылку на нужный элемент
-        (void)r; (void)c;
-        throw std::logic_error("TODO: Matrix::at");
+        if (r >= Rows || c >= Cols)
+            throw std::out_of_range("Matrix::at: index out of range");
+        return data[r * Cols + c];
     }
     const T& at(std::size_t r, std::size_t c) const {
-        // TODO: то же самое, но const-версия
-        (void)r; (void)c;
-        throw std::logic_error("TODO: Matrix::at const");
+        if (r >= Rows || c >= Cols)
+            throw std::out_of_range("Matrix::at: index out of range");
+        return data[r * Cols + c];
     }
 
     // Поэлементное сложение. Тип гарантирует, что размеры совпадают.
     Matrix operator+(const Matrix& other) const {
-        // TODO: сложить поэлементно и вернуть результат
-        (void)other;
-        throw std::logic_error("TODO: Matrix::operator+");
+        Matrix result;
+        for (std::size_t i = 0; i < Rows * Cols; ++i)
+            result.data[i] = data[i] + other.data[i];
+        return result;
     }
 
     bool operator==(const Matrix& other) const {
@@ -104,22 +100,19 @@ struct Matrix {
 // База (первичный шаблон):
 template <class T>
 const char* type_name(const T&) {
-    // TODO: вернуть "other"
-    return "stub";
+    return "other";
 }
 // Полная специализация для bool:
 template <>
 inline const char* type_name<bool>(const bool&) {
-    // TODO: вернуть "bool"
-    return "stub";
+    return "bool";
 }
 // Частичная специализация невозможна для функций — поэтому для указателей
 // делаем ОТДЕЛЬНУЮ перегрузку шаблона (это работает за счёт перегрузки, а
 // перегрузка для указателей более специализирована, чем базовый шаблон):
 template <class T>
 const char* type_name(T* const&) {
-    // TODO: вернуть "pointer"
-    return "stub";
+    return "pointer";
 }
 
 // 8. compile-time возведение в степень через рекурсию шаблонов.
@@ -127,14 +120,12 @@ const char* type_name(T* const&) {
 //    (годится в static_assert и как размер массива). Base^0 == 1.
 template <long long Base, unsigned Exp>
 struct Pow {
-    // TODO: связать с Pow<Base, Exp - 1>::value так, чтобы получилось Base^Exp
-    static constexpr long long value = 0;
+    static constexpr long long value = Base * Pow<Base, Exp - 1>::value;
 };
 // Базовый случай рекурсии — частичная специализация по Exp == 0:
 template <long long Base>
 struct Pow<Base, 0> {
-    // TODO: чему равно Base^0 ?
-    static constexpr long long value = 0;
+    static constexpr long long value = 1;
 };
 
 // Удобный псевдоним-переменная (variable template).

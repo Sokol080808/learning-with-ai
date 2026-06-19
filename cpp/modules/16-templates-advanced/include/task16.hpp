@@ -21,16 +21,18 @@ namespace adv {
 // =====================================================================
 
 template <class First, class... Rest>
-auto sum(First first, Rest... /*rest*/) {
-    // TODO: верни сумму ВСЕХ аргументов через fold-выражение.
-    // (заглушка возвращает только первый — тесты на этом и упадут)
-    return first;
+auto sum(First first, Rest... rest) {
+    // Reference answer key: унарная правая свёртка по сложению.
+    return (first + ... + rest);
 }
 
 template <class... Ts>
-std::string to_string_all(const Ts&... /*args*/) {
-    // TODO: для каждого аргумента вызови std::to_string и склей через ", ".
-    return std::string{"TODO"};
+std::string to_string_all(const Ts&... args) {
+    // Reference answer key: склейка std::to_string каждого аргумента через ", ".
+    std::string out;
+    bool first = true;
+    (((out += (first ? "" : ", "), out += std::to_string(args), first = false)), ...);
+    return out;
 }
 
 // =====================================================================
@@ -44,10 +46,14 @@ std::string to_string_all(const Ts&... /*args*/) {
 // --- my_remove_const ---
 template <class T>
 struct my_remove_const {
-    // TODO: по умолчанию type должен совпадать с T...
-    using type = const T;  // ...а это нарочно неверная заглушка.
+    // Reference answer key: по умолчанию type совпадает с T.
+    using type = T;
 };
-// TODO: добавь частичную специализацию для `const T`, снимающую const.
+template <class T>
+struct my_remove_const<const T> {
+    // Снимаем const с верхнего уровня.
+    using type = T;
+};
 
 template <class T>
 using my_remove_const_t = typename my_remove_const<T>::type;
@@ -55,10 +61,13 @@ using my_remove_const_t = typename my_remove_const<T>::type;
 // --- my_is_pointer ---
 template <class T>
 struct my_is_pointer {
-    // TODO: по умолчанию false, специализация для T* — true.
-    static constexpr bool value = true;  // нарочно неверно
+    // Reference answer key: по умолчанию не указатель.
+    static constexpr bool value = false;
 };
-// TODO: добавь специализацию my_is_pointer<T*>.
+template <class T>
+struct my_is_pointer<T*> {
+    static constexpr bool value = true;
+};
 
 template <class T>
 inline constexpr bool my_is_pointer_v = my_is_pointer<T>::value;
@@ -66,10 +75,13 @@ inline constexpr bool my_is_pointer_v = my_is_pointer<T>::value;
 // --- my_is_same ---
 template <class A, class B>
 struct my_is_same {
-    // TODO: по умолчанию false, специализация для <T, T> — true.
-    static constexpr bool value = true;  // нарочно неверно
+    // Reference answer key: разные типы -> false.
+    static constexpr bool value = false;
 };
-// TODO: добавь специализацию my_is_same<T, T>.
+template <class T>
+struct my_is_same<T, T> {
+    static constexpr bool value = true;
+};
 
 template <class A, class B>
 inline constexpr bool my_is_same_v = my_is_same<A, B>::value;
@@ -84,15 +96,15 @@ inline constexpr bool my_is_same_v = my_is_same<A, B>::value;
 template <class T,
           typename std::enable_if<std::is_integral<T>::value, int>::type = 0>
 std::string describe(T /*value*/) {
-    // TODO: верни "integer".
-    throw std::logic_error("TODO: describe(integral)");
+    // Reference answer key.
+    return "integer";
 }
 
 template <class T,
           typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
 std::string describe(T /*value*/) {
-    // TODO: верни "floating".
-    throw std::logic_error("TODO: describe(floating)");
+    // Reference answer key.
+    return "floating";
 }
 
 // =====================================================================
@@ -106,21 +118,21 @@ struct Comparable {
     // Удобный доступ к производному объекту.
     const Derived& self() const { return static_cast<const Derived&>(*this); }
 
-    friend bool operator!=(const Derived& /*a*/, const Derived& /*b*/) {
-        // TODO: через == производного класса.
-        throw std::logic_error("TODO: operator!=");
+    friend bool operator!=(const Derived& a, const Derived& b) {
+        // Reference answer key: a != b  <=>  !(a == b).
+        return !(a == b);
     }
-    friend bool operator>(const Derived& /*a*/, const Derived& /*b*/) {
-        // TODO: a > b  <=>  b < a.
-        throw std::logic_error("TODO: operator>");
+    friend bool operator>(const Derived& a, const Derived& b) {
+        // Reference answer key: a > b  <=>  b < a.
+        return b < a;
     }
-    friend bool operator<=(const Derived& /*a*/, const Derived& /*b*/) {
-        // TODO: a <= b  <=>  !(b < a).
-        throw std::logic_error("TODO: operator<=");
+    friend bool operator<=(const Derived& a, const Derived& b) {
+        // Reference answer key: a <= b  <=>  !(b < a).
+        return !(b < a);
     }
-    friend bool operator>=(const Derived& /*a*/, const Derived& /*b*/) {
-        // TODO: a >= b  <=>  !(a < b).
-        throw std::logic_error("TODO: operator>=");
+    friend bool operator>=(const Derived& a, const Derived& b) {
+        // Reference answer key: a >= b  <=>  !(a < b).
+        return !(a < b);
     }
 };
 
@@ -141,26 +153,31 @@ inline int& fast_path_calls() {
 
 // Перегрузка для произвольного итератора (обычный путь).
 template <class It>
-std::ptrdiff_t distance_impl(It /*begin*/, It /*end*/,
+std::ptrdiff_t distance_impl(It begin, It end,
                              std::input_iterator_tag) {
-    // TODO: посчитай шаги в цикле.
-    throw std::logic_error("TODO: distance_impl(input)");
+    // Reference answer key: считаем шаги в цикле.
+    std::ptrdiff_t n = 0;
+    for (; begin != end; ++begin) {
+        ++n;
+    }
+    return n;
 }
 
 // Перегрузка для итератора случайного доступа (быстрый путь).
 template <class It>
-std::ptrdiff_t distance_impl(It /*begin*/, It /*end*/,
+std::ptrdiff_t distance_impl(It begin, It end,
                              std::random_access_iterator_tag) {
-    // TODO: ++fast_path_calls(); верни end - begin.
-    throw std::logic_error("TODO: distance_impl(random)");
+    // Reference answer key: быстрый путь.
+    ++fast_path_calls();
+    return end - begin;
 }
 
 template <class It>
 std::ptrdiff_t distance_dispatch(It begin, It end) {
-    // TODO: вызови distance_impl, передав тег категории итератора.
-    (void)begin;
-    (void)end;
-    throw std::logic_error("TODO: distance_dispatch");
+    // Reference answer key: диспетчеризация по тегу категории итератора.
+    return distance_impl(
+        begin, end,
+        typename std::iterator_traits<It>::iterator_category{});
 }
 
 }  // namespace adv

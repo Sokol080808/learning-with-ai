@@ -9,6 +9,7 @@
 
 #include <cstddef>      // std::size_t, std::byte, std::max_align_t
 #include <cstdint>      // std::uintptr_t
+#include <cstring>      // std::memcpy
 #include <new>          // placement new, ::operator new/delete
 #include <utility>      // std::move, std::exchange, std::swap, std::forward
 #include <stdexcept>    // std::logic_error, std::bad_alloc
@@ -43,21 +44,29 @@ public:
 
     // align гарантированно степень двойки. Бросает std::bad_alloc при нехватке.
     void* allocate(std::size_t n, std::size_t align = alignof(std::max_align_t)) {
-        // TODO: выровнять cursor_ вверх до кратного align, проверить, что
-        // выровненный блок + n помещается в [begin_, begin_+capacity_), сдвинуть
-        // cursor_ и вернуть начало блока. При нехватке — throw std::bad_alloc{}.
-        (void)n; (void)align;
-        throw std::logic_error("TODO: BumpAllocator::allocate");
+        // Эталонный ответ (answer key).
+        // Считаем адреса в целых, чтобы не делать арифметику над void*.
+        const std::uintptr_t cur     = reinterpret_cast<std::uintptr_t>(cursor_);
+        const std::uintptr_t aligned = (cur + (align - 1)) & ~(static_cast<std::uintptr_t>(align) - 1);
+        const std::uintptr_t end     = reinterpret_cast<std::uintptr_t>(begin_) + capacity_;
+        // Сравниваем остаток с n, а не aligned + n с end — иначе на больших n
+        // сложение указателей переполнится.
+        if (aligned > end || (end - aligned) < n) {
+            throw std::bad_alloc{};
+        }
+        std::byte* result = reinterpret_cast<std::byte*>(aligned);
+        cursor_ = result + n;
+        return result;
     }
 
     void reset() {
-        // TODO: вернуть cursor_ в begin_.
-        throw std::logic_error("TODO: BumpAllocator::reset");
+        // Эталонный ответ (answer key).
+        cursor_ = begin_;
     }
 
     std::size_t used() const {
-        // TODO: вернуть число занятых байт.
-        return 99999;  // заведомо неверно
+        // Эталонный ответ (answer key). Занятое = курсор минус начало буфера.
+        return static_cast<std::size_t>(cursor_ - begin_);
     }
 
     std::size_t capacity() const { return capacity_; }
@@ -94,44 +103,43 @@ public:
     UniquePtr(const UniquePtr&)            = delete;
     UniquePtr& operator=(const UniquePtr&) = delete;
 
-    UniquePtr(UniquePtr&& other) noexcept : ptr_(nullptr) {
-        // TODO: украсть указатель у other, оставив other пустым.
-        // (Заглушка ничего не крадёт — указатель остаётся nullptr.)
-        (void)other;
+    UniquePtr(UniquePtr&& other) noexcept : ptr_(std::exchange(other.ptr_, nullptr)) {
+        // Эталонный ответ (answer key): украсть указатель, оставив other пустым.
     }
 
     UniquePtr& operator=(UniquePtr&& other) noexcept {
-        // TODO: освободить свой объект, забрать чужой указатель, обнулить other.
-        // Не забудь про самоприсваивание. (Заглушка ничего не делает.)
-        (void)other;
+        // Эталонный ответ (answer key).
+        if (this != &other) {
+            delete ptr_;                              // убрать свой старый объект
+            ptr_ = std::exchange(other.ptr_, nullptr); // забрать чужой, обнулив other
+        }
         return *this;
     }
 
     ~UniquePtr() {
-        // TODO: delete ptr_;  (delete nullptr безопасен)
-        // (Заглушка не удаляет объект — деструктор объекта не вызовется.)
+        // Эталонный ответ (answer key): delete nullptr безопасен.
+        delete ptr_;
     }
 
     T* get() const noexcept { return ptr_; }
 
     T* release() noexcept {
-        // TODO: вернуть текущий указатель, а внутри обнулиться (владение отдано).
-        // (Заглушка возвращает nullptr и владение не отдаёт.)
-        return nullptr;
+        // Эталонный ответ (answer key): отдать указатель наружу, внутри обнулиться.
+        return std::exchange(ptr_, nullptr);
     }
 
     void reset(T* p = nullptr) noexcept {
-        // TODO: удалить старый объект и принять новый указатель p.
-        // (Заглушка ничего не меняет.)
-        (void)p;
+        // Эталонный ответ (answer key): удалить старый объект, принять новый.
+        delete ptr_;
+        ptr_ = p;
     }
 
     T& operator*()  const { return *ptr_; }
     T* operator->() const noexcept { return ptr_; }
 
     explicit operator bool() const noexcept {
-        // TODO: true, если владеем объектом.
-        return false;  // заведомо неверно
+        // Эталонный ответ (answer key).
+        return ptr_ != nullptr;
     }
 
 private:
@@ -185,46 +193,49 @@ public:
     SharedPtr(std::nullptr_t) noexcept : ctrl_(nullptr) {}
 
     explicit SharedPtr(T* p) {
-        // TODO: создать ControlBlock<T>, записать ptr=p, strong=1, weak=0.
-        // При исключении p не должен утечь (для простоты можно: new ControlBlock,
-        // затем присвоить поля).
-        // (Заглушка не создаёт контрол-блок — указатель p при этом теряется.)
-        (void)p;
+        // Эталонный ответ (answer key): новый контрол-блок, strong=1, weak=0.
+        ctrl_         = new ControlBlock<T>;
+        ctrl_->ptr    = p;
+        ctrl_->strong = 1;
+        ctrl_->weak   = 0;
     }
 
     SharedPtr(const SharedPtr& other) noexcept : ctrl_(other.ctrl_) {
-        // TODO: если ctrl_ != nullptr — увеличить strong.
-        // (Заглушка не увеличивает счётчик.)
+        // Эталонный ответ (answer key): ещё один владелец.
+        if (ctrl_) ++ctrl_->strong;
     }
 
-    SharedPtr(SharedPtr&& other) noexcept : ctrl_(nullptr) {
-        // TODO: украсть ctrl_ у other (other становится пустым).
-        // (Заглушка ничего не крадёт.)
-        (void)other;
+    SharedPtr(SharedPtr&& other) noexcept : ctrl_(std::exchange(other.ctrl_, nullptr)) {
+        // Эталонный ответ (answer key): перемещение не трогает счётчик.
     }
 
     SharedPtr& operator=(const SharedPtr& other) noexcept {
-        // TODO: release_() своего, скопировать ctrl_, ++strong. Учти самоприсваивание.
-        // (Заглушка ничего не делает.)
-        (void)other;
+        // Эталонный ответ (answer key).
+        if (this != &other) {
+            release_();
+            ctrl_ = other.ctrl_;
+            if (ctrl_) ++ctrl_->strong;
+        }
         return *this;
     }
 
     SharedPtr& operator=(SharedPtr&& other) noexcept {
-        // TODO: release_() своего, забрать ctrl_, обнулить other.
-        // (Заглушка ничего не делает.)
-        (void)other;
+        // Эталонный ответ (answer key).
+        if (this != &other) {
+            release_();
+            ctrl_ = std::exchange(other.ctrl_, nullptr);
+        }
         return *this;
     }
 
     ~SharedPtr() {
-        // TODO: release_();
-        // (Заглушка не уменьшает счётчики — объект не разрушится.)
+        // Эталонный ответ (answer key).
+        release_();
     }
 
     long use_count() const noexcept {
-        // TODO: вернуть ctrl_ ? ctrl_->strong : 0.
-        return -1;  // заведомо неверно
+        // Эталонный ответ (answer key).
+        return ctrl_ ? ctrl_->strong : 0;
     }
 
     T*  get() const noexcept { return ctrl_ ? ctrl_->ptr : nullptr; }
@@ -236,9 +247,16 @@ private:
     // Уменьшить strong; при strong==0 удалить объект; при strong==0 && weak==0
     // удалить контрол-блок. (Вызывается из деструктора и присваиваний.)
     void release_() {
-        // TODO: реализовать описанную выше логику. Подсказка: если ctrl_ == nullptr
-        // — ничего не делать. После --strong, если strong == 0 — delete ctrl_->ptr
-        // (и обнули его); если ещё и weak == 0 — delete ctrl_.
+        // Эталонный ответ (answer key): логика двух счётчиков.
+        if (!ctrl_) return;
+        if (--ctrl_->strong == 0) {
+            delete ctrl_->ptr;          // объект больше не нужен
+            ctrl_->ptr = nullptr;
+            if (ctrl_->weak == 0) {
+                delete ctrl_;           // и контрол-блок никому не нужен
+            }
+        }
+        ctrl_ = nullptr;
     }
 
     ControlBlock<T>* ctrl_;
@@ -252,59 +270,70 @@ public:
     WeakPtr() noexcept : ctrl_(nullptr) {}
 
     WeakPtr(const SharedPtr<T>& sp) noexcept : ctrl_(sp.ctrl_) {
-        // TODO: если ctrl_ != nullptr — увеличить weak.
-        // (Заглушка не увеличивает счётчик.)
+        // Эталонный ответ (answer key): ещё один наблюдатель.
+        if (ctrl_) ++ctrl_->weak;
     }
 
     WeakPtr(const WeakPtr& other) noexcept : ctrl_(other.ctrl_) {
-        // TODO: если ctrl_ != nullptr — увеличить weak.
-        // (Заглушка не увеличивает счётчик.)
+        // Эталонный ответ (answer key).
+        if (ctrl_) ++ctrl_->weak;
     }
 
-    WeakPtr(WeakPtr&& other) noexcept : ctrl_(nullptr) {
-        // TODO: украсть ctrl_ у other.
-        // (Заглушка ничего не крадёт.)
-        (void)other;
+    WeakPtr(WeakPtr&& other) noexcept : ctrl_(std::exchange(other.ctrl_, nullptr)) {
+        // Эталонный ответ (answer key): перемещение не трогает счётчик.
     }
 
     WeakPtr& operator=(const WeakPtr& other) noexcept {
-        // TODO: release_() своего, скопировать ctrl_, ++weak. Учти самоприсваивание.
-        // (Заглушка ничего не делает.)
-        (void)other;
+        // Эталонный ответ (answer key).
+        if (this != &other) {
+            release_();
+            ctrl_ = other.ctrl_;
+            if (ctrl_) ++ctrl_->weak;
+        }
         return *this;
     }
 
     WeakPtr& operator=(WeakPtr&& other) noexcept {
-        // TODO: release_() своего, забрать ctrl_, обнулить other.
-        // (Заглушка ничего не делает.)
-        (void)other;
+        // Эталонный ответ (answer key).
+        if (this != &other) {
+            release_();
+            ctrl_ = std::exchange(other.ctrl_, nullptr);
+        }
         return *this;
     }
 
     ~WeakPtr() {
-        // TODO: release_();
-        // (Заглушка ничего не делает.)
+        // Эталонный ответ (answer key).
+        release_();
     }
 
     bool expired() const noexcept {
-        // TODO: true, если объекта уже нет (ctrl_ == nullptr || strong == 0).
-        return false;  // заведомо неверно
+        // Эталонный ответ (answer key).
+        return ctrl_ == nullptr || ctrl_->strong == 0;
     }
 
     // Повыситься до SharedPtr. Если объект жив (strong > 0) — вернуть владеющий
     // SharedPtr (strong увеличится). Иначе — пустой SharedPtr.
     SharedPtr<T> lock() const noexcept {
-        // TODO: если !expired() — собрать SharedPtr, разделяющий этот ctrl_,
-        // увеличив strong; иначе вернуть пустой.
-        // (Заглушка всегда возвращает пустой SharedPtr.)
-        return SharedPtr<T>();
+        // Эталонный ответ (answer key): разделить тот же ctrl_, подняв strong.
+        SharedPtr<T> sp;  // пустой
+        if (!expired()) {
+            sp.ctrl_ = ctrl_;
+            ++ctrl_->strong;
+        }
+        return sp;
     }
 
 private:
     // Уменьшить weak; если strong==0 && weak==0 — удалить контрол-блок.
     void release_() {
-        // TODO: если ctrl_ == nullptr — выходим. Иначе --weak; если strong==0 и
-        // weak==0 — delete ctrl_.
+        // Эталонный ответ (answer key).
+        if (!ctrl_) return;
+        --ctrl_->weak;
+        if (ctrl_->strong == 0 && ctrl_->weak == 0) {
+            delete ctrl_;
+        }
+        ctrl_ = nullptr;
     }
 
     ControlBlock<T>* ctrl_;
@@ -331,30 +360,39 @@ class PoolAllocator {
 public:
     PoolAllocator(void* buffer, std::size_t block_size, std::size_t block_count)
         : block_size_(block_size), free_head_(nullptr), free_count_(0) {
-        // TODO: пройтись по block_count блокам в buffer и связать их в free-list:
-        // в каждый блок записать указатель на следующий свободный, последний — на
-        // nullptr. free_head_ должен указывать на первый блок, free_count_ ==
-        // block_count. Адрес i-го блока: (std::byte*)buffer + i*block_size.
-        (void)buffer; (void)block_count;
+        // Эталонный ответ (answer key): связать блоки в free-list.
+        std::byte* base = static_cast<std::byte*>(buffer);
+        // Связываем с конца, чтобы free_head_ указывал на самый первый блок и
+        // блоки выдавались в порядке возрастания адресов.
+        for (std::size_t i = block_count; i-- > 0; ) {
+            void* block = base + i * block_size_;
+            std::memcpy(block, &free_head_, sizeof(void*));  // next := текущая голова
+            free_head_ = block;
+        }
+        free_count_ = block_count;
     }
 
     void* allocate() {
-        // TODO: если free_head_ == nullptr — вернуть nullptr. Иначе снять голову
-        // списка: запомнить её, сдвинуть free_head_ на следующий блок, уменьшить
-        // free_count_, вернуть снятый блок.
-        throw std::logic_error("TODO: PoolAllocator::allocate");
+        // Эталонный ответ (answer key): снять голову free-list.
+        if (free_head_ == nullptr) return nullptr;
+        void* block = free_head_;
+        void* next;
+        std::memcpy(&next, block, sizeof(void*));  // прочитать «следующего»
+        free_head_ = next;
+        --free_count_;
+        return block;
     }
 
     void deallocate(void* p) {
-        // TODO: вернуть блок p в голову free-list: записать в первые байты p
-        // текущий free_head_, затем free_head_ = p, увеличить free_count_.
-        (void)p;
-        throw std::logic_error("TODO: PoolAllocator::deallocate");
+        // Эталонный ответ (answer key): вставить блок в голову free-list.
+        std::memcpy(p, &free_head_, sizeof(void*));  // p->next := текущая голова
+        free_head_ = p;
+        ++free_count_;
     }
 
     std::size_t free_count() const {
-        // TODO: вернуть число свободных блоков.
-        return 999999;  // заведомо неверно
+        // Эталонный ответ (answer key).
+        return free_count_;
     }
 
     std::size_t block_size() const { return block_size_; }
@@ -378,16 +416,14 @@ private:
 // ─────────────────────────────────────────────────────────────────────────────
 template <class T, class... Args>
 T* construct_at19(void* raw, Args&&... args) {
-    // TODO: вернуть new (raw) T(std::forward<Args>(args)...);
-    (void)raw;
-    throw std::logic_error("TODO: construct_at19");
+    // Эталонный ответ (answer key): placement new — память не выделяется.
+    return new (raw) T(std::forward<Args>(args)...);
 }
 
 template <class T>
 void destroy_at19(T* p) {
-    // TODO: вызвать деструктор объекта: p->~T();  (память при этом НЕ освобождаем)
-    (void)p;
-    throw std::logic_error("TODO: destroy_at19");
+    // Эталонный ответ (answer key): явный деструктор, память не освобождаем.
+    p->~T();
 }
 
 }  // namespace m19

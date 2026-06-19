@@ -24,30 +24,40 @@ template <class T>
 class Stack {
 public:
     void push(const T& value) {
-        // TODO: добавить value на вершину так, чтобы при броске (например,
-        // при копировании value или при выделении памяти) стек не изменился.
-        (void)value;
-        throw std::logic_error("TODO: Stack::push");
+        // Reference answer key: резервируем место ЗАРАНЕЕ, до изменения видимого
+        // состояния. Реаллокация (источник броска) делается отдельным шагом; если
+        // она бросит, размер ещё не изменён. После reserve места заведомо хватает,
+        // поэтому push_back не реаллоцирует — лишь копирует value в подготовленный
+        // буфер. Если копирование value бросит, vector::push_back сам откатит и
+        // size() не изменится — строгая гарантия сохранена.
+        if (data_.size() == data_.capacity()) {
+            // Растём с запасом, чтобы после push всегда оставалось место (capacity >
+            // size). Первая реаллокация выделяет минимум 2, дальше удваиваем.
+            data_.reserve(data_.empty() ? 2 : data_.capacity() * 2);
+        }
+        data_.push_back(value);
     }
 
     void pop() {
-        // TODO: убрать верхний элемент; на пустом стеке бросить std::out_of_range
-        throw std::logic_error("TODO: Stack::pop");
+        if (data_.empty()) {
+            throw std::out_of_range("Stack::pop on empty stack");
+        }
+        data_.pop_back();
     }
 
     const T& top() const {
-        // TODO: вернуть верхний элемент; на пустом стеке бросить std::out_of_range
+        if (data_.empty()) {
+            throw std::out_of_range("Stack::top on empty stack");
+        }
         return data_.back();
     }
 
     bool empty() const {
-        // TODO
-        return true;
+        return data_.empty();
     }
 
     std::size_t size() const {
-        // TODO
-        return 0;
+        return data_.size();
     }
 
     // Сколько элементов помещается без новой реаллокации (для проверки reserve).
@@ -78,12 +88,20 @@ public:
 
     // Отменить срабатывание: после этого деструктор ничего не делает.
     void dismiss() {
-        // TODO
+        active_ = false;
     }
 
     ~ScopeGuard() noexcept {
-        // TODO: если guard ещё активен (не dismissed) и действие задано —
-        // выполнить его. Из деструктора исключения наружу выпускать нельзя.
+        // Reference answer key: если guard ещё активен и действие задано — выполнить
+        // его ровно один раз. Из деструктора исключения наружу не выпускаем (поэтому
+        // try/catch), иначе при раскрутке стека получили бы std::terminate.
+        if (active_ && action_) {
+            try {
+                action_();
+            } catch (...) {
+                // молча проглатываем — деструктор обязан быть noexcept
+            }
+        }
     }
 
 private:
@@ -110,24 +128,28 @@ public:
         : size_(n), data_(n == 0 ? nullptr : new int[n]()) {}
 
     Buffer(const Buffer& other)
-        : size_(0), data_(nullptr) {
-        // TODO: глубокая копия other (выдели свой массив и скопируй элементы)
-        (void)other;
-        throw std::logic_error("TODO: Buffer copy ctor");
+        : size_(other.size_), data_(other.size_ == 0 ? nullptr : new int[other.size_]) {
+        // Reference answer key: глубокая копия — свой массив + поэлементное копирование.
+        for (std::size_t i = 0; i < size_; ++i) {
+            data_[i] = other.data_[i];
+        }
     }
 
     // Перемещение: забрать ресурс у other, оставив его пустым (size 0, data null).
     Buffer(Buffer&& other) noexcept
-        : size_(0), data_(nullptr) {
-        // TODO: украсть ресурс у other
-        (void)other;
+        : size_(other.size_), data_(other.data_) {
+        // Reference answer key: украли ресурс — обнуляем источник, чтобы его
+        // деструктор не освободил уже наш массив.
+        other.size_ = 0;
+        other.data_ = nullptr;
     }
 
     // ОДИН operator= по значению — это и есть copy-and-swap.
     // Аргумент other уже скопирован/перемещён компилятором; остаётся swap.
     Buffer& operator=(Buffer other) noexcept {
-        // TODO: swap(*this, other) и вернуть *this
-        (void)other;
+        // Reference answer key: вся тяжёлая работа (копия/перемещение) сделана при
+        // создании other; забираем его ресурс к себе, старый уедет в other и умрёт.
+        swap(*this, other);
         return *this;
     }
 
@@ -138,22 +160,25 @@ public:
     std::size_t size() const { return size_; }
 
     int at(std::size_t i) const {
-        // TODO: вернуть элемент; за границей бросить std::out_of_range
-        (void)i;
-        throw std::logic_error("TODO: Buffer::at");
+        if (i >= size_) {
+            throw std::out_of_range("Buffer::at index out of range");
+        }
+        return data_[i];
     }
 
     void set(std::size_t i, int v) {
-        // TODO: записать v в позицию i; за границей бросить std::out_of_range
-        (void)i; (void)v;
-        throw std::logic_error("TODO: Buffer::set");
+        if (i >= size_) {
+            throw std::out_of_range("Buffer::set index out of range");
+        }
+        data_[i] = v;
     }
 
     // Обмен внутренностей двух буферов без бросков.
     friend void swap(Buffer& a, Buffer& b) noexcept {
         using std::swap;
-        // TODO: обменять size_ и data_ местами
-        (void)a; (void)b;
+        // Reference answer key: обмениваем именно поля-владельцы — размер и указатель.
+        swap(a.size_, b.size_);
+        swap(a.data_, b.data_);
     }
 
 private:
@@ -168,22 +193,36 @@ private:
 
 // Факториал: factorial(0) == 1, factorial(5) == 120.
 constexpr unsigned long long factorial(unsigned n) {
-    // TODO
-    (void)n;
-    return 0;
+    // Reference answer key.
+    unsigned long long result = 1;
+    for (unsigned i = 2; i <= n; ++i) {
+        result *= i;
+    }
+    return result;
 }
 
 // Наибольший общий делитель (алгоритм Евклида). gcd(0, x) == x.
 constexpr unsigned gcd(unsigned a, unsigned b) {
-    // TODO
-    (void)a; (void)b;
-    return 0;
+    // Reference answer key: пока b != 0, (a, b) = (b, a % b).
+    while (b != 0) {
+        unsigned t = a % b;
+        a = b;
+        b = t;
+    }
+    return a;
 }
 
 // Простое ли число. 0 и 1 — не простые; 2 — простое.
 constexpr bool is_prime(unsigned n) {
-    // TODO
-    (void)n;
+    // Reference answer key: 0 и 1 не простые; проверяем делители до корня из n.
+    if (n < 2) {
+        return false;
+    }
+    for (unsigned d = 2; d * d <= n; ++d) {
+        if (n % d == 0) {
+            return false;
+        }
+    }
     return true;
 }
 
@@ -194,9 +233,12 @@ constexpr bool is_prime(unsigned n) {
 // Длина C-строки (без завершающего '\0'), посчитанная в compile-time.
 // cstr_len("") == 0, cstr_len("abc") == 3.
 constexpr std::size_t cstr_len(const char* s) {
-    // TODO: пройди по символам до '\0' и посчитай их
-    (void)s;
-    return 0;
+    // Reference answer key: идём до нуль-терминатора.
+    std::size_t n = 0;
+    while (s[n] != '\0') {
+        ++n;
+    }
+    return n;
 }
 
 // Класс-обёртка над массивом фиксированной длины N (constexpr-дружественный).
@@ -221,7 +263,10 @@ struct Array {
 // reversed({1,2,3}) == {3,2,1}.
 template <class T, std::size_t N>
 constexpr Array<T, N> reversed(const Array<T, N>& in) {
-    // TODO: собери результат, где result[i] == in[N-1-i]
-    (void)in;
-    return Array<T, N>{};
+    // Reference answer key: result[i] == in[N-1-i].
+    Array<T, N> out{};
+    for (std::size_t i = 0; i < N; ++i) {
+        out[i] = in[N - 1 - i];
+    }
+    return out;
 }

@@ -2,113 +2,112 @@
 
 #include <ostream>
 #include <chrono>
+#include <numeric>
+#include <string>
 
-// Реализуй методы класса Fraction. Сейчас это стабы.
+// Эталонный ответ (answer key). На ветке для учащихся здесь стабы.
 //
-// Подсказка по структуре: всю нормализацию (сокращение + знак) удобно сделать
-// в конструкторе. Тогда add/multiply просто создают новый Fraction.
+// Вся нормализация (сокращение + знак) выполняется в конструкторе.
+// Тогда add/multiply/operator+ просто конструируют новый Fraction,
+// и инварианты класса поддерживаются автоматически.
 
 Fraction::Fraction(int num, int den)
     : num_(num), den_(den) {
-    // TODO: нормализуй num_/den_ (сократи на НОД, перенеси знак в числитель).
+    // Знаменатель строго положителен — знак переносим в числитель.
+    if (den_ < 0) {
+        num_ = -num_;
+        den_ = -den_;
+    }
+    // Сокращаем на НОД. std::gcd возвращает неотрицательное значение.
+    int g = std::gcd(num_, den_);
+    if (g != 0) {
+        num_ /= g;
+        den_ /= g;
+    }
+    // Ноль представляем как 0/1.
+    if (num_ == 0) {
+        den_ = 1;
+    }
 }
 
 int Fraction::numerator() const {
-    // TODO
-    return 0;
+    return num_;
 }
 
 int Fraction::denominator() const {
-    // TODO
-    return 1;
+    return den_;
 }
 
 Fraction Fraction::add(const Fraction& o) const {
-    // TODO: a/b + c/d
-    (void)o;
-    return Fraction(0, 1);
+    // a/b + c/d = (a*d + c*b) / (b*d). Конструктор нормализует результат.
+    return Fraction(num_ * o.den_ + o.num_ * den_, den_ * o.den_);
 }
 
 Fraction Fraction::multiply(const Fraction& o) const {
-    // TODO
-    (void)o;
-    return Fraction(0, 1);
+    return Fraction(num_ * o.num_, den_ * o.den_);
 }
 
 bool Fraction::operator==(const Fraction& o) const {
-    // TODO
-    (void)o;
-    return false;
+    // Оба операнда хранятся в сокращённом каноническом виде, поэтому
+    // достаточно сравнить компоненты напрямую.
+    return num_ == o.num_ && den_ == o.den_;
 }
 
 std::string Fraction::to_string() const {
-    // TODO: "num/den"
-    return "";
+    return std::to_string(num_) + "/" + std::to_string(den_);
 }
 
-// ── Новые перегрузки операторов (Задание 2) ───────────────────────────────
+// ── Перегрузки операторов (Задание 2) ─────────────────────────────────────
 
 Fraction Fraction::operator+(const Fraction& o) const {
-    // TODO: верни сумму. Подумай, нельзя ли переиспользовать уже написанный add().
-    (void)o;
-    return Fraction(0, 1);
+    return add(o);
 }
 
 Fraction Fraction::operator*(const Fraction& o) const {
-    // TODO: верни произведение (можно через multiply()).
-    (void)o;
-    return Fraction(0, 1);
+    return multiply(o);
 }
 
 bool Fraction::operator<(const Fraction& o) const {
-    // TODO: a/b < c/d. Сведи к сравнению целых, не теряя знак знаменателя.
-    (void)o;
-    return false;
+    // a/b < c/d. Знаменатели положительны (инвариант), значит при умножении
+    // на (den_ * o.den_) > 0 знак неравенства сохраняется.
+    return num_ * o.den_ < o.num_ * den_;
 }
 
 std::ostream& operator<<(std::ostream& os, const Fraction& f) {
-    // TODO: выведи f в виде "num/den". Свободная функция — у неё есть доступ
-    // только к публичному интерфейсу Fraction (numerator()/denominator()/to_string()).
-    (void)f;
-    return os;
+    return os << f.to_string();
 }
 
 // ── RAII-таймер (Задание 3) ───────────────────────────────────────────────
 
-Timer::Timer(std::int64_t& accumulator_ns)
-    : accumulator_ns_(&accumulator_ns), start_ns_(0) {
-    // TODO: запиши в start_ns_ текущий момент в наносекундах.
-    // Подсказка: std::chrono::steady_clock::now().time_since_epoch(),
-    // затем std::chrono::duration_cast<std::chrono::nanoseconds>(...).count().
+namespace {
+std::int64_t now_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(
+               std::chrono::steady_clock::now().time_since_epoch())
+        .count();
 }
+}  // namespace
+
+Timer::Timer(std::int64_t& accumulator_ns)
+    : accumulator_ns_(&accumulator_ns), start_ns_(now_ns()) {}
 
 Timer::~Timer() {
-    // TODO: вычисли (текущее время - start_ns_) в наносекундах и ПРИБАВЬ
-    // результат к *accumulator_ns_. Стаб ничего не прибавляет — это неверно.
+    *accumulator_ns_ += now_ns() - start_ns_;
 }
 
 // ── Vec2 (Задание 4) ──────────────────────────────────────────────────────
 
 Vec2 Vec2::operator+(const Vec2& o) const {
-    // TODO: покомпонентная сумма.
-    (void)o;
-    return Vec2{0.0, 0.0};
+    return Vec2{x + o.x, y + o.y};
 }
 
 Vec2 Vec2::operator-(const Vec2& o) const {
-    // TODO: покомпонентная разность.
-    (void)o;
-    return Vec2{0.0, 0.0};
+    return Vec2{x - o.x, y - o.y};
 }
 
 bool Vec2::operator==(const Vec2& o) const {
-    // TODO: точное равенство x и y.
-    (void)o;
-    return false;
+    return x == o.x && y == o.y;
 }
 
 double Vec2::dot(const Vec2& o) const {
-    // TODO: скалярное произведение.
-    (void)o;
-    return 0.0;
+    return x * o.x + y * o.y;
 }

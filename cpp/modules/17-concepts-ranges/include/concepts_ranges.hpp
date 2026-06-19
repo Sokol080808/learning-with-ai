@@ -4,12 +4,14 @@
 #include <utility>
 #include <iterator>
 #include <concepts>
+#include <ranges>
+#include <algorithm>
 #include <type_traits>
 
 // =====================================================================
 // Модуль 17 — Concepts и ranges (C++20)
-// Весь модуль — шаблонный и header-only, поэтому пиши реализацию прямо
-// здесь. Стабы намеренно «неправильные», чтобы тесты сначала были КРАСНЫМИ.
+// Это эталонный ключ ответов (reference branch) — образец корректной
+// реализации, к учащимся не попадает.
 // =====================================================================
 
 namespace m17 {
@@ -22,7 +24,9 @@ namespace m17 {
 //   чтобы он проверял наличие подходящего operator+.
 // ---------------------------------------------------------------------
 template <class T>
-concept Addable = true;  // TODO: замени на requires-выражение с (a + b)
+concept Addable = requires(T a, T b) {
+    { a + b } -> std::convertible_to<T>;
+};
 
 // ---------------------------------------------------------------------
 // Задание 1б. Концепт Container<C>
@@ -32,7 +36,11 @@ concept Addable = true;  // TODO: замени на requires-выражение 
 //   Сейчас концепт всегда ложен. Почини его.
 // ---------------------------------------------------------------------
 template <class C>
-concept Container = true;  // TODO: замени на requires-выражение с begin/end
+concept Container = requires(C c) {
+    std::begin(c);
+    std::end(c);
+    *std::begin(c);
+};
 
 // ---------------------------------------------------------------------
 // Задание 2. sum_container
@@ -47,9 +55,11 @@ template <Container C,
           class Value = std::remove_cvref_t<decltype(*std::begin(std::declval<C&>()))>>
     requires Addable<Value>
 Value sum_container(const C& c) {
-    // TODO: пройти по c и накопить сумму в Value{}.
-    (void)c;
-    return Value{} + Value{} + Value{};  // заведомо неверно для непустого
+    Value total{};
+    for (const auto& x : c) {
+        total = total + x;
+    }
+    return total;
 }
 
 // ---------------------------------------------------------------------
@@ -61,11 +71,15 @@ Value sum_container(const C& c) {
 //   Если k больше количества подходящих элементов — вернуть сколько есть.
 // ---------------------------------------------------------------------
 inline std::vector<int> even_times_two_take(const std::vector<int>& xs, std::size_t k) {
-    // TODO: собери конвейер на std::views (filter | transform | take)
-    //       и материализуй результат в std::vector<int>.
-    (void)xs;
-    (void)k;
-    return {};  // заведомо неверно
+    auto pipeline = xs
+        | std::views::filter([](int x) { return x % 2 == 0; })
+        | std::views::transform([](int x) { return x * 2; })
+        | std::views::take(k);
+    std::vector<int> out;
+    for (int x : pipeline) {
+        out.push_back(x);
+    }
+    return out;
 }
 
 // ---------------------------------------------------------------------
@@ -79,14 +93,18 @@ inline std::vector<int> even_times_two_take(const std::vector<int>& xs, std::siz
 //   random-access итератор и operator< у элементов.
 // ---------------------------------------------------------------------
 template <class R>
-concept Sortable = true;  // TODO: random-access range + сравнимые элементы
+concept Sortable =
+    std::ranges::random_access_range<R> &&
+    requires(std::ranges::range_value_t<R> a, std::ranges::range_value_t<R> b) {
+        { a < b } -> std::convertible_to<bool>;
+    };
 
 template <Sortable R,
           class Value = std::remove_cvref_t<decltype(*std::begin(std::declval<R&>()))>>
 std::vector<Value> sorted_copy(const R& r) {
-    // TODO: скопировать элементы в вектор и отсортировать по возрастанию.
-    (void)r;
-    return {};  // заведомо неверно
+    std::vector<Value> out(std::begin(r), std::end(r));
+    std::sort(out.begin(), out.end());
+    return out;
 }
 
 // ---------------------------------------------------------------------
@@ -99,10 +117,13 @@ std::vector<Value> sorted_copy(const R& r) {
 template <class R,
           class Value = std::remove_cvref_t<decltype(*std::begin(std::declval<R&>()))>>
 std::vector<Value> take_n(const R& range, std::size_t n) {
-    // TODO: пройди от begin до end, набирая не более n элементов.
-    (void)range;
-    (void)n;
-    return {};  // заведомо неверно
+    std::vector<Value> out;
+    auto it = std::begin(range);
+    auto last = std::end(range);
+    for (std::size_t count = 0; it != last && count < n; ++it, ++count) {
+        out.push_back(*it);
+    }
+    return out;
 }
 
 }  // namespace m17

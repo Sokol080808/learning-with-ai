@@ -26,13 +26,10 @@ namespace vm {
 // -----------------------------------------------------------------------------
 template <class T>
 std::remove_reference_t<T>&& my_move(T&& value) noexcept {
-    // TODO: верни value, приведённый к rvalue-ссылке через static_cast.
-    // Сейчас заготовка возвращает ССЫЛКУ НА ЧУЖОЙ (статический) объект, а не на
-    // твой value — это не перемещение исходного значения, и тест это поймает.
+    // Эталонный ответ: один static_cast меняет категорию value на xvalue,
+    // ссылаясь на тот же объект (ничего не копируя и не перемещая).
     using Bare = std::remove_reference_t<T>;
-    static Bare placeholder{};  // заглушка: «не тот» объект
-    (void)value;
-    return static_cast<Bare&&>(placeholder);
+    return static_cast<Bare&&>(value);
 }
 
 // -----------------------------------------------------------------------------
@@ -46,10 +43,11 @@ std::remove_reference_t<T>&& my_move(T&& value) noexcept {
 // сейчас тоже false, и тест на это сломается.
 // -----------------------------------------------------------------------------
 template <class T>
-struct is_lvalue : std::false_type {
-    // TODO: добавь частичную специализацию `template <class U> struct is_lvalue<U&>`,
-    // унаследованную от std::true_type, чтобы для ссылочных типов давала true.
-};
+struct is_lvalue : std::false_type {};
+
+// Эталонный ответ: частичная специализация ловит ровно lvalue-ссылочные типы U&.
+template <class U>
+struct is_lvalue<U&> : std::true_type {};
 
 // Удобный helper-переменная (как у стандартных трейтов: std::is_lvalue_reference_v).
 template <class T>
@@ -69,9 +67,8 @@ inline constexpr bool is_lvalue_v = is_lvalue<T>::value;
 // -----------------------------------------------------------------------------
 template <class T, class... Args>
 T make_in_place(Args&&... args) {
-    // TODO: верни T(std::forward<Args>(args)...)
-    (void)sizeof...(args);
-    throw std::logic_error("TODO: реализуй make_in_place через perfect forwarding");
+    // Эталонный ответ: perfect forwarding каждого аргумента в конструктор T.
+    return T(std::forward<Args>(args)...);
 }
 
 // -----------------------------------------------------------------------------
@@ -101,29 +98,33 @@ public:
     ScopedResource& operator=(const ScopedResource&) = delete;
 
     // Перемещение: укради хэндл и обнули источник.
-    ScopedResource(ScopedResource&& other) noexcept {
-        // TODO: забрать other.handle_ себе, а other оставить пустым (kEmpty).
-        handle_ = kEmpty;  // заглушка теряет хэндл источника — тест это ловит.
-        (void)other;
+    ScopedResource(ScopedResource&& other) noexcept : handle_(other.handle_) {
+        // Эталонный ответ: украсть хэндл и обнулить источник.
+        other.handle_ = kEmpty;
     }
 
     ScopedResource& operator=(ScopedResource&& other) noexcept {
-        // TODO: защита от самоприсваивания; забрать чужой хэндл; обнулить other.
-        (void)other;  // заглушка ничего не переносит.
+        // Эталонный ответ: защита от самоприсваивания, затем перенос хэндла.
+        if (this != &other) {
+            handle_ = other.handle_;
+            other.handle_ = kEmpty;
+        }
         return *this;
     }
 
     int get() const noexcept { return handle_; }
 
     bool valid() const noexcept {
-        // TODO: true, если хэндл не пустой.
-        return false;
+        // Эталонный ответ: непустой хэндл означает валидность.
+        return handle_ != kEmpty;
     }
 
     // Отдать хэндл наружу, себя оставить пустым.
     int release() noexcept {
-        // TODO: вернуть текущий handle_, предварительно сбросив себя в kEmpty.
-        return kEmpty;
+        // Эталонный ответ: вернуть текущий хэндл, обнулив себя.
+        int handle = handle_;
+        handle_ = kEmpty;
+        return handle;
     }
 
 private:
@@ -148,20 +149,20 @@ public:
     CopyMoveCounter() = default;
 
     CopyMoveCounter(const CopyMoveCounter&) {
-        // TODO: ++copies_
+        ++copies_;  // Эталонный ответ.
     }
 
     CopyMoveCounter& operator=(const CopyMoveCounter&) {
-        // TODO: ++copies_
+        ++copies_;  // Эталонный ответ.
         return *this;
     }
 
     CopyMoveCounter(CopyMoveCounter&&) noexcept {
-        // TODO: ++moves_
+        ++moves_;  // Эталонный ответ.
     }
 
     CopyMoveCounter& operator=(CopyMoveCounter&&) noexcept {
-        // TODO: ++moves_
+        ++moves_;  // Эталонный ответ.
         return *this;
     }
 

@@ -31,6 +31,5 @@ long abs_diff(int a, int b);
 //
 // is_even(x) возвращает true, если x чётное, и false иначе.
 inline bool is_even(int x) {
-    // TODO: верни true для чётных x. Сейчас тут заведомо неверная заглушка.
-    return false;
+    return x % 2 == 0;
 }

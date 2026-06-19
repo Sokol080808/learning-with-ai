@@ -1,9 +1,9 @@
 #include "int_vector.hpp"
-#include <stdexcept>  // std::logic_error, std::out_of_range
-// #include <algorithm>  // может пригодиться std::copy / std::swap
+#include <stdexcept>  // std::out_of_range
+#include <utility>    // std::swap, std::move
 
-// Реализуй методы IntVector. Сейчас всё — стабы (тесты красные).
-// Внимание к памяти: каждому new[] должен соответствовать ровно один delete[].
+// Это эталонная реализация (answer key) — на reference-ветке, учащимся не отдаётся.
+// Внимание к памяти: каждому new[] соответствует ровно один delete[].
 
 IntVector::IntVector()
     : data_(nullptr), size_(0), capacity_(0) {
@@ -11,42 +11,63 @@ IntVector::IntVector()
 }
 
 IntVector::IntVector(std::size_t count, int value)
-    : data_(nullptr), size_(0), capacity_(0) {
-    // TODO: выдели массив на count элементов и заполни значением value
-    (void)count; (void)value;
+    : data_(count ? new int[count] : nullptr), size_(count), capacity_(count) {
+    for (std::size_t i = 0; i < size_; ++i) data_[i] = value;
 }
 
 IntVector::~IntVector() {
-    // TODO: освободи память
+    delete[] data_;
 }
 
 IntVector::IntVector(const IntVector& other)
-    : data_(nullptr), size_(0), capacity_(0) {
-    // TODO: глубокое копирование из other
-    (void)other;
+    : data_(other.size_ ? new int[other.size_] : nullptr),
+      size_(other.size_),
+      capacity_(other.size_) {
+    for (std::size_t i = 0; i < size_; ++i) data_[i] = other.data_[i];
 }
 
 IntVector& IntVector::operator=(const IntVector& other) {
-    // TODO: безопасно (учти самоприсваивание; освободи старое)
-    (void)other;
+    if (this != &other) {
+        // copy-and-swap: сделать глубокую копию, затем обменять внутренности.
+        IntVector tmp(other);
+        std::swap(data_, tmp.data_);
+        std::swap(size_, tmp.size_);
+        std::swap(capacity_, tmp.capacity_);
+        // старое содержимое *this уезжает в tmp и уничтожается при выходе.
+    }
     return *this;
 }
 
 IntVector::IntVector(IntVector&& other) noexcept
-    : data_(nullptr), size_(0), capacity_(0) {
-    // TODO: забери ресурсы у other, оставь other пустым
-    (void)other;
+    : data_(other.data_), size_(other.size_), capacity_(other.capacity_) {
+    other.data_ = nullptr;
+    other.size_ = 0;
+    other.capacity_ = 0;
 }
 
 IntVector& IntVector::operator=(IntVector&& other) noexcept {
-    // TODO
-    (void)other;
+    if (this != &other) {
+        delete[] data_;
+        data_ = other.data_;
+        size_ = other.size_;
+        capacity_ = other.capacity_;
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.capacity_ = 0;
+    }
     return *this;
 }
 
 void IntVector::push_back(int value) {
-    // TODO: при необходимости вырасти, затем добавить элемент
-    (void)value;
+    if (size_ == capacity_) {
+        std::size_t new_cap = capacity_ == 0 ? 1 : capacity_ * 2;
+        int* new_data = new int[new_cap];
+        for (std::size_t i = 0; i < size_; ++i) new_data[i] = data_[i];
+        delete[] data_;
+        data_ = new_data;
+        capacity_ = new_cap;
+    }
+    data_[size_++] = value;
 }
 
 std::size_t IntVector::size() const {
@@ -58,17 +79,14 @@ std::size_t IntVector::capacity() const {
 }
 
 bool IntVector::empty() const {
-    // TODO
-    return true;
+    return size_ == 0;
 }
 
 int& IntVector::operator[](std::size_t i) {
-    // TODO
     return data_[i];
 }
 
 const int& IntVector::operator[](std::size_t i) const {
-    // TODO
     return data_[i];
 }
 
@@ -77,88 +95,82 @@ const int& IntVector::operator[](std::size_t i) const {
 // ───────────────────────────────────────────────────────────────────────────
 
 Buffer::Buffer(std::size_t count, double value)
-    : data_(nullptr), size_(0) {
-    // TODO: выдели count элементов через new[] и заполни значением value.
-    //       Помни: count == 0 — корректное состояние (data_ == nullptr).
-    (void)count; (void)value;
+    : data_(count ? new double[count] : nullptr), size_(count) {
+    for (std::size_t i = 0; i < size_; ++i) data_[i] = value;
 }
 
 Buffer::~Buffer() {
-    // TODO: освободи буфер (delete[]). delete[] nullptr — безопасен.
+    delete[] data_;
 }
 
 Buffer::Buffer(const Buffer& other)
-    : data_(nullptr), size_(0) {
-    // TODO: ГЛУБОКАЯ копия — свой буфер, поэлементное копирование.
-    (void)other;
+    : data_(other.size_ ? new double[other.size_] : nullptr),
+      size_(other.size_) {
+    for (std::size_t i = 0; i < size_; ++i) data_[i] = other.data_[i];
 }
 
 Buffer& Buffer::operator=(const Buffer& other) {
-    // TODO: безопасное присваивание (самоприсваивание! освобождение старого).
-    //       Подумай про copy-and-swap.
-    (void)other;
+    // copy-and-swap: сделать глубокую копию, затем обменять с ней внутренности.
+    // Безопасно при самоприсваивании и при исключении в копировании.
+    Buffer tmp(other);
+    swap(tmp);
     return *this;
 }
 
 Buffer::Buffer(Buffer&& other) noexcept
-    : data_(nullptr), size_(0) {
-    // TODO: забери буфер у other, оставь other в (nullptr, 0).
-    (void)other;
+    : data_(other.data_), size_(other.size_) {
+    other.data_ = nullptr;
+    other.size_ = 0;
 }
 
 Buffer& Buffer::operator=(Buffer&& other) noexcept {
-    // TODO
-    (void)other;
+    if (this != &other) {
+        delete[] data_;
+        data_ = other.data_;
+        size_ = other.size_;
+        other.data_ = nullptr;
+        other.size_ = 0;
+    }
     return *this;
 }
 
 std::size_t Buffer::size() const {
-    // TODO
-    return 0;
+    return size_;
 }
 
 double* Buffer::data() {
-    // TODO
-    return nullptr;
+    return data_;
 }
 
 const double* Buffer::data() const {
-    // TODO
-    return nullptr;
+    return data_;
 }
 
 double& Buffer::operator[](std::size_t i) {
-    // TODO: без проверки границ
-    (void)i;
-    throw std::logic_error("TODO: Buffer::operator[]");
+    return data_[i];
 }
 
 const double& Buffer::operator[](std::size_t i) const {
-    // TODO
-    (void)i;
-    throw std::logic_error("TODO: Buffer::operator[] const");
+    return data_[i];
 }
 
 double& Buffer::at(std::size_t i) {
-    // TODO: при i >= size() бросить std::out_of_range; иначе вернуть элемент.
-    (void)i;
-    throw std::logic_error("TODO: Buffer::at");
+    if (i >= size_) throw std::out_of_range("Buffer::at: index out of range");
+    return data_[i];
 }
 
 const double& Buffer::at(std::size_t i) const {
-    // TODO
-    (void)i;
-    throw std::logic_error("TODO: Buffer::at const");
+    if (i >= size_) throw std::out_of_range("Buffer::at: index out of range");
+    return data_[i];
 }
 
 void Buffer::fill(double value) {
-    // TODO: записать value во все элементы.
-    (void)value;
+    for (std::size_t i = 0; i < size_; ++i) data_[i] = value;
 }
 
 void Buffer::swap(Buffer& other) noexcept {
-    // TODO: обменять data_ и size_ местами (std::swap пригодится).
-    (void)other;
+    std::swap(data_, other.data_);
+    std::swap(size_, other.size_);
 }
 
 // ───────────────────────────────────────────────────────────────────────────
@@ -202,53 +214,49 @@ UniqueHandle::UniqueHandle() noexcept
 }
 
 UniqueHandle::UniqueHandle(int id) noexcept
-    : id_(kInvalidHandle) {
-    // TODO: взять id во владение.
-    (void)id;
+    : id_(id) {
+    // берём готовый id во владение
 }
 
 UniqueHandle::~UniqueHandle() {
-    // TODO: если владеем ресурсом — освободить его (resource_release).
+    if (id_ != kInvalidHandle) resource_release(id_);
 }
 
 UniqueHandle::UniqueHandle(UniqueHandle&& other) noexcept
-    : id_(kInvalidHandle) {
-    // TODO: украсть владение у other, обнулить other.
-    (void)other;
+    : id_(other.id_) {
+    other.id_ = kInvalidHandle;   // источник больше ничем не владеет
 }
 
 UniqueHandle& UniqueHandle::operator=(UniqueHandle&& other) noexcept {
-    // TODO: освободить своё, забрать чужое, обнулить other (учти self-move).
-    (void)other;
+    // reset(other.release()): забрать чужой id (обнулив other), заменить им свой.
+    // Естественно переживает self-move: release() вынет id, reset вернёт его назад.
+    reset(other.release());
     return *this;
 }
 
 int UniqueHandle::get() const noexcept {
-    // TODO
     return id_;
 }
 
 bool UniqueHandle::valid() const noexcept {
-    // TODO: владеет ли реальным id?
-    return false;
+    return id_ != kInvalidHandle;
 }
 
 int UniqueHandle::release() noexcept {
-    // TODO: вернуть текущий id, стать пустым (НЕ освобождать ресурс — отдаём наружу).
-    return kInvalidHandle;
+    int id = id_;
+    id_ = kInvalidHandle;   // отдаём наружу, ресурс НЕ освобождаем
+    return id;
 }
 
 void UniqueHandle::reset(int id) noexcept {
-    // TODO: освободить текущий ресурс (если есть), взять id.
-    (void)id;
+    if (id_ != kInvalidHandle) resource_release(id_);
+    id_ = id;
 }
 
 void UniqueHandle::swap(UniqueHandle& other) noexcept {
-    // TODO: обменять id_.
-    (void)other;
+    std::swap(id_, other.id_);
 }
 
 UniqueHandle make_handle() {
-    // TODO: захватить ресурс из реестра и обернуть его в UniqueHandle.
-    return UniqueHandle{};
+    return UniqueHandle{resource_acquire()};
 }
