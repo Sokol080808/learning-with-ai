@@ -6,9 +6,9 @@
 # В ветке main этого файла НЕТ намеренно: там стабы не заполнены, и «всё зелёное» недостижимо
 # by design (courses-ci.yml проверяет main иначе — что скелет лишь компилируется/собирается).
 #
-# Заполнены эталонами: Python (все модули + капстоун) и C++ (все 23 модуля; капстоун MiniDB —
-# отдельный заход, поэтому исключён). По мере появления эталонов rust/deep-learning/caos сюда
-# добавляются их шаги.
+# Заполнены эталонами: Python (все модули + капстоун), C++ (все 23 модуля; капстоун MiniDB —
+# отдельный заход, поэтому исключён) и Rust (все 15 модулей + капстоун minidb). По мере появления
+# эталонов deep-learning/caos сюда добавляются их шаги.
 name: Reference green
 
 on:
@@ -45,3 +45,13 @@ jobs:
           cmake -S cpp -B cpp/build
           cmake --build cpp/build -j"$(nproc)"
           ctest --test-dir cpp/build -LE capstone --output-on-failure -j"$(nproc)"
+
+  rust:
+    name: Rust (эталон — все 15 модулей + капстоун зелёные)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Версия тулчейна
+        run: cargo --version && rustc --version
+      - name: Весь воркспейс должен пройти на эталонном решении
+        run: cargo test --workspace --manifest-path rust/Cargo.toml

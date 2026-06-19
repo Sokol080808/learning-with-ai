@@ -20,7 +20,7 @@
 /// - `my_max(3, 9) == 9`
 /// - `my_max("apple", "banana") == "banana"` (строки сравниваются лексикографически)
 pub fn my_max<T: PartialOrd>(a: T, b: T) -> T {
-    todo!()
+    if a >= b { a } else { b }
 }
 
 /// Возвращает наибольший элемент непустого среза.
@@ -39,7 +39,13 @@ pub fn my_max<T: PartialOrd>(a: T, b: T) -> T {
 /// - `largest(&[1, 5, 2, 9, 4]) == 9`
 /// - `largest(&[42]) == 42`
 pub fn largest<T: PartialOrd + Copy>(v: &[T]) -> T {
-    todo!()
+    let mut best = v[0];
+    for &item in &v[1..] {
+        if item > best {
+            best = item;
+        }
+    }
+    best
 }
 
 /// Общий интерфейс «умею выдать краткую сводку о себе».
@@ -61,7 +67,7 @@ pub trait Summary {
     ///
     /// Реализован прямо в трейте — типам переопределять не обязательно.
     fn preview(&self) -> String {
-        todo!()
+        format!("Читать дальше: {}", self.summarize())
     }
 }
 
@@ -79,6 +85,6 @@ impl Summary for Article {
     /// Метод `preview` НЕ переопределяем — пусть работает реализация по умолчанию
     /// из трейта.
     fn summarize(&self) -> String {
-        todo!()
+        self.title.clone()
     }
 }

@@ -12,7 +12,7 @@
 /// больше не может использовать переданный вектор — владение перешло сюда, и в конце
 /// тела `v` будет уничтожен (drop). Для пустого вектора сумма равна `0`.
 pub fn sum_vec(v: Vec<i64>) -> i64 {
-    todo!()
+    v.into_iter().sum()
 }
 
 /// Склеивает две строки в одну: сначала `a`, затем `b`.
@@ -21,7 +21,9 @@ pub fn sum_vec(v: Vec<i64>) -> i64 {
 /// Это позволяет переиспользовать буфер `a` без лишнего выделения памяти, дописав
 /// в него `b`. Вызывающий код после этого ни `a`, ни `b` использовать не сможет.
 pub fn concat_strings(a: String, b: String) -> String {
-    todo!()
+    let mut result = a;
+    result.push_str(&b);
+    result
 }
 
 /// Повторяет строку `s` ровно `times` раз и возвращает результат.
@@ -30,7 +32,7 @@ pub fn concat_strings(a: String, b: String) -> String {
 /// возвращается пустая строка. Например, `repeat_string("ab".to_string(), 3)` даёт
 /// `"ababab"`.
 pub fn repeat_string(s: String, times: usize) -> String {
-    todo!()
+    s.repeat(times)
 }
 
 /// Возвращает НОВЫЙ вектор: копию `v` с дописанным в конец элементом `x`.
@@ -40,5 +42,7 @@ pub fn repeat_string(s: String, times: usize) -> String {
 /// Поэтому после вызова исходный вектор у вызывающего остаётся целым и неизменным —
 /// в этом весь смысл клонирования вместо перемещения.
 pub fn clone_and_push(v: &Vec<i64>, x: i64) -> Vec<i64> {
-    todo!()
+    let mut out = v.clone();
+    out.push(x);
+    out
 }

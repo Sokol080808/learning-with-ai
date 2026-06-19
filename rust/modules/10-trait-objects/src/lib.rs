@@ -35,14 +35,14 @@ impl Shape for Circle {
     ///
     /// Подсказка: число π есть в стандартной библиотеке — `std::f64::consts::PI`.
     fn area(&self) -> f64 {
-        todo!("верни площадь круга через self.r")
+        std::f64::consts::PI * self.r * self.r
     }
 }
 
 impl Shape for Square {
     /// Площадь квадрата: сторона в квадрате.
     fn area(&self) -> f64 {
-        todo!("верни площадь квадрата через self.side")
+        self.side * self.side
     }
 }
 
@@ -53,7 +53,7 @@ impl Shape for Square {
 /// компиляции не знаем. Зато знаем: у каждого есть метод `area()`. Пройди по срезу и
 /// сложи площади.
 pub fn total_area(shapes: &[Box<dyn Shape>]) -> f64 {
-    todo!("просуммируй area() каждой фигуры из shapes")
+    shapes.iter().map(|s| s.area()).sum()
 }
 
 // ───────────────────────── Задание 2. Свой Display для Point ─────────────────────────
@@ -77,7 +77,7 @@ impl fmt::Display for Point {
     ///
     /// Метод должен ВЕРНУТЬ то, что вернул `write!` (это `fmt::Result`). Просто верни его.
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!("используй write!(f, ...), чтобы получить вид \"(x, y)\"")
+        write!(f, "({}, {})", self.x, self.y)
     }
 }
 
@@ -93,7 +93,7 @@ pub struct Counter {
 impl Counter {
     /// Создаёт новый счётчик в начальном состоянии (`count == 0`).
     pub fn new() -> Self {
-        todo!("верни Counter с count = 0")
+        Counter { count: 0 }
     }
 }
 
@@ -109,7 +109,12 @@ impl Iterator for Counter {
     /// Именно реализовав ОДИН метод `next`, ты бесплатно получаешь весь арсенал
     /// итераторов: `.map`, `.filter`, `.sum`, `.collect` и десятки других.
     fn next(&mut self) -> Option<Self::Item> {
-        todo!("верни Some(1..=5) по очереди, потом None")
+        if self.count < 5 {
+            self.count += 1;
+            Some(self.count)
+        } else {
+            None
+        }
     }
 }
 
@@ -119,5 +124,5 @@ impl Iterator for Counter {
 /// любого итератора — он работает, потому что ты реализовал `next`. В этом и сила
 /// трейта `Iterator`: одна твоя строчка `next` включает всю стандартную «машинерию».
 pub fn counter_sum() -> u32 {
-    todo!("Counter::new().sum()")
+    Counter::new().sum()
 }

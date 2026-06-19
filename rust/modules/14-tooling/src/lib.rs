@@ -26,7 +26,7 @@ pub fn sum_first_n(v: &[i64], n: usize) -> i64 {
     let limit = if n < v.len() { n } else { v.len() };
     let mut total = 0;
     // БАГ: цикл начинается с 1, а не с 0 — первый элемент теряется.
-    for i in 1..limit {
+    for i in 0..limit {
         total += v[i];
     }
     total
@@ -42,7 +42,7 @@ pub fn sum_first_n(v: &[i64], n: usize) -> i64 {
 pub fn max_in(v: &[i64]) -> i64 {
     // БАГ: стартуем с 0. Для среза из одних отрицательных чисел вернётся 0 — а такого
     // элемента в данных нет. Правильный старт — первый элемент среза, v[0].
-    let mut best = 0;
+    let mut best = v[0];
     for &x in v {
         if x > best {
             best = x;
@@ -67,7 +67,7 @@ pub fn average(v: &[i64]) -> f64 {
     }
     // БАГ: делим на (len - 1) вместо len, да ещё и целочисленно (приводим к f64 уже
     // ПОСЛЕ деления, когда дробная часть потеряна).
-    (sum / (v.len() as i64 - 1)) as f64
+    sum as f64 / v.len() as f64
 }
 
 /// `true`, если в срезе `v` есть хотя бы два РАЗНЫХ по позиции элемента с одинаковым
@@ -84,7 +84,7 @@ pub fn has_duplicate(v: &[i64]) -> bool {
     for i in 0..n {
         // БАГ: j стартует с i, значит первая же проверка — v[i] == v[i] == true.
         // Нужно j in (i + 1)..n, чтобы сравнивать с ПОСЛЕДУЮЩИМИ элементами.
-        for j in i..n {
+        for j in (i + 1)..n {
             if v[i] == v[j] {
                 return true;
             }
@@ -108,7 +108,7 @@ pub fn repeat_str(s: &str, times: usize) -> String {
         return result;
     }
     // БАГ: повторяем (times - 1) раз вместо times. Для times == 1 вернётся пустая строка.
-    for _ in 0..(times - 1) {
+    for _ in 0..times {
         result.push_str(s);
     }
     result

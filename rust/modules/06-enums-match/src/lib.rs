@@ -25,7 +25,10 @@ impl Shape {
     ///
     /// Реализуй через `match self { ... }`, извлекая данные из вариантов.
     pub fn area(&self) -> f64 {
-        todo!("посчитай площадь через match по вариантам Shape")
+        match self {
+            Self::Circle(r) => std::f64::consts::PI * r * r,
+            Self::Rect(w, h) => w * h,
+        }
     }
 }
 
@@ -37,7 +40,11 @@ impl Shape {
 ///
 /// Смысл `Option`: «результата может не быть», и это видно прямо в типе.
 pub fn safe_div(a: f64, b: f64) -> Option<f64> {
-    todo!("верни None при делении на ноль, иначе Some(a / b)")
+    if b == 0.0 {
+        None
+    } else {
+        Some(a / b)
+    }
 }
 
 /// Первое чётное число в срезе.
@@ -48,7 +55,12 @@ pub fn safe_div(a: f64, b: f64) -> Option<f64> {
 ///
 /// `v: &[i64]` — срез по ссылке: мы только читаем чужие данные, не владея ими.
 pub fn first_even(v: &[i64]) -> Option<i64> {
-    todo!("найди первое чётное число и верни его в Some, иначе None")
+    for &n in v {
+        if n % 2 == 0 {
+            return Some(n);
+        }
+    }
+    None
 }
 
 /// Текстовое описание необязательного числа.
@@ -59,5 +71,8 @@ pub fn first_even(v: &[i64]) -> Option<i64> {
 ///
 /// Удобно через `match o { Some(n) => ..., None => ... }` и `format!`.
 pub fn describe(o: Option<i64>) -> String {
-    todo!("сопоставь Option и собери нужную строку")
+    match o {
+        Some(n) => format!("value: {n}"),
+        None => "nothing".to_string(),
+    }
 }

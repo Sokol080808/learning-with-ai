@@ -41,6 +41,10 @@ impl Value {
     ///
     /// Реализуй через `match self { ... }` по трём вариантам.
     pub fn type_name(&self) -> &'static str {
-        todo!("верни \"string\" / \"list\" / \"hash\" в зависимости от варианта Value")
+        match self {
+            Value::Str(_) => "string",
+            Value::List(_) => "list",
+            Value::Hash(_) => "hash",
+        }
     }
 }

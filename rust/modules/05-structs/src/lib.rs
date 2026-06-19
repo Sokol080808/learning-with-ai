@@ -26,7 +26,7 @@ impl Point {
     /// Это НЕ метод — у неё нет `self`. По соглашению `new` создаёт значение из частей.
     /// Возвращает владение новой точкой (вызывающий становится её хозяином).
     pub fn new(x: f64, y: f64) -> Point {
-        todo!("собери и верни Point с переданными x и y")
+        Point { x, y }
     }
 
     /// Евклидово расстояние от этой точки до `other`.
@@ -35,7 +35,9 @@ impl Point {
     /// `other: &Point` — чужую точку тоже лишь одалживаем для чтения.
     /// Формула: sqrt((x1 - x2)^2 + (y1 - y2)^2). Пригодится `f64::sqrt`.
     pub fn distance_to(&self, other: &Point) -> f64 {
-        todo!("посчитай разности по x и y, возведи в квадрат, сложи, извлеки корень")
+        let dx = self.x - other.x;
+        let dy = self.y - other.y;
+        (dx * dx + dy * dy).sqrt()
     }
 }
 
@@ -49,21 +51,21 @@ pub struct Rectangle {
 impl Rectangle {
     /// Конструктор прямоугольника.
     pub fn new(width: f64, height: f64) -> Rectangle {
-        todo!("собери и верни Rectangle с переданными width и height")
+        Rectangle { width, height }
     }
 
     /// Площадь прямоугольника (`width * height`).
     ///
     /// `&self`, потому что считать площадь — это чтение, объект менять не нужно.
     pub fn area(&self) -> f64 {
-        todo!("верни произведение ширины на высоту")
+        self.width * self.height
     }
 
     /// `true`, если прямоугольник — квадрат (ширина равна высоте).
     ///
     /// Возвращает `bool`, а не меняет объект — снова `&self`.
     pub fn is_square(&self) -> bool {
-        todo!("сравни width и height")
+        self.width == self.height
     }
 }
 
@@ -86,6 +88,6 @@ impl Color {
     ///
     /// Складывай через `u32`, иначе сумма трёх `u8` может переполнить `u8`.
     pub fn brightness(self) -> u32 {
-        todo!("приведи каждую компоненту к u32 и сложи: self.0 + self.1 + self.2")
+        self.0 as u32 + self.1 as u32 + self.2 as u32
     }
 }

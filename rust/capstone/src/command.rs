@@ -45,5 +45,135 @@ use crate::db::Database;
 /// Реализуй через разбор `line.split_whitespace()` и `match` по имени команды (модуль 06),
 /// прокидывая ошибки методов базы (модуль 07) в формат `(error) ...`.
 pub fn execute(db: &mut Database, line: &str) -> String {
-    todo!("разбери строку на слова, сматчи команду и собери Redis-подобный текстовый ответ")
+    let args: Vec<&str> = line.split_whitespace().collect();
+    if args.is_empty() {
+        return String::new();
+    }
+    let cmd = args[0].to_uppercase();
+    match cmd.as_str() {
+        "SET" => {
+            if args.len() < 3 {
+                return format!("(error) wrong number of arguments for 'SET'");
+            }
+            db.set(args[1], args[2].to_string());
+            "OK".to_string()
+        }
+        "GET" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'GET'");
+            }
+            match db.get(args[1]) {
+                Some(s) => s,
+                None => "(nil)".to_string(),
+            }
+        }
+        "DEL" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'DEL'");
+            }
+            let deleted = db.del(args[1]);
+            format!("(integer) {}", if deleted { 1 } else { 0 })
+        }
+        "TYPE" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'TYPE'");
+            }
+            match db.type_of(args[1]) {
+                Some(t) => t.to_string(),
+                None => "none".to_string(),
+            }
+        }
+        "KEYS" => {
+            let keys = db.keys();
+            if keys.is_empty() {
+                "(empty)".to_string()
+            } else {
+                keys.join(" ")
+            }
+        }
+        "LPUSH" => {
+            if args.len() < 3 {
+                return format!("(error) wrong number of arguments for 'LPUSH'");
+            }
+            match db.lpush(args[1], args[2].to_string()) {
+                Ok(len) => format!("(integer) {len}"),
+                Err(msg) => format!("(error) {msg}"),
+            }
+        }
+        "LRANGE" => {
+            if args.len() < 4 {
+                return format!("(error) wrong number of arguments for 'LRANGE'");
+            }
+            let start = match args[2].parse::<i64>() {
+                Ok(n) => n,
+                Err(_) => return "(error) value is not an integer".to_string(),
+            };
+            let stop = match args[3].parse::<i64>() {
+                Ok(n) => n,
+                Err(_) => return "(error) value is not an integer".to_string(),
+            };
+            let elems = db.lrange(args[1], start, stop);
+            if elems.is_empty() {
+                "(empty)".to_string()
+            } else {
+                elems.join(" ")
+            }
+        }
+        "LLEN" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'LLEN'");
+            }
+            format!("(integer) {}", db.llen(args[1]))
+        }
+        "HSET" => {
+            if args.len() < 4 {
+                return format!("(error) wrong number of arguments for 'HSET'");
+            }
+            match db.hset(args[1], args[2], args[3].to_string()) {
+                Ok(is_new) => format!("(integer) {}", if is_new { 1 } else { 0 }),
+                Err(msg) => format!("(error) {msg}"),
+            }
+        }
+        "HGET" => {
+            if args.len() < 3 {
+                return format!("(error) wrong number of arguments for 'HGET'");
+            }
+            match db.hget(args[1], args[2]) {
+                Some(v) => v,
+                None => "(nil)".to_string(),
+            }
+        }
+        "HKEYS" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'HKEYS'");
+            }
+            let keys = db.hkeys(args[1]);
+            if keys.is_empty() {
+                "(empty)".to_string()
+            } else {
+                keys.join(" ")
+            }
+        }
+        "SAVE" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'SAVE'");
+            }
+            match db.save(args[1]) {
+                Ok(()) => "OK".to_string(),
+                Err(e) => format!("(error) {e}"),
+            }
+        }
+        "LOAD" => {
+            if args.len() < 2 {
+                return format!("(error) wrong number of arguments for 'LOAD'");
+            }
+            match db.load(args[1]) {
+                Ok(()) => "OK".to_string(),
+                Err(e) => format!("(error) {e}"),
+            }
+        }
+        _ => {
+            format!("(error) unknown command '{}'", cmd)
+        }
+    }
 }

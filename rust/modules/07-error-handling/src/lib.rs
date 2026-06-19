@@ -20,7 +20,7 @@
 /// «восстановимая» ошибка. Вызывающий код сам решит, что делать с плохим вводом,
 /// а не упадёт целиком.
 pub fn parse_int(s: &str) -> Result<i64, String> {
-    todo!("реализуй parse_int: см. подсказку про i64::from_str / s.parse() в README")
+    s.parse::<i64>().map_err(|_| format!("not a number: '{s}'"))
 }
 
 /// Целочисленное деление `a / b`.
@@ -30,7 +30,11 @@ pub fn parse_int(s: &str) -> Result<i64, String> {
 /// - при `b == 0` вернуть `Err("division by zero".to_string())` (деление на ноль —
 ///   восстановимая ситуация: мы НЕ хотим, чтобы программа падала).
 pub fn divide(a: i64, b: i64) -> Result<i64, String> {
-    todo!("реализуй divide: проверь делитель ДО деления")
+    if b == 0 {
+        Err("division by zero".to_string())
+    } else {
+        Ok(a / b)
+    }
 }
 
 /// Взять элемент среза по индексу.
@@ -43,7 +47,9 @@ pub fn divide(a: i64, b: i64) -> Result<i64, String> {
 /// Принимаем `&[i64]` (заимствование среза, без владения): нам нужно только
 /// прочитать элемент. Возвращаем `i64` по значению — `i64` дёшево копируется (`Copy`).
 pub fn element_at(v: &[i64], i: usize) -> Result<i64, String> {
-    todo!("реализуй element_at: пригодится v.get(i), который сам возвращает Option")
+    v.get(i)
+        .copied()
+        .ok_or_else(|| format!("index {i} out of bounds for length {}", v.len()))
 }
 
 /// Просуммировать числа, записанные строками.
@@ -59,5 +65,9 @@ pub fn element_at(v: &[i64], i: usize) -> Result<i64, String> {
 /// разворачивает значение и идёт дальше. Это и есть «ранний возврат ошибки» без
 /// лесенки из `match`.
 pub fn sum_parsed(parts: &[&str]) -> Result<i64, String> {
-    todo!("реализуй sum_parsed через parse_int(...)? и накопление суммы")
+    let mut total = 0i64;
+    for part in parts {
+        total += parse_int(part)?;
+    }
+    Ok(total)
 }

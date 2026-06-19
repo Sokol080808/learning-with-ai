@@ -21,7 +21,11 @@ use std::collections::HashMap;
 /// Заметь: мы лишь читаем `s` (он `&str`, чужой), а ключи-`char` копируются в карту
 /// (это `Copy`-тип), поэтому со временем жизни здесь возиться не приходится.
 pub fn char_freq(s: &str) -> HashMap<char, usize> {
-    todo!()
+    let mut map = HashMap::new();
+    for c in s.chars() {
+        *map.entry(c).or_insert(0) += 1;
+    }
+    map
 }
 
 /// Вернуть уникальные элементы `v`, отсортированные по возрастанию.
@@ -35,7 +39,10 @@ pub fn char_freq(s: &str) -> HashMap<char, usize> {
 /// Подсказка к смыслу сигнатуры: раз мы владеем `v`, нам не нужны ни `&`, ни клонирование —
 /// можно отсортировать вектор на месте, а потом убрать соседние дубликаты.
 pub fn dedup_sorted(v: Vec<i64>) -> Vec<i64> {
-    todo!()
+    let mut v = v;
+    v.sort();
+    v.dedup();
+    v
 }
 
 /// Посчитать частоту слов в тексте `text`, разбивая его по пробельным символам.
@@ -50,7 +57,11 @@ pub fn dedup_sorted(v: Vec<i64>) -> Vec<i64> {
 ///
 /// Пример: `"a b a"` → `{"a": 2, "b": 1}`. Для пустого/пробельного текста — пустая карта.
 pub fn word_count(text: &str) -> HashMap<String, usize> {
-    todo!()
+    let mut map = HashMap::new();
+    for word in text.split_whitespace() {
+        *map.entry(word.to_string()).or_insert(0) += 1;
+    }
+    map
 }
 
 /// Склеить слова `words` в одну строку, вставляя `sep` между соседними.
@@ -64,5 +75,5 @@ pub fn word_count(text: &str) -> HashMap<String, usize> {
 /// Здесь и `words`, и `sep` — заимствования (`&[&str]`, `&str`): мы только читаем чужие
 /// данные. А результат — новая `String`, которой владеет вызывающий код.
 pub fn join_words(words: &[&str], sep: &str) -> String {
-    todo!()
+    words.join(sep)
 }

@@ -32,7 +32,10 @@ impl List {
     ///
     /// Реализуй через `match self { ... }`, разбирая текущий узел на голову и хвост.
     pub fn len(&self) -> usize {
-        todo!("посчитай длину рекурсивно: Nil -> 0, Cons(_, tail) -> 1 + tail.len()")
+        match self {
+            List::Nil => 0,
+            List::Cons(_, tail) => 1 + tail.len(),
+        }
     }
 
     /// Сумма всех значений в списке.
@@ -41,7 +44,10 @@ impl List {
     /// - для `Nil` вернуть `0`;
     /// - для `Cons(v, tail)` вернуть `v + сумма хвоста` (рекурсивно).
     pub fn sum(&self) -> i64 {
-        todo!("сложи значения рекурсивно: Nil -> 0, Cons(v, tail) -> v + tail.sum()")
+        match self {
+            List::Nil => 0,
+            List::Cons(v, tail) => v + tail.sum(),
+        }
     }
 }
 
@@ -55,7 +61,11 @@ impl List {
 /// `items: &[i64]` — срез по ссылке: мы только читаем чужие данные, не владея ими.
 /// Подсказка: список строится «с хвоста к голове», поэтому удобно идти с конца среза.
 pub fn build_list(items: &[i64]) -> List {
-    todo!("собери Cons-список из элементов среза, сохранив их порядок")
+    let mut acc = List::Nil;
+    for &x in items.iter().rev() {
+        acc = List::Cons(x, Box::new(acc));
+    }
+    acc
 }
 
 /// Счётчик, который умеет меняться через общую ссылку `&self`.
@@ -73,7 +83,9 @@ impl Counter {
     ///
     /// Положи `0` внутрь `RefCell`: `RefCell::new(0)`.
     pub fn new() -> Self {
-        todo!("создай Counter со счётчиком, равным 0, обёрнутым в RefCell")
+        Counter {
+            count: RefCell::new(0),
+        }
     }
 
     /// Увеличить счётчик на 1 — обрати внимание: метод берёт `&self`, а не `&mut self`.
@@ -82,14 +94,14 @@ impl Counter {
     /// Подсказка: `self.count.borrow_mut()` даёт изменяемый доступ к содержимому в
     /// рантайме; разыменуй его (`*`) и прибавь 1.
     pub fn increment(&self) {
-        todo!("через self.count.borrow_mut() увеличь хранимое значение на 1")
+        *self.count.borrow_mut() += 1;
     }
 
     /// Текущее значение счётчика.
     ///
     /// Подсказка: `self.count.borrow()` даёт доступ для чтения; разыменуй (`*`) и верни.
     pub fn get(&self) -> i64 {
-        todo!("верни значение из self.count.borrow()")
+        *self.count.borrow()
     }
 }
 
@@ -112,5 +124,7 @@ impl Default for Counter {
 ///
 /// Тест проверяет, что возвращённое число равно количеству живых клонов (>= 2).
 pub fn rc_clone_count() -> usize {
-    todo!("создай Rc, склонируй его хотя бы раз и верни Rc::strong_count(...)")
+    let a = Rc::new(42i64);
+    let _b = Rc::clone(&a);
+    Rc::strong_count(&a)
 }

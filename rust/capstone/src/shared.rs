@@ -42,7 +42,9 @@ impl SharedDb {
     ///
     /// Реализуй как `Arc::new(Mutex::new(Database::new()))`, завёрнутое в `SharedDb`.
     pub fn new() -> Self {
-        todo!("оберни новую Database в Arc<Mutex<...>> и верни SharedDb")
+        SharedDb {
+            inner: Arc::new(Mutex::new(Database::new())),
+        }
     }
 
     /// Получить ещё один дескриптор того же хранилища — для передачи в другой поток.
@@ -54,7 +56,9 @@ impl SharedDb {
     /// (По сути то же, что `self.clone()`, но имя `handle` явно говорит о намерении:
     /// «дай мне ручку к тому же хранилищу для другого потока».)
     pub fn handle(&self) -> SharedDb {
-        todo!("верни SharedDb с Arc::clone(&self.inner) — тот же хранилище, новый дескриптор")
+        SharedDb {
+            inner: Arc::clone(&self.inner),
+        }
     }
 
     /// Исполнить команду атомарно: взять замок, вызвать [`execute`], отдать ответ.
@@ -74,7 +78,8 @@ impl SharedDb {
     /// `exec` одновременно; `Mutex` выстроит их в очередь, и ни одно изменение не
     /// потеряется — это проверяет тест `concurrent_lpush_*`.
     pub fn exec(&self, line: &str) -> String {
-        todo!("залочь Mutex, вызови execute(&mut guard, line) и верни строку-ответ")
+        let mut guard = self.inner.lock().expect("mutex poisoned");
+        execute(&mut guard, line)
     }
 }
 
