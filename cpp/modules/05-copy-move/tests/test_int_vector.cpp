@@ -2,6 +2,9 @@
 #include <utility>      // std::move
 #include <stdexcept>    // std::out_of_range
 #include <type_traits>  // std::is_copy_constructible и т.п.
+#include <random>       // std::mt19937, распределения
+#include <vector>       // std::vector как оракул
+#include <cstddef>      // std::size_t
 #include "int_vector.hpp"
 
 TEST(IntVector, EmptyByDefault) {
@@ -308,4 +311,353 @@ TEST(UniqueHandle, NoLeakAcrossManyMoves) {
         EXPECT_EQ(resource_live_count(), 1);
     }
     EXPECT_EQ(resource_live_count(), 0);
+}
+
+// ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
+//
+// Идея: вместо фиксированных примеров прогоняем СОТНИ случайных входов и
+// проверяем ИНВАРИАНТЫ, которые обязаны держаться у любой корректной
+// реализации правила пяти:
+//   * push_back ведёт себя как std::vector (оракул);
+//   * копия — глубокая и независимая, размер и содержимое совпадают;
+//   * move «крадёт» буфер: цель == бывшее содержимое, источник пуст;
+//   * swap — это перестановка содержимого (две полусы swap == тождество);
+//   * copy-assign переживает разные размеры и самоприсваивание;
+//   * у UniqueHandle реестр всегда сбалансирован (нет утечек / двойных release).
+// Сид фиксирован (0xC0FFEE) => в CI ничего не «мигает».
+
+namespace {
+
+// Снимок содержимого вектора для сравнения «до/после».
+std::vector<int> snapshot(const IntVector& v) {
+    std::vector<int> out;
+    out.reserve(v.size());
+    for (std::size_t i = 0; i < v.size(); ++i) out.push_back(v[i]);
+    return out;
+}
+
+std::vector<double> snapshot(const Buffer& b) {
+    std::vector<double> out;
+    out.reserve(b.size());
+    for (std::size_t i = 0; i < b.size(); ++i) out.push_back(b[i]);
+    return out;
+}
+
+}  // namespace
+
+// --- IntVector ---------------------------------------------------------------
+
+// push_back в IntVector ведёт себя ровно как в std::vector<int> (оракул).
+TEST(IntVectorProps, PushBackMatchesStdVectorOracle) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-100000, 100000);
+    std::uniform_int_distribution<int> len(0, 64);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = len(rng);
+        IntVector v;
+        std::vector<int> oracle;
+        for (int i = 0; i < n; ++i) {
+            int x = val(rng);
+            v.push_back(x);
+            oracle.push_back(x);
+        }
+        ASSERT_EQ(v.size(), oracle.size());
+        EXPECT_EQ(v.empty(), oracle.empty());
+        // ёмкость никогда не меньше размера
+        EXPECT_GE(v.capacity(), v.size());
+        for (std::size_t i = 0; i < oracle.size(); ++i) {
+            ASSERT_EQ(v[i], oracle[i]) << "iter=" << iter << " i=" << i;
+        }
+    }
+}
+
+// Копия независима: правка копии не трогает оригинал, размеры/содержимое равны.
+TEST(IntVectorProps, CopyIsDeepAndIndependent) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-50000, 50000);
+    std::uniform_int_distribution<int> len(0, 50);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = len(rng);
+        IntVector a;
+        for (int i = 0; i < n; ++i) a.push_back(val(rng));
+        const std::vector<int> before = snapshot(a);
+
+        IntVector b = a;                       // копирующий конструктор
+        ASSERT_EQ(b.size(), a.size());
+        EXPECT_EQ(snapshot(b), before);
+
+        // мутируем копию целиком — оригинал обязан остаться прежним
+        for (std::size_t i = 0; i < b.size(); ++i) b[i] = b[i] + 12345;
+        EXPECT_EQ(snapshot(a), before) << "iter=" << iter << ": copy was shallow";
+    }
+}
+
+// Move-конструктор: цель получает прежнее содержимое, источник становится пустым.
+TEST(IntVectorProps, MoveConstructorStealsContent) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-50000, 50000);
+    std::uniform_int_distribution<int> len(0, 50);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = len(rng);
+        IntVector a;
+        for (int i = 0; i < n; ++i) a.push_back(val(rng));
+        const std::vector<int> before = snapshot(a);
+
+        IntVector b = std::move(a);            // перемещающий конструктор
+        EXPECT_EQ(snapshot(b), before);
+        EXPECT_EQ(a.size(), 0u) << "iter=" << iter << ": source not emptied";
+        EXPECT_TRUE(a.empty());
+    }
+}
+
+// Move-присваивание тоже крадёт содержимое и опустошает источник.
+TEST(IntVectorProps, MoveAssignmentStealsContent) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-50000, 50000);
+    std::uniform_int_distribution<int> len(0, 50);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        IntVector a;
+        for (int i = 0, n = len(rng); i < n; ++i) a.push_back(val(rng));
+        const std::vector<int> before = snapshot(a);
+
+        IntVector b;
+        for (int i = 0, n = len(rng); i < n; ++i) b.push_back(val(rng));  // непустая цель
+        b = std::move(a);
+        EXPECT_EQ(snapshot(b), before);
+        EXPECT_EQ(a.size(), 0u);
+    }
+}
+
+// Copy-assign между векторами разных размеров + самоприсваивание не портят данные.
+TEST(IntVectorProps, CopyAssignmentSurvivesAnySizesAndSelf) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-50000, 50000);
+    std::uniform_int_distribution<int> len(0, 40);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        IntVector a;
+        for (int i = 0, n = len(rng); i < n; ++i) a.push_back(val(rng));
+        IntVector b;
+        for (int i = 0, n = len(rng); i < n; ++i) b.push_back(val(rng));
+
+        const std::vector<int> a_snap = snapshot(a);
+        b = a;                                  // присваивание (размеры произвольны)
+        EXPECT_EQ(snapshot(b), a_snap);
+        EXPECT_EQ(snapshot(a), a_snap);         // источник не тронут
+
+        IntVector& self = a;
+        a = self;                               // самоприсваивание
+        EXPECT_EQ(snapshot(a), a_snap) << "iter=" << iter << ": self-assign corrupted data";
+    }
+}
+
+// --- Buffer ------------------------------------------------------------------
+
+// Конструктор Buffer(n, v): размер == n, все элементы == v, пустой => nullptr.
+TEST(BufferProps, ConstructorFillsAndSizes) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 64);
+    std::uniform_real_distribution<double> val(-1000.0, 1000.0);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        const double v = val(rng);
+        Buffer b(n, v);
+        ASSERT_EQ(b.size(), n);
+        if (n == 0) {
+            EXPECT_EQ(b.data(), nullptr);
+        } else {
+            EXPECT_NE(b.data(), nullptr);
+            for (std::size_t i = 0; i < n; ++i) EXPECT_DOUBLE_EQ(b[i], v);
+        }
+    }
+}
+
+// Копия Buffer глубокая: иной указатель, равное содержимое, независимость.
+TEST(BufferProps, CopyIsDeepAndIndependent) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 50);
+    std::uniform_real_distribution<double> val(-1000.0, 1000.0);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer a(n, 0.0);
+        for (std::size_t i = 0; i < n; ++i) a[i] = val(rng);
+        const std::vector<double> before = snapshot(a);
+
+        Buffer b = a;
+        ASSERT_EQ(b.size(), a.size());
+        EXPECT_EQ(snapshot(b), before);
+        if (n > 0) EXPECT_NE(b.data(), a.data());   // разные буферы
+
+        for (std::size_t i = 0; i < b.size(); ++i) b[i] = b[i] + 777.0;
+        EXPECT_EQ(snapshot(a), before) << "iter=" << iter << ": copy was shallow";
+    }
+}
+
+// Move-конструктор Buffer: тот же указатель «переезжает», источник -> (nullptr, 0).
+TEST(BufferProps, MoveConstructorTransfersPointer) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(1, 50);   // непустой, чтобы был реальный буфер
+    std::uniform_real_distribution<double> val(-1000.0, 1000.0);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer a(n, 0.0);
+        for (std::size_t i = 0; i < n; ++i) a[i] = val(rng);
+        const std::vector<double> before = snapshot(a);
+        const double* old_ptr = a.data();
+
+        Buffer b = std::move(a);
+        EXPECT_EQ(b.size(), n);
+        EXPECT_EQ(b.data(), old_ptr);          // буфер переехал без копии
+        EXPECT_EQ(snapshot(b), before);
+        EXPECT_EQ(a.size(), 0u);
+        EXPECT_EQ(a.data(), nullptr);
+    }
+}
+
+// swap — это перестановка: применённый дважды, он возвращает исходное состояние.
+TEST(BufferProps, SwapIsAnInvolutionPermutation) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 40);
+    std::uniform_real_distribution<double> val(-1000.0, 1000.0);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        Buffer a(static_cast<std::size_t>(len(rng)), 0.0);
+        for (std::size_t i = 0; i < a.size(); ++i) a[i] = val(rng);
+        Buffer b(static_cast<std::size_t>(len(rng)), 0.0);
+        for (std::size_t i = 0; i < b.size(); ++i) b[i] = val(rng);
+
+        const std::vector<double> a0 = snapshot(a);
+        const std::vector<double> b0 = snapshot(b);
+
+        a.swap(b);
+        EXPECT_EQ(snapshot(a), b0);            // содержимое обменялось
+        EXPECT_EQ(snapshot(b), a0);
+        EXPECT_EQ(a.size(), b0.size());
+        EXPECT_EQ(b.size(), a0.size());
+
+        a.swap(b);                             // второй swap — тождество
+        EXPECT_EQ(snapshot(a), a0) << "iter=" << iter << ": swap is not an involution";
+        EXPECT_EQ(snapshot(b), b0);
+    }
+}
+
+// at() бросает ровно std::out_of_range за границей и не бросает внутри.
+TEST(BufferProps, AtThrowsOutOfRangeBeyondBounds) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 32);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer b(n, 1.5);
+        for (std::size_t i = 0; i < n; ++i) {
+            EXPECT_NO_THROW({ volatile double d = b.at(i); (void)d; });
+        }
+        // n и n+произвольный сдвиг — заведомо вне границ
+        std::uniform_int_distribution<int> over(0, 1000);
+        EXPECT_THROW(b.at(n), std::out_of_range);
+        EXPECT_THROW(b.at(n + static_cast<std::size_t>(over(rng))), std::out_of_range);
+    }
+}
+
+// copy-assign Buffer переживает любые размеры цели и самоприсваивание.
+TEST(BufferProps, CopyAssignmentSurvivesAnySizesAndSelf) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 40);
+    std::uniform_real_distribution<double> val(-1000.0, 1000.0);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        Buffer a(static_cast<std::size_t>(len(rng)), 0.0);
+        for (std::size_t i = 0; i < a.size(); ++i) a[i] = val(rng);
+        Buffer b(static_cast<std::size_t>(len(rng)), 0.0);
+        for (std::size_t i = 0; i < b.size(); ++i) b[i] = val(rng);
+
+        const std::vector<double> a_snap = snapshot(a);
+        b = a;
+        EXPECT_EQ(snapshot(b), a_snap);
+        EXPECT_EQ(snapshot(a), a_snap);
+
+        Buffer& self = a;
+        a = self;                               // самоприсваивание не должно чистить данные
+        EXPECT_EQ(snapshot(a), a_snap) << "iter=" << iter << ": self-assign corrupted data";
+    }
+}
+
+// --- UniqueHandle ------------------------------------------------------------
+
+// После любой случайной последовательности move/swap/reset в блоке реестр
+// возвращается к нулю «живых» ресурсов: нет утечек и нет двойных release.
+TEST(UniqueHandleProps, RegistryAlwaysBalancedAfterRandomOps) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> op(0, 4);
+    std::uniform_int_distribution<int> pick(0, 3);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        resource_reset_registry();
+        {
+            UniqueHandle h[4];                  // четыре пустых хэндла
+            const int steps = 30;
+            for (int s = 0; s < steps; ++s) {
+                const int i = pick(rng);
+                const int j = pick(rng);
+                switch (op(rng)) {
+                    case 0: h[i] = make_handle();            break;  // захватить
+                    case 1: if (i != j) h[i] = std::move(h[j]); break;  // move-assign
+                    case 2: h[i].swap(h[j]);                 break;  // swap
+                    case 3: h[i].reset();                    break;  // освободить
+                    case 4: {                                        // release вручную
+                        int id = h[i].release();
+                        if (id != kInvalidHandle) resource_release(id);
+                        break;
+                    }
+                }
+                // инвариант: живых ресурсов не больше, чем валидных хэндлов
+                int valid_cnt = 0;
+                for (int k = 0; k < 4; ++k) if (h[k].valid()) ++valid_cnt;
+                EXPECT_EQ(resource_live_count(), valid_cnt)
+                    << "iter=" << iter << " step=" << s;
+            }
+        }
+        // все хэндлы разрушены => ноль живых ресурсов (нет утечек)
+        EXPECT_EQ(resource_live_count(), 0) << "iter=" << iter << ": leak after scope";
+    }
+}
+
+// Move/swap сохраняют id (ресурс не подменяется и не задваивается).
+TEST(UniqueHandleProps, MoveAndSwapPreserveIds) {
+    std::mt19937 rng(0xC0FFEEu);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        resource_reset_registry();
+        UniqueHandle a = make_handle();
+        const int idA = a.get();
+        EXPECT_NE(idA, kInvalidHandle);
+
+        UniqueHandle b = std::move(a);          // id переезжает целиком
+        EXPECT_EQ(b.get(), idA);
+        EXPECT_FALSE(a.valid());
+        EXPECT_EQ(resource_live_count(), 1);    // ресурс не задвоился
+
+        UniqueHandle c;
+        b.swap(c);                              // swap с пустым перемещает id
+        EXPECT_FALSE(b.valid());
+        EXPECT_EQ(c.get(), idA);
+        EXPECT_EQ(resource_live_count(), 1);
+
+        // случайная серия туда-сюда move — id и баланс сохраняются
+        std::uniform_int_distribution<int> n(0, 10);
+        UniqueHandle cur = std::move(c);
+        for (int k = 0, m = n(rng); k < m; ++k) {
+            UniqueHandle tmp = std::move(cur);
+            cur = std::move(tmp);
+        }
+        EXPECT_EQ(cur.get(), idA);
+        EXPECT_EQ(resource_live_count(), 1);
+    }
 }

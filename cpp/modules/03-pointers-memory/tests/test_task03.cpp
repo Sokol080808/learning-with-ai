@@ -1,5 +1,9 @@
 #include <gtest/gtest.h>
 #include <stdexcept>
+#include <random>
+#include <vector>
+#include <algorithm>
+#include <numeric>
 #include "task03.hpp"
 
 TEST(Pointers, SumArray) {
@@ -174,4 +178,294 @@ TEST(OwnedIntTest, SelfAssignmentSafe) {
     OwnedInt a(3);
     a = a;                           // не должно ломать объект или течь
     EXPECT_EQ(a.get(), 3);
+}
+
+// ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
+//
+// Эти тесты прогоняют МНОГО случайных входов (фиксированный сид std::mt19937,
+// чтобы CI не флакал) и проверяют ИНВАРИАНТЫ, а не конкретные примеры:
+//   - оракул против std:: (accumulate / count / max_element / reverse);
+//   - reverse — инволюция и перестановка входа; два разворота согласованы;
+//   - swap — обмен значений и идемпотентность двойного обмена;
+//   - DynArray — заполнение, запись насквозь, sum против оракула, границы at();
+//   - OwnedInt — глубокая копия: отдельный буфер и независимость значений.
+
+// ── sum_array: оракул против std::accumulate, плюс крайние n ──────────────────
+TEST(PointersProps, SumArrayMatchesAccumulate) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> sz(0, 64);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = sz(rng);
+        std::vector<int> v(n);
+        for (int& x : v) x = val(rng);
+
+        // Оракул: long long, чтобы не путать переполнением сам тест.
+        long long oracle = 0;
+        for (int x : v) oracle += x;
+
+        const int* p = v.empty() ? nullptr : v.data();
+        EXPECT_EQ(static_cast<long long>(sum_array(p, n)), oracle)
+            << "n=" << n;
+    }
+
+    // Явные края: n == 0 всегда 0 (на любом указателе, даже nullptr).
+    EXPECT_EQ(sum_array(nullptr, 0), 0);
+    int one[] = {-7};
+    EXPECT_EQ(sum_array(one, 1), -7);
+}
+
+// ── swap_ints: обмен значений и идемпотентность двойного обмена ───────────────
+TEST(PointersProps, SwapIntsExchangesAndDoubleIsIdentity) {
+    std::mt19937 rng(0x5EEDu);
+    std::uniform_int_distribution<int> val(-100000, 100000);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int a0 = val(rng), b0 = val(rng);
+        int a = a0, b = b0;
+
+        swap_ints(&a, &b);
+        EXPECT_EQ(a, b0);   // значения обменялись
+        EXPECT_EQ(b, a0);
+
+        swap_ints(&a, &b);  // второй обмен возвращает исходное
+        EXPECT_EQ(a, a0);
+        EXPECT_EQ(b, b0);
+    }
+
+    // Край: своп равных и своп переменной с самой собой (один адрес).
+    int x = 42;
+    swap_ints(&x, &x);
+    EXPECT_EQ(x, 42);
+}
+
+// ── count_value: оракул против std::count; сумма по всем значениям == n ───────
+TEST(PointersProps, CountValueMatchesStdCount) {
+    std::mt19937 rng(0xBEEFu);
+    std::uniform_int_distribution<int> sz(0, 40);
+    // Маленький домен значений, чтобы реально были повторы и попадания.
+    std::uniform_int_distribution<int> val(0, 5);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = sz(rng);
+        std::vector<int> v(n);
+        for (int& x : v) x = val(rng);
+        const int* p = v.empty() ? nullptr : v.data();
+
+        // Согласие с std::count для каждого значения домена.
+        long long total = 0;
+        for (int target = 0; target <= 5; ++target) {
+            long long oracle = std::count(v.begin(), v.end(), target);
+            EXPECT_EQ(count_value(p, n, target), static_cast<int>(oracle))
+                << "n=" << n << " target=" << target;
+            total += oracle;
+        }
+        // Инвариант: счётчики по всем значениям домена в сумме дают n
+        // (домен [0,5] покрывает все возможные элементы).
+        EXPECT_EQ(total, static_cast<long long>(n));
+
+        // Отсутствующее значение даёт 0.
+        EXPECT_EQ(count_value(p, n, 999), 0);
+    }
+}
+
+// ── max_element_ptr: оракул против std::max_element; nullptr на пустом ────────
+TEST(PointersProps, MaxElementPtrMatchesStd) {
+    std::mt19937 rng(0xD00Du);
+    std::uniform_int_distribution<int> sz(0, 50);
+    std::uniform_int_distribution<int> val(-500, 500);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = sz(rng);
+        std::vector<int> v(n);
+        for (int& x : v) x = val(rng);
+        const int* p = v.empty() ? nullptr : v.data();
+
+        const int* got = max_element_ptr(p, n);
+        if (n == 0) {
+            EXPECT_EQ(got, nullptr);
+            continue;
+        }
+        ASSERT_NE(got, nullptr) << "n=" << n;
+        // Указатель должен лежать внутри буфера.
+        ASSERT_GE(got, v.data());
+        ASSERT_LT(got, v.data() + n);
+
+        int oracle_max = *std::max_element(v.begin(), v.end());
+        EXPECT_EQ(*got, oracle_max) << "n=" << n;
+        // Это действительно максимум: никакой элемент не больше.
+        for (int x : v) EXPECT_LE(x, *got);
+    }
+}
+
+// ── reverse_in_place: инволюция, перестановка, оракул std::reverse ────────────
+TEST(PointersProps, ReverseInPlaceIsInvolutionAndPermutation) {
+    std::mt19937 rng(0x12345u);
+    std::uniform_int_distribution<int> sz(0, 50);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = sz(rng);
+        std::vector<int> orig(n);
+        for (int& x : orig) x = val(rng);
+
+        // Согласие с std::reverse.
+        std::vector<int> a = orig;
+        std::vector<int> expected = orig;
+        std::reverse(expected.begin(), expected.end());
+        reverse_in_place(a.empty() ? nullptr : a.data(), n);
+        EXPECT_EQ(a, expected) << "n=" << n;
+
+        // Это перестановка входа (мультимножество не меняется).
+        std::vector<int> sa = a, so = orig;
+        std::sort(sa.begin(), sa.end());
+        std::sort(so.begin(), so.end());
+        EXPECT_EQ(sa, so);
+
+        // Инволюция: разворот разворота возвращает исходный массив.
+        reverse_in_place(a.empty() ? nullptr : a.data(), n);
+        EXPECT_EQ(a, orig);
+    }
+}
+
+// ── reverse_with_pointers: оракул std::reverse и согласие с reverse_in_place ──
+TEST(PointersProps, ReverseWithPointersMatchesStdAndIndexVersion) {
+    std::mt19937 rng(0xABCDEu);
+    std::uniform_int_distribution<int> sz(0, 50);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = sz(rng);
+        std::vector<int> orig(n);
+        for (int& x : orig) x = val(rng);
+
+        std::vector<int> a = orig, b = orig;
+        std::vector<int> expected = orig;
+        std::reverse(expected.begin(), expected.end());
+
+        reverse_with_pointers(a.empty() ? nullptr : a.data(), n);
+        reverse_in_place(b.empty() ? nullptr : b.data(), n);
+
+        // Версия на указателях == std::reverse == версия на индексах.
+        EXPECT_EQ(a, expected) << "n=" << n;
+        EXPECT_EQ(a, b);
+
+        // Инволюция.
+        reverse_with_pointers(a.empty() ? nullptr : a.data(), n);
+        EXPECT_EQ(a, orig);
+    }
+
+    // Явные края: n == 0 (nullptr допустим) и n == 1 — без изменений.
+    reverse_with_pointers(nullptr, 0);
+    int one[] = {77};
+    reverse_with_pointers(one, 1);
+    EXPECT_EQ(one[0], 77);
+}
+
+// ── DynArray: конструктор-заполнение, sum == оракул, запись насквозь ──────────
+TEST(DynArrayProps, ConstructFillSumAndWriteThrough) {
+    std::mt19937 rng(0x44332211u);
+    std::uniform_int_distribution<int> sz(0, 64);
+    std::uniform_int_distribution<int> val(-200, 200);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int n = sz(rng);
+        int fill = val(rng);
+
+        DynArray a(n, fill);
+        EXPECT_EQ(a.size(), n);
+
+        // После конструктора все элементы == fill; sum == n*fill.
+        long long expected_sum = static_cast<long long>(n) * fill;
+        EXPECT_EQ(static_cast<long long>(a.sum()), expected_sum) << "n=" << n;
+        for (int i = 0; i < n; ++i) EXPECT_EQ(a.at(i), fill);
+
+        // Запись насквозь через неконстантную at(): зеркалим в vector-оракул.
+        std::vector<int> mirror(n, fill);
+        for (int i = 0; i < n; ++i) {
+            int w = val(rng);
+            a.at(i) = w;
+            mirror[i] = w;
+        }
+        // sum совпадает со std::accumulate по зеркалу.
+        long long oracle = std::accumulate(mirror.begin(), mirror.end(), 0LL);
+        EXPECT_EQ(static_cast<long long>(a.sum()), oracle);
+        for (int i = 0; i < n; ++i) EXPECT_EQ(a.at(i), mirror[i]);
+    }
+}
+
+// ── DynArray::fill перезаписывает всё; границы at() бросают out_of_range ──────
+TEST(DynArrayProps, FillOverwritesAndAtBoundsThrow) {
+    std::mt19937 rng(0x99AA55u);
+    std::uniform_int_distribution<int> sz(1, 40);   // n >= 1, чтобы было что заполнять
+    std::uniform_int_distribution<int> val(-500, 500);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int n = sz(rng);
+        DynArray a(n, val(rng));
+
+        int v = val(rng);
+        a.fill(v);
+        EXPECT_EQ(static_cast<long long>(a.sum()),
+                  static_cast<long long>(n) * v);
+        for (int i = 0; i < n; ++i) EXPECT_EQ(a.at(i), v);
+
+        // Любой валидный индекс [0, n) не бросает.
+        std::uniform_int_distribution<int> idx(0, n - 1);
+        EXPECT_NO_THROW(a.at(idx(rng)));
+
+        // Индексы вне [0, n) бросают ровно std::out_of_range.
+        EXPECT_THROW(a.at(-1), std::out_of_range);
+        EXPECT_THROW(a.at(n), std::out_of_range);
+        std::uniform_int_distribution<int> below(-10000, -1);
+        std::uniform_int_distribution<int> above(n, n + 10000);
+        EXPECT_THROW(a.at(below(rng)), std::out_of_range);
+        EXPECT_THROW(a.at(above(rng)), std::out_of_range);
+    }
+
+    // Край: пустой массив — любой at() вне диапазона бросает.
+    DynArray empty(0, 5);
+    EXPECT_EQ(empty.size(), 0);
+    EXPECT_THROW(empty.at(0), std::out_of_range);
+    EXPECT_THROW(empty.at(-1), std::out_of_range);
+}
+
+// ── OwnedInt: глубокая копия — отдельный буфер и независимость значений ───────
+TEST(OwnedIntProps, DeepCopyHasSeparateBufferAndIsIndependent) {
+    std::mt19937 rng(0x0DDBEEFu);
+    std::uniform_int_distribution<int> val(-100000, 100000);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int v0 = val(rng);
+        OwnedInt a(v0);
+
+        // Копия конструктором: то же значение, ДРУГОЙ буфер.
+        OwnedInt b(a);
+        EXPECT_EQ(b.get(), v0);
+        EXPECT_NE(a.raw(), b.raw());
+
+        // Меняем копию — оригинал не задет (буферы независимы).
+        int v1 = val(rng);
+        b.set(v1);
+        EXPECT_EQ(b.get(), v1);
+        EXPECT_EQ(a.get(), v0);
+
+        // Присваивание: тоже глубокое и независимое.
+        OwnedInt c(val(rng));
+        c = a;
+        EXPECT_EQ(c.get(), v0);
+        EXPECT_NE(c.raw(), a.raw());
+        int v2 = val(rng);
+        a.set(v2);                 // меняем источник после присваивания
+        EXPECT_EQ(c.get(), v0);    // у c — своё значение, не задето
+        EXPECT_EQ(a.get(), v2);
+
+        // Самоприсваивание не ломает значение и не меняет буфер.
+        const int* before = c.raw();
+        OwnedInt& cref = c;
+        cref = c;
+        EXPECT_EQ(c.get(), v0);
+        EXPECT_EQ(c.raw(), before);
+    }
 }

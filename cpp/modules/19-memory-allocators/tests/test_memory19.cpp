@@ -4,6 +4,9 @@
 #include <new>
 #include <string>
 #include <vector>
+#include <random>
+#include <set>
+#include <algorithm>
 #include "memory19.hpp"
 
 using namespace m19;
@@ -327,4 +330,453 @@ TEST(PlacementNew, ForwardsConstructorArgs) {
     EXPECT_EQ((*v)[0], 7);
     EXPECT_EQ((*v)[2], 7);
     destroy_at19(v);
+}
+
+// ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
+//
+// Эти тесты не повторяют фиксированные примеры, а прогоняют сотни сгенерированных
+// входов и проверяют ИНВАРИАНТЫ:
+//   * BumpAllocator: выровненность, монотонность курсора, отсутствие наложений,
+//     согласованность used() и эталонный (oracle) расчёт смещения/исчерпания.
+//   * UniquePtr:    передача владения move'ом, round-trip release/reset, bool.
+//   * SharedPtr/WeakPtr: use_count == числу живых владельцев, жизнь объекта,
+//     weak не продлевает жизнь, lock как функция от expired().
+//   * PoolAllocator: free_count + выданные == N, различимость и принадлежность
+//     буферу, round-trip allocate/deallocate.
+//   * placement new: round-trip значений в сыром буфере, вызов деструктора.
+// Сид фиксирован (0xC0FFEE) — CI детерминирован, никогда не «мигает».
+
+namespace {
+
+// align — степень двойки. Эталонное (oracle) выравнивание адреса вверх.
+inline std::uintptr_t align_up_oracle(std::uintptr_t v, std::uintptr_t align) {
+    return (v + (align - 1)) & ~(align - 1);
+}
+
+}  // namespace
+
+// ── Задание 1. BumpAllocator — property ──────────────────────────────────────
+
+// Каждый выданный блок выровнен по запрошенному align, лежит внутри буфера,
+// не накладывается на предыдущий, а курсор (used) монотонно неубывает.
+TEST(BumpAllocatorProps, AlignedNonOverlappingInBoundsMonotone) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> align_pow(0, 6);   // 2^0..2^6 = 1..64
+    std::uniform_int_distribution<std::size_t> size_dist(1, 24);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        alignas(std::max_align_t) std::byte buf[512];
+        BumpAllocator a(buf, sizeof(buf));
+
+        std::byte* prev_end = nullptr;
+        std::size_t prev_used = 0;
+        for (int step = 0; step < 40; ++step) {
+            const std::size_t align = std::size_t{1} << align_pow(rng);
+            const std::size_t n     = size_dist(rng);
+            void* p = nullptr;
+            try {
+                p = a.allocate(n, align);
+            } catch (const std::bad_alloc&) {
+                // Буфер исчерпан — used() при этом не должен был измениться.
+                EXPECT_EQ(a.used(), prev_used);
+                break;
+            }
+            ASSERT_NE(p, nullptr);
+            std::byte* bp = static_cast<std::byte*>(p);
+            // Выровнен по align.
+            EXPECT_TRUE(is_aligned(p, align));
+            // Внутри буфера, и блок целиком помещается.
+            EXPECT_GE(bp, buf);
+            EXPECT_LE(bp + n, buf + sizeof(buf));
+            // Не накладывается на предыдущий блок (адреса не убывают).
+            if (prev_end) EXPECT_GE(bp, prev_end);
+            // used() монотонно растёт и согласован с положением блока.
+            EXPECT_GE(a.used(), prev_used);
+            EXPECT_EQ(a.used(), static_cast<std::size_t>(bp + n - buf));
+            prev_end  = bp + n;
+            prev_used = a.used();
+        }
+    }
+}
+
+// Эталон (oracle): зная курсор до allocate, можно ровно предсказать адрес
+// выданного блока и итоговый used(); они должны совпадать с реализацией.
+TEST(BumpAllocatorProps, MatchesOracleOffsetAndUsed) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> align_pow(0, 5);   // 1..32
+    std::uniform_int_distribution<std::size_t> size_dist(1, 20);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        alignas(std::max_align_t) std::byte buf[256];
+        const std::uintptr_t base = reinterpret_cast<std::uintptr_t>(buf);
+        BumpAllocator a(buf, sizeof(buf));
+
+        std::size_t cursor = 0;  // модель курсора как смещение от base
+        for (int step = 0; step < 30; ++step) {
+            const std::size_t align = std::size_t{1} << align_pow(rng);
+            const std::size_t n     = size_dist(rng);
+            const std::uintptr_t aligned = align_up_oracle(base + cursor, align);
+            const std::size_t off = static_cast<std::size_t>(aligned - base);
+            const bool fits = off <= sizeof(buf) && (sizeof(buf) - off) >= n;
+            if (!fits) {
+                EXPECT_THROW(a.allocate(n, align), std::bad_alloc);
+                EXPECT_EQ(a.used(), cursor);  // неудача не сдвигает курсор
+                continue;
+            }
+            void* p = a.allocate(n, align);
+            // Адрес ровно по эталонному смещению.
+            EXPECT_EQ(reinterpret_cast<std::uintptr_t>(p), aligned);
+            cursor = off + n;
+            EXPECT_EQ(a.used(), cursor);
+        }
+    }
+}
+
+// reset() всегда обнуляет used() и снова выдаёт самый первый адрес буфера.
+TEST(BumpAllocatorProps, ResetAlwaysRewindsToStart) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<std::size_t> size_dist(1, 30);
+    std::uniform_int_distribution<int> reps(1, 6);
+
+    alignas(std::max_align_t) std::byte buf[128];
+    for (int iter = 0; iter < 250; ++iter) {
+        BumpAllocator a(buf, sizeof(buf));
+        const int k = reps(rng);
+        for (int j = 0; j < k; ++j) {
+            try { a.allocate(size_dist(rng), 1); } catch (const std::bad_alloc&) { break; }
+        }
+        a.reset();
+        EXPECT_EQ(a.used(), 0u);
+        EXPECT_EQ(a.capacity(), sizeof(buf));  // ёмкость инвариантна
+        void* first = a.allocate(1, 1);
+        EXPECT_EQ(first, static_cast<void*>(buf));  // снова с начала
+    }
+}
+
+// Краевые случаи: n == 0 всегда успешно и не сдвигает курсор; запрос ровно на
+// всю оставшуюся ёмкость проходит, а на байт больше — бросает bad_alloc.
+TEST(BumpAllocatorProps, EdgeZeroAndExactCapacity) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<std::size_t> cap_dist(1, 200);
+    for (int iter = 0; iter < 200; ++iter) {
+        const std::size_t cap = cap_dist(rng);
+        std::vector<std::byte> storage(cap);
+        BumpAllocator a(storage.data(), cap);
+        // n == 0 при align 1 — курсор на месте.
+        a.allocate(0, 1);
+        EXPECT_EQ(a.used(), 0u);
+        // Ровно вся ёмкость влезает.
+        EXPECT_NO_THROW(a.allocate(cap, 1));
+        EXPECT_EQ(a.used(), cap);
+        // Ещё один байт — уже нет.
+        EXPECT_THROW(a.allocate(1, 1), std::bad_alloc);
+    }
+}
+
+// ── Задание 2. UniquePtr — property ──────────────────────────────────────────
+
+// Move-конструктор и move-присваивание ВСЕГДА передают тот же сырой указатель,
+// источник становится пустым, значение сохраняется.
+TEST(UniquePtrProps, MoveTransfersOwnershipExactly) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-100000, 100000);
+    for (int iter = 0; iter < 400; ++iter) {
+        const int v = val(rng);
+        UniquePtr<int> a(new int(v));
+        int* raw = a.get();
+        ASSERT_NE(raw, nullptr);
+
+        if (iter & 1) {
+            UniquePtr<int> b(std::move(a));
+            EXPECT_EQ(a.get(), nullptr);     // источник опустел
+            EXPECT_FALSE(static_cast<bool>(a));
+            ASSERT_EQ(b.get(), raw);         // ровно тот же указатель
+            EXPECT_EQ(*b, v);                // и то же значение
+        } else {
+            UniquePtr<int> b;
+            b = std::move(a);
+            EXPECT_EQ(a.get(), nullptr);
+            ASSERT_EQ(b.get(), raw);
+            EXPECT_EQ(*b, v);
+        }
+    }
+}
+
+// release() round-trip: отдаёт сырой указатель, обнуляет себя; reset(p) удаляет
+// старый и берёт новый; bool == (get()!=nullptr) во всех состояниях.
+TEST(UniquePtrProps, ReleaseResetRoundTripAndBool) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-50000, 50000);
+    for (int iter = 0; iter < 400; ++iter) {
+        const int v1 = val(rng), v2 = val(rng);
+        UniquePtr<int> p(new int(v1));
+        EXPECT_TRUE(static_cast<bool>(p));
+        EXPECT_EQ(static_cast<bool>(p), p.get() != nullptr);
+
+        int* taken = p.release();
+        EXPECT_EQ(p.get(), nullptr);
+        EXPECT_FALSE(static_cast<bool>(p));
+        ASSERT_NE(taken, nullptr);
+        EXPECT_EQ(*taken, v1);
+
+        // Возвращаем владение через reset — старого объекта у p нет, утечки нет.
+        p.reset(taken);
+        EXPECT_TRUE(static_cast<bool>(p));
+        EXPECT_EQ(*p, v1);
+
+        // reset на новый объект заменяет значение.
+        p.reset(new int(v2));
+        EXPECT_EQ(*p, v2);
+
+        p.reset();
+        EXPECT_EQ(p.get(), nullptr);
+        EXPECT_FALSE(static_cast<bool>(p));
+    }
+}
+
+// Время жизни: сколько объектов создали (с учётом move/reset), столько и
+// разрушили — счётчик живых всегда возвращается к 0.
+TEST(UniquePtrProps, LifetimeBalancedNoLeak) {
+    static int alive = 0;
+    struct Tracked { int v; explicit Tracked(int x): v(x){ ++alive; } ~Tracked(){ --alive; } };
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> op(0, 3);
+    for (int iter = 0; iter < 300; ++iter) {
+        alive = 0;
+        {
+            UniquePtr<Tracked> a(new Tracked(1));
+            UniquePtr<Tracked> b(new Tracked(2));
+            EXPECT_EQ(alive, 2);
+            switch (op(rng)) {
+                case 0: b = std::move(a); break;          // объект a разрушится сейчас
+                case 1: a.reset(new Tracked(3)); break;   // старый a разрушится
+                case 2: { UniquePtr<Tracked> c(std::move(b)); break; } // c уносит b
+                case 3: a.reset(); break;                  // a опустошается
+            }
+        }
+        EXPECT_EQ(alive, 0);  // все Tracked разрушены к выходу из блока
+    }
+}
+
+// ── Задание 3. SharedPtr / WeakPtr — property ────────────────────────────────
+
+// use_count() == числу живых SharedPtr, разделяющих один контрол-блок.
+// Моделируем вектором копий: добавление/удаление копий двигает счётчик ±1.
+TEST(SharedPtrProps, UseCountEqualsLiveOwners) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    std::uniform_int_distribution<int> coin(0, 1);
+    for (int iter = 0; iter < 200; ++iter) {
+        const int v = val(rng);
+        std::vector<SharedPtr<int>> owners;
+        owners.emplace_back(new int(v));          // strong == 1
+        int* raw = owners.front().get();
+        EXPECT_EQ(owners.front().use_count(), 1);
+
+        for (int step = 0; step < 30; ++step) {
+            const bool grow = owners.size() == 1 || coin(rng);
+            if (grow) {
+                owners.push_back(owners.back());  // копия → ++strong
+            } else {
+                owners.pop_back();                // разрушение копии → --strong
+            }
+            const long expected = static_cast<long>(owners.size());
+            for (const auto& sp : owners) {
+                EXPECT_EQ(sp.use_count(), expected);
+                EXPECT_EQ(sp.get(), raw);         // все на один объект
+                EXPECT_EQ(*sp, v);
+            }
+        }
+    }
+}
+
+// Жизнь объекта: пока есть хоть одна сильная ссылка — объект жив; когда все
+// сильные исчезают — разрушается. weak-ссылки на это не влияют.
+TEST(SharedPtrProps, ObjectAliveIffStrongPositive) {
+    static int alive = 0;
+    struct Tracked { Tracked(){ ++alive; } ~Tracked(){ --alive; } };
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> nweak(0, 4);
+    for (int iter = 0; iter < 200; ++iter) {
+        alive = 0;
+        {
+            SharedPtr<Tracked> a(new Tracked());
+            EXPECT_EQ(alive, 1);
+            // Навешиваем сколько-то weak — они не должны менять жизнь объекта.
+            std::vector<WeakPtr<Tracked>> watchers;
+            const int wk = nweak(rng);
+            for (int i = 0; i < wk; ++i) watchers.emplace_back(a);
+            EXPECT_EQ(alive, 1);
+            for (const auto& w : watchers) EXPECT_FALSE(w.expired());
+
+            {
+                SharedPtr<Tracked> b = a;     // 2 сильные
+                EXPECT_EQ(alive, 1);
+            }
+            EXPECT_EQ(alive, 1);              // осталась одна сильная
+            // weak ещё живы (в watchers), но объект жив именно из-за a.
+        }
+        EXPECT_EQ(alive, 0);                  // сильных не осталось → разрушен
+    }
+}
+
+// lock() — чистая функция от expired(): живой weak даёт владеющий SharedPtr с
+// поднятым счётчиком; протухший weak даёт пустой SharedPtr.
+TEST(SharedPtrProps, LockConsistentWithExpired) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(0, 9999);
+    for (int iter = 0; iter < 300; ++iter) {
+        const int v = val(rng);
+        WeakPtr<int> w;
+        {
+            SharedPtr<int> a(new int(v));
+            w = WeakPtr<int>(a);
+            EXPECT_FALSE(w.expired());
+            const long before = a.use_count();
+            SharedPtr<int> locked = w.lock();
+            ASSERT_TRUE(static_cast<bool>(locked));        // жив → не пустой
+            EXPECT_EQ(*locked, v);
+            EXPECT_EQ(locked.get(), a.get());
+            EXPECT_EQ(a.use_count(), before + 1);          // lock поднял strong
+            // locked разрушится здесь, вернув счётчик.
+        }
+        // a мёртв → weak протух.
+        EXPECT_TRUE(w.expired());
+        SharedPtr<int> dead = w.lock();
+        EXPECT_FALSE(static_cast<bool>(dead));             // протух → пустой
+        EXPECT_EQ(dead.use_count(), 0);
+    }
+}
+
+// ── Задание 4. PoolAllocator — property ──────────────────────────────────────
+
+// Инвариант сохранения числа блоков: (выдано + free_count) == N всегда; все
+// одновременно выданные блоки различны, выровнены под блок и лежат в буфере.
+TEST(PoolAllocatorProps, ConservationDistinctInBuffer) {
+    std::mt19937 rng(0xC0FFEEu);
+    constexpr std::size_t BS = sizeof(void*) > 24 ? sizeof(void*) : 24;
+    std::uniform_int_distribution<std::size_t> count_dist(1, 16);
+    std::uniform_int_distribution<int> coin(0, 1);
+
+    for (int iter = 0; iter < 200; ++iter) {
+        const std::size_t N = count_dist(rng);
+        std::vector<std::byte> storage(BS * N);
+        std::byte* base = storage.data();
+        PoolAllocator pool(base, BS, N);
+        EXPECT_EQ(pool.free_count(), N);
+        EXPECT_EQ(pool.block_size(), BS);
+
+        std::vector<void*> live;  // сейчас выданные
+        for (int step = 0; step < 60; ++step) {
+            const bool want_alloc = live.empty() || (live.size() < N && coin(rng));
+            if (want_alloc) {
+                void* p = pool.allocate();
+                ASSERT_NE(p, nullptr);                      // место есть
+                std::byte* bp = static_cast<std::byte*>(p);
+                EXPECT_GE(bp, base);
+                EXPECT_LT(bp, base + BS * N);
+                EXPECT_EQ(static_cast<std::size_t>(bp - base) % BS, 0u);  // на границе блока
+                live.push_back(p);
+            } else {
+                // Вернуть случайный из выданных.
+                std::uniform_int_distribution<std::size_t> idx(0, live.size() - 1);
+                std::size_t i = idx(rng);
+                pool.deallocate(live[i]);
+                live[i] = live.back();
+                live.pop_back();
+            }
+            // Инвариант сохранения.
+            EXPECT_EQ(live.size() + pool.free_count(), N);
+            // Все одновременно выданные блоки различны.
+            std::set<void*> uniq(live.begin(), live.end());
+            EXPECT_EQ(uniq.size(), live.size());
+        }
+        // Когда все выданы — следующий allocate даёт nullptr.
+        while (pool.free_count() > 0) { ASSERT_NE(pool.allocate(), nullptr); }
+        EXPECT_EQ(pool.allocate(), nullptr);
+    }
+}
+
+// Round-trip: deallocate ровно одного блока всегда поднимает free_count на 1 и
+// позволяет немедленно снова выдать непустой блок.
+TEST(PoolAllocatorProps, DeallocateAllocateRoundTrip) {
+    std::mt19937 rng(0xC0FFEEu);
+    constexpr std::size_t BS = 32;
+    std::uniform_int_distribution<std::size_t> count_dist(2, 12);
+    for (int iter = 0; iter < 250; ++iter) {
+        const std::size_t N = count_dist(rng);
+        std::vector<std::byte> storage(BS * N);
+        PoolAllocator pool(storage.data(), BS, N);
+
+        // Выдаём все.
+        std::vector<void*> blocks;
+        for (std::size_t i = 0; i < N; ++i) blocks.push_back(pool.allocate());
+        EXPECT_EQ(pool.free_count(), 0u);
+
+        // Возвращаем случайный, free_count +1, и снова выдаём непустой.
+        std::uniform_int_distribution<std::size_t> idx(0, N - 1);
+        std::size_t i = idx(rng);
+        pool.deallocate(blocks[i]);
+        EXPECT_EQ(pool.free_count(), 1u);
+        void* again = pool.allocate();
+        ASSERT_NE(again, nullptr);
+        EXPECT_EQ(pool.free_count(), 0u);
+    }
+}
+
+// ── Задание 5. placement new — property ──────────────────────────────────────
+
+// construct_at19 строит объект ровно в переданном буфере, и значение
+// round-trip'ится (записали через конструктор — прочитали из объекта).
+TEST(PlacementNewProps, ConstructRoundTripsValueInBuffer) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<long long> val(-1000000000LL, 1000000000LL);
+    for (int iter = 0; iter < 400; ++iter) {
+        const long long v = val(rng);
+        alignas(long long) std::byte buf[sizeof(long long)];
+        long long* p = construct_at19<long long>(buf, v);
+        ASSERT_NE(p, nullptr);
+        EXPECT_EQ(static_cast<void*>(p), static_cast<void*>(buf));  // именно в buf
+        EXPECT_EQ(*p, v);                                           // round-trip значения
+        destroy_at19(p);
+    }
+}
+
+// Строим vector с пробросом аргументов конструктора в сыром буфере; содержимое
+// совпадает с эталонным std::vector; destroy вызывает деструктор (нет утечки).
+TEST(PlacementNewProps, ForwardsArgsMatchesStdVector) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<std::size_t> len(0, 12);
+    std::uniform_int_distribution<int> fill(-1000, 1000);
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = len(rng);
+        const int f = fill(rng);
+        alignas(std::vector<int>) std::byte buf[sizeof(std::vector<int>)];
+        auto* v = construct_at19<std::vector<int>>(buf, n, f);
+        ASSERT_NE(v, nullptr);
+        const std::vector<int> oracle(n, f);  // эталон
+        ASSERT_EQ(v->size(), n);
+        EXPECT_TRUE(std::equal(v->begin(), v->end(), oracle.begin()));
+        destroy_at19(v);
+    }
+}
+
+// destroy_at19 всегда вызывает деструктор: на серии построений счётчик живых
+// после каждого destroy возвращается к нулю.
+TEST(PlacementNewProps, DestroyAlwaysRunsDestructor) {
+    static int alive = 0;
+    struct Tracked { Tracked(){ ++alive; } ~Tracked(){ --alive; } };
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> reps(1, 8);
+    for (int iter = 0; iter < 300; ++iter) {
+        alive = 0;
+        const int k = reps(rng);
+        for (int j = 0; j < k; ++j) {
+            alignas(Tracked) std::byte buf[sizeof(Tracked)];
+            Tracked* t = construct_at19<Tracked>(buf);
+            EXPECT_EQ(alive, 1);
+            destroy_at19(t);
+            EXPECT_EQ(alive, 0);
+        }
+    }
 }
