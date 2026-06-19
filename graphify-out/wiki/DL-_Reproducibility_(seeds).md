@@ -1,10 +1,10 @@
-# Rust: Capstone: kvstore
+# DL: Reproducibility (seeds)
 
 > 1 nodes
 
 ## Key Concepts
 
-- **Capstone: kvstore** (0 connections) — `rust/capstone/README.md`
+- **Reproducibility (seeds)** (0 connections) — `deep-learning/NEXT_STEPS.md`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `rust/capstone/README.md`
+- `deep-learning/NEXT_STEPS.md`
 
 ## Audit Trail
 

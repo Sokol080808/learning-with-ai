@@ -1,42 +1,31 @@
 # C++: TEST()
 
-> 19 nodes
+> 8 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **fraction.cpp** (8 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **Fraction()** (4 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **Fraction** (3 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **add()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **multiply()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **operator==()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **to_string()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **test_fraction.cpp** (2 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **numerator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **denominator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **string** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **NormalizesOnConstruction** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **MovesSignToNumerator** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Add** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Multiply** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Equality** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **ToString** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **TEST()** (8 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **Basics** (2 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **test_task01.cpp** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **ToFahrenheit** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **IsEven** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **MinOfThree** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **TripleByReference** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **Average3** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[C++: task01.cpp]] (1 shared connections)
+- [[Python: test_basics.py]] (1 shared connections)
 
 ## Source Files
 
-- `cpp/modules/04-classes/src/fraction.cpp`
-- `cpp/modules/04-classes/tests/test_fraction.cpp`
+- `cpp/modules/01-basics/tests/test_task01.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 15 (94%)
+- INFERRED: 1 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

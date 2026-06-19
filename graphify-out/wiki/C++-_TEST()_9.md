@@ -1,27 +1,28 @@
 # C++: TEST()
 
-> 18 nodes
+> 19 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **task06.cpp** (5 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **make_unique_int()** (3 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **size()** (2 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **to_vector()** (2 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **unique_ptr** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **push_front()** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **size_t** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **contains()** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **vector** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
-- **test_task06.cpp** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **SmartPointers** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **MakeUniqueInt** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **IntList** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **PushFrontOrder** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **Size** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **Contains** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
-- **EmptyToVector** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **TEST()** (9 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **fraction.cpp** (8 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **Fraction()** (4 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **Fraction** (3 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **add()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **multiply()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **operator==()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **to_string()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **test_fraction.cpp** (2 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **numerator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **denominator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **string** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **NormalizesOnConstruction** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **MovesSignToNumerator** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Add** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Multiply** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Equality** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **ToString** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 
 ## Relationships
 
@@ -29,13 +30,13 @@
 
 ## Source Files
 
-- `cpp/modules/06-smart-pointers/src/task06.cpp`
-- `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- `cpp/modules/04-classes/src/fraction.cpp`
+- `cpp/modules/04-classes/tests/test_fraction.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (94%)
-- INFERRED: 2 (6%)
+- EXTRACTED: 44 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,21 +1,16 @@
 # C++: TEST()
 
-> 12 nodes
+> 7 nodes
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **task14.cpp** (3 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **parallel_sum()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **concurrent_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **atomic_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **vector** (1 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **test_task14.cpp** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **Concurrency** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSum** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSumUneven** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **MutexCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **AtomicCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- **TEST()** (6 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **test_geometry.cpp** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **Geometry** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **Distance** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterSquare** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterTriangle** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterDegenerate** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
 
 ## Relationships
 
@@ -23,13 +18,12 @@
 
 ## Source Files
 
-- `cpp/modules/14-concurrency/src/task14.cpp`
-- `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- `cpp/modules/11-projects/tests/test_geometry.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (83%)
-- INFERRED: 4 (17%)
+- EXTRACTED: 12 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

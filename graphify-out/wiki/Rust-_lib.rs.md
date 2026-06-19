@@ -1,12 +1,10 @@
 # Rust: lib.rs
 
-> 3 nodes
+> 1 nodes
 
 ## Key Concepts
 
-- **lib.rs** (2 connections) — `rust/modules/00-setup/src/lib.rs`
-- **add()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
-- **seconds_in()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
+- **lib.rs** (0 connections) — `rust/capstone/src/lib.rs`
 
 ## Relationships
 
@@ -14,11 +12,11 @@
 
 ## Source Files
 
-- `rust/modules/00-setup/src/lib.rs`
+- `rust/capstone/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 0 (0%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

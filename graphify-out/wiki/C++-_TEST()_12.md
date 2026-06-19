@@ -1,28 +1,31 @@
 # C++: TEST()
 
-> 19 nodes
+> 22 nodes
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **task09.cpp** (5 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **to_int()** (4 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **first_even()** (3 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **describe()** (3 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **element_at()** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **vector** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **optional** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **string** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **variant** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **task09.hpp** (1 connections) — `cpp/modules/09-error-handling/include/task09.hpp`
-- **safe_divide()** (1 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **test_task09.cpp** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ErrorHandling** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **SafeDivide** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ElementAt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ToInt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **FirstEven** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **Describe** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **TEST()** (9 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Pair** (7 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **task07.hpp** (6 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **T** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **sum_vector()** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **clamp_value()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **First** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **Second** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.Pair()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.swapped()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **my_max()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **vector** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **is_power_of_two()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **first** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **second** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **test_task07.cpp** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Templates** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **MyMax** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **ClampValue** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **SumVector** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **PairSwapped** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Relationships
 
@@ -30,14 +33,13 @@
 
 ## Source Files
 
-- `cpp/modules/09-error-handling/include/task09.hpp`
-- `cpp/modules/09-error-handling/src/task09.cpp`
-- `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- `cpp/modules/07-templates/include/task07.hpp`
+- `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 40 (95%)
-- INFERRED: 2 (5%)
+- EXTRACTED: 56 (93%)
+- INFERRED: 4 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -1,26 +1,27 @@
 # C++: TEST()
 
-> 17 nodes
+> 18 nodes
 
 ## Key Concepts
 
-- **TEST()** (10 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **task08.cpp** (5 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **vector** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **char_frequency()** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **count_greater()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **sorted_desc()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **evens()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **squared()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **map** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **string** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **test_task08.cpp** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Stl** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Evens** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **CountGreater** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Squared** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **SortedDesc** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **CharFrequency** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **TEST()** (9 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **task06.cpp** (5 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **make_unique_int()** (3 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **size()** (2 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **to_vector()** (2 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **unique_ptr** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **push_front()** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **size_t** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **contains()** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **vector** (1 connections) — `cpp/modules/06-smart-pointers/src/task06.cpp`
+- **test_task06.cpp** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **SmartPointers** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **MakeUniqueInt** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **IntList** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **PushFrontOrder** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **Size** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **Contains** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
+- **EmptyToVector** (1 connections) — `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
 
 ## Relationships
 
@@ -28,13 +29,13 @@
 
 ## Source Files
 
-- `cpp/modules/08-stl/src/task08.cpp`
-- `cpp/modules/08-stl/tests/test_task08.cpp`
+- `cpp/modules/06-smart-pointers/src/task06.cpp`
+- `cpp/modules/06-smart-pointers/tests/test_task06.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 36 (86%)
-- INFERRED: 6 (14%)
+- EXTRACTED: 32 (94%)
+- INFERRED: 2 (6%)
 - AMBIGUOUS: 0 (0%)
 
 ---

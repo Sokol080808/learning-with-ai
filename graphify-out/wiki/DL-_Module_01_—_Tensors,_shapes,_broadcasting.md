@@ -5,7 +5,7 @@
 ## Key Concepts
 
 - **Module 01 — Tensors, shapes, broadcasting** (5 connections) — `deep-learning/modules/01-tensors/README.md`
-- **Batch** (2 connections) — `deep-learning/GLOSSARY.md`
+- **Batch** (1 connections) — `deep-learning/GLOSSARY.md`
 - **Tensor** (1 connections) — `deep-learning/modules/01-tensors/README.md`
 - **Shape** (1 connections) — `deep-learning/modules/01-tensors/README.md`
 - **Axis / dim** (1 connections) — `deep-learning/modules/01-tensors/README.md`
@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- [[DL: Capstone — nanoLM char-level Transformer]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -22,7 +22,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -4,28 +4,27 @@
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Basics** (2 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **test_task01.cpp** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **ToFahrenheit** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **IsEven** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **MinOfThree** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **TripleByReference** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Average3** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **TEST()** (7 connections) — `cpp/capstone/tests/test_value.cpp`
+- **test_value.cpp** (2 connections) — `cpp/capstone/tests/test_value.cpp`
+- **Value** (2 connections) — `cpp/capstone/tests/test_value.cpp`
+- **StringRoundtrip** (1 connections) — `cpp/capstone/tests/test_value.cpp`
+- **ListStartsEmptyAndIsMutable** (1 connections) — `cpp/capstone/tests/test_value.cpp`
+- **HashStartsEmptyAndIsMutable** (1 connections) — `cpp/capstone/tests/test_value.cpp`
+- **WrongAccessorThrows** (1 connections) — `cpp/capstone/tests/test_value.cpp`
+- **ConstAccessorReads** (1 connections) — `cpp/capstone/tests/test_value.cpp`
 
 ## Relationships
 
-- [[C++: task01.cpp]] (1 shared connections)
-- [[Python: test_basics.py]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `cpp/modules/01-basics/tests/test_task01.cpp`
+- `cpp/capstone/tests/test_value.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (94%)
-- INFERRED: 1 (6%)
+- EXTRACTED: 16 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

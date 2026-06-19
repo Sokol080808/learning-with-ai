@@ -1,17 +1,17 @@
-# Rust: main.rs
+# Rust: print_prompt()
 
 > 4 nodes
 
 ## Key Concepts
 
-- **main.rs** (3 connections) — `rust/capstone/src/main.rs`
-- **print_banner()** (3 connections) — `rust/capstone/src/main.rs`
+- **print_prompt()** (3 connections) — `rust/capstone/src/main.rs`
+- **main.rs** (2 connections) — `rust/capstone/src/main.rs`
 - **main()** (2 connections) — `rust/capstone/src/main.rs`
-- **Write** (1 connections) — `rust/capstone/src/main.rs`
+- **W** (1 connections) — `rust/capstone/src/main.rs`
 
 ## Relationships
 
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -19,7 +19,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

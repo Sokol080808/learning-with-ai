@@ -1,14 +1,12 @@
 # Rust: lib.rs
 
-> 5 nodes
+> 3 nodes
 
 ## Key Concepts
 
-- **lib.rs** (4 connections) — `rust/modules/01-basics/src/lib.rs`
-- **to_fahrenheit()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **is_even()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **min_of_three()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **abs_diff()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **lib.rs** (2 connections) — `rust/modules/00-setup/src/lib.rs`
+- **add()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
+- **seconds_in()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
 
 ## Relationships
 
@@ -16,11 +14,11 @@
 
 ## Source Files
 
-- `rust/modules/01-basics/src/lib.rs`
+- `rust/modules/00-setup/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,25 +1,29 @@
 # C++: TEST()
 
-> 16 nodes
+> 20 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **two_sum()** (5 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **task13.cpp** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **binary_search_idx()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **vector** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **insertion_sort()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **optional** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **pair** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **test_task13.cpp** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **Stack** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **PushTopPopSize** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **WorksForStrings** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **Algo** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **BinarySearch** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **InsertionSort** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **TwoSum** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- **TEST()** (12 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **task10.cpp** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **minmax_of()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **color_name()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **sum_values()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **evens_squared()** (3 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **square_ce()** (2 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
+- **vector** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **string** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **task10.hpp** (1 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
+- **pair** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **Color** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **map** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **test_task10.cpp** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **Modern** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **MinMax** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **ColorName** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **SquareConstexpr** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **EvensSquared** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **SumValues** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
 
 ## Relationships
 
@@ -27,13 +31,14 @@
 
 ## Source Files
 
-- `cpp/modules/13-data-structures/src/task13.cpp`
-- `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- `cpp/modules/10-modern-idioms/include/task10.hpp`
+- `cpp/modules/10-modern-idioms/src/task10.cpp`
+- `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (84%)
-- INFERRED: 6 (16%)
+- EXTRACTED: 38 (79%)
+- INFERRED: 10 (21%)
 - AMBIGUOUS: 0 (0%)
 
 ---

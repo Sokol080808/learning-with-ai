@@ -14,7 +14,7 @@
 
 ## Relationships
 
-- [[Python: dict and set (hash tables)]] (1 shared connections)
+- [[Python: Module 03: Collections (list, tuple, dic]] (1 shared connections)
 - [[Python: class, __init__, self, attributes and me]] (1 shared connections)
 
 ## Source Files

@@ -1,29 +1,26 @@
 # C++: TEST()
 
-> 20 nodes
+> 17 nodes
 
 ## Key Concepts
 
-- **TEST()** (12 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **task10.cpp** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **minmax_of()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **color_name()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **sum_values()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **evens_squared()** (3 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **square_ce()** (2 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
-- **vector** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **string** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **task10.hpp** (1 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
-- **pair** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **Color** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **map** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **test_task10.cpp** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **Modern** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **MinMax** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **ColorName** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **SquareConstexpr** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **EvensSquared** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **SumValues** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **TEST()** (10 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **task08.cpp** (5 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **vector** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **char_frequency()** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **count_greater()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **sorted_desc()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **evens()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **squared()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **map** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **string** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **test_task08.cpp** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Stl** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Evens** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **CountGreater** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Squared** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **SortedDesc** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **CharFrequency** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
 
 ## Relationships
 
@@ -31,14 +28,13 @@
 
 ## Source Files
 
-- `cpp/modules/10-modern-idioms/include/task10.hpp`
-- `cpp/modules/10-modern-idioms/src/task10.cpp`
-- `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- `cpp/modules/08-stl/src/task08.cpp`
+- `cpp/modules/08-stl/tests/test_task08.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (79%)
-- INFERRED: 10 (21%)
+- EXTRACTED: 36 (86%)
+- INFERRED: 6 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

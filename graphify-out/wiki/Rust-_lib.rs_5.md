@@ -4,14 +4,14 @@
 
 ## Key Concepts
 
-- **lib.rs** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **Article** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **my_max()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **T** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **largest()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **Summary** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **String** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **.summarize()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **lib.rs** (4 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **Option** (3 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **describe()** (3 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **Shape** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **safe_div()** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **first_even()** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **.area()** (1 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **String** (1 connections) — `rust/modules/06-enums-match/src/lib.rs`
 
 ## Relationships
 
@@ -19,11 +19,11 @@
 
 ## Source Files
 
-- `rust/modules/09-generics-traits/src/lib.rs`
+- `rust/modules/06-enums-match/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

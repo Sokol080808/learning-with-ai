@@ -4,8 +4,8 @@
 
 ## Key Concepts
 
-- **class, __init__, self, attributes and methods** (5 connections) — `python/modules/06-oop/README.md`
 - **Module 06: OOP (classes, dunder, properties)** (4 connections) — `python/modules/06-oop/README.md`
+- **class, __init__, self, attributes and methods** (4 connections) — `python/modules/06-oop/README.md`
 - **Module 07: Inheritance, dataclasses, duck typing** (4 connections) — `python/modules/07-dataclasses-protocols/README.md`
 - **Duck typing** (4 connections) — `python/modules/07-dataclasses-protocols/README.md`
 - **Dunder methods (__repr__, __eq__)** (2 connections) — `python/modules/06-oop/README.md`
@@ -19,7 +19,7 @@
 
 ## Relationships
 
-- [[Python: Capstone: CLI Todo Manager]] (2 shared connections)
+- [[Python: Module 08: Errors, exceptions, context m]] (1 shared connections)
 - [[Python: iterable vs iterator (__iter__, __next__]] (1 shared connections)
 
 ## Source Files
@@ -29,8 +29,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 29 (94%)
-- INFERRED: 2 (6%)
+- EXTRACTED: 28 (93%)
+- INFERRED: 2 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

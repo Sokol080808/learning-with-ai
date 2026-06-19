@@ -1,21 +1,23 @@
 # C++: TEST()
 
-> 12 nodes
+> 14 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **test_int_vector.cpp** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **IntVector** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **EmptyByDefault** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **FillConstructor** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **PushBackGrows** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **IndexIsWritable** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **DeepCopyIndependent** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **CopyAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **SelfAssignmentSafe** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **MoveConstructorStealsBuffer** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **MoveAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **TEST()** (12 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **task03.cpp** (5 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **sum_array()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **swap_ints()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **count_value()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **max_element_ptr()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **reverse_in_place()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **test_task03.cpp** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **Pointers** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SumArray** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SwapInts** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **CountValue** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **MaxElementPtr** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **ReverseInPlace** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Relationships
 
@@ -23,12 +25,13 @@
 
 ## Source Files
 
-- `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- `cpp/modules/03-pointers-memory/src/task03.cpp`
+- `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 24 (71%)
+- INFERRED: 10 (29%)
 - AMBIGUOUS: 0 (0%)
 
 ---

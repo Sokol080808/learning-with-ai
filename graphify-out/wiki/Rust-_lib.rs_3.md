@@ -1,17 +1,14 @@
 # Rust: lib.rs
 
-> 8 nodes
+> 5 nodes
 
 ## Key Concepts
 
-- **lib.rs** (5 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **fizzbuzz()** (3 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **Vec** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **String** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **factorial()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **fib()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **gcd()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **classify()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **lib.rs** (4 connections) — `rust/modules/01-basics/src/lib.rs`
+- **to_fahrenheit()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **is_even()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **min_of_three()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **abs_diff()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
 
 ## Relationships
 
@@ -19,11 +16,11 @@
 
 ## Source Files
 
-- `rust/modules/02-control-flow/src/lib.rs`
+- `rust/modules/01-basics/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

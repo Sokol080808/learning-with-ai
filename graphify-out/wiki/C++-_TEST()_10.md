@@ -1,31 +1,21 @@
 # C++: TEST()
 
-> 22 nodes
+> 12 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **Pair** (7 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **task07.hpp** (6 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **T** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **sum_vector()** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **clamp_value()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **First** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **Second** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **.Pair()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **.swapped()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **my_max()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **vector** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **is_power_of_two()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **first** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **second** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **test_task07.cpp** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **Templates** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **MyMax** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **ClampValue** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **SumVector** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **PairSwapped** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
-- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **TEST()** (11 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **test_int_vector.cpp** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IntVector** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **EmptyByDefault** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **FillConstructor** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **PushBackGrows** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IndexIsWritable** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **DeepCopyIndependent** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **CopyAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **SelfAssignmentSafe** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveConstructorStealsBuffer** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Relationships
 
@@ -33,13 +23,12 @@
 
 ## Source Files
 
-- `cpp/modules/07-templates/include/task07.hpp`
-- `cpp/modules/07-templates/tests/test_task07.cpp`
+- `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 56 (93%)
-- INFERRED: 4 (7%)
+- EXTRACTED: 22 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

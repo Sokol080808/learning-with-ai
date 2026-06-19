@@ -1,17 +1,17 @@
-# DL: Linear (fully-connected) layer
+# DL: Module 02 — Linear algebra for DL
 
 > 4 nodes
 
 ## Key Concepts
 
-- **Linear (fully-connected) layer** (4 connections) — `deep-learning/modules/02-linear-algebra/README.md`
 - **Module 02 — Linear algebra for DL** (3 connections) — `deep-learning/modules/02-linear-algebra/README.md`
+- **Linear (fully-connected) layer** (3 connections) — `deep-learning/modules/02-linear-algebra/README.md`
 - **Matrix multiplication (matmul)** (2 connections) — `deep-learning/modules/02-linear-algebra/README.md`
 - **Weights & bias** (2 connections) — `deep-learning/modules/02-linear-algebra/README.md`
 
 ## Relationships
 
-- [[DL: Capstone Milestone 2 — transformer model]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -19,8 +19,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 10 (91%)
-- INFERRED: 1 (9%)
+- EXTRACTED: 10 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---
