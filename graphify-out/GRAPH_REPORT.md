@@ -1,16 +1,16 @@
 # Graph Report - learning-with-ai  (2026-06-19)
 
 ## Corpus Check
-- 363 files · ~211,245 words
+- 385 files · ~224,353 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 4203 nodes · 4845 edges · 384 communities (336 shown, 48 thin omitted)
-- Extraction: 86% EXTRACTED · 14% INFERRED · 0% AMBIGUOUS · INFERRED: 656 edges (avg confidence: 0.81)
+- 4616 nodes · 5528 edges · 416 communities (367 shown, 49 thin omitted)
+- Extraction: 85% EXTRACTED · 15% INFERRED · 0% AMBIGUOUS · INFERRED: 845 edges (avg confidence: 0.8)
 - Token cost: 0 input · 0 output
 
 ## Graph Freshness
-- Built from commit: `da0e42bf`
+- Built from commit: `68bc1bef`
 - Run `git rev-parse HEAD` and compare to check if the graph is stale.
 - Run `graphify update .` after code changes (no API cost).
 
@@ -19,8 +19,8 @@
 - [[_COMMUNITY_DL CharTokenizer|DL: CharTokenizer]]
 - [[_COMMUNITY_Python test_containers.py|Python: test_containers.py]]
 - [[_COMMUNITY_DL DL Glossary|DL: DL Glossary]]
-- [[_COMMUNITY_Python test_models.py|Python: test_models.py]]
 - [[_COMMUNITY_Python test_gens.py|Python: test_gens.py]]
+- [[_COMMUNITY_Python test_database.py|Python: test_database.py]]
 - [[_COMMUNITY_CAOS TEST()|CAOS: TEST()]]
 - [[_COMMUNITY_Rust acceptance.rs|Rust: acceptance.rs]]
 - [[_COMMUNITY_DL test_linalg.py|DL: test_linalg.py]]
@@ -54,7 +54,6 @@
 - [[_COMMUNITY_Python test_typingtest.py|Python: test_typingtest.py]]
 - [[_COMMUNITY_C++ Database|C++: Database]]
 - [[_COMMUNITY_DL test_linreg.py|DL: test_linreg.py]]
-- [[_COMMUNITY_Python test_errors.py|Python: test_errors.py]]
 - [[_COMMUNITY_C++ add_exercise CMake helper macro|C++: add_exercise CMake helper macro]]
 - [[_COMMUNITY_Rust borrowing.rs|Rust: borrowing.rs]]
 - [[_COMMUNITY_Python test_wordfreq.py|Python: test_wordfreq.py]]
@@ -250,7 +249,6 @@
 - [[_COMMUNITY_Community 291|Community 291]]
 - [[_COMMUNITY_Community 292|Community 292]]
 - [[_COMMUNITY_Community 293|Community 293]]
-- [[_COMMUNITY_Community 294|Community 294]]
 - [[_COMMUNITY_Community 295|Community 295]]
 - [[_COMMUNITY_Community 296|Community 296]]
 - [[_COMMUNITY_Community 297|Community 297]]
@@ -333,22 +331,48 @@
 - [[_COMMUNITY_Community 374|Community 374]]
 - [[_COMMUNITY_Community 375|Community 375]]
 - [[_COMMUNITY_Community 376|Community 376]]
-- [[_COMMUNITY_Community 377|Community 377]]
-- [[_COMMUNITY_Community 378|Community 378]]
 - [[_COMMUNITY_Community 379|Community 379]]
+- [[_COMMUNITY_Community 380|Community 380]]
 - [[_COMMUNITY_Community 381|Community 381]]
+- [[_COMMUNITY_Community 385|Community 385]]
+- [[_COMMUNITY_Community 387|Community 387]]
+- [[_COMMUNITY_Community 388|Community 388]]
+- [[_COMMUNITY_Community 389|Community 389]]
+- [[_COMMUNITY_Community 390|Community 390]]
+- [[_COMMUNITY_Community 391|Community 391]]
+- [[_COMMUNITY_Community 392|Community 392]]
+- [[_COMMUNITY_Community 393|Community 393]]
+- [[_COMMUNITY_Community 394|Community 394]]
+- [[_COMMUNITY_Community 395|Community 395]]
+- [[_COMMUNITY_Community 396|Community 396]]
+- [[_COMMUNITY_Community 397|Community 397]]
+- [[_COMMUNITY_Community 398|Community 398]]
+- [[_COMMUNITY_Community 399|Community 399]]
+- [[_COMMUNITY_Community 400|Community 400]]
+- [[_COMMUNITY_Community 401|Community 401]]
+- [[_COMMUNITY_Community 402|Community 402]]
+- [[_COMMUNITY_Community 403|Community 403]]
+- [[_COMMUNITY_Community 404|Community 404]]
+- [[_COMMUNITY_Community 405|Community 405]]
+- [[_COMMUNITY_Community 406|Community 406]]
+- [[_COMMUNITY_Community 407|Community 407]]
+- [[_COMMUNITY_Community 408|Community 408]]
+- [[_COMMUNITY_Community 409|Community 409]]
+- [[_COMMUNITY_Community 410|Community 410]]
+- [[_COMMUNITY_Community 411|Community 411]]
+- [[_COMMUNITY_Community 414|Community 414]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `TEST()` - 37 edges
-2. `Database` - 28 edges
-3. `parse()` - 27 edges
-4. `TEST()` - 25 edges
-5. `TEST()` - 21 edges
+1. `parse()` - 39 edges
+2. `TEST()` - 37 edges
+3. `tokenize()` - 30 edges
+4. `Database` - 28 edges
+5. `TEST()` - 25 edges
 6. `TEST()` - 21 edges
 7. `TEST()` - 21 edges
-8. `TEST()` - 20 edges
-9. `TEST()` - 19 edges
-10. `TEST()` - 19 edges
+8. `TEST()` - 21 edges
+9. `Fraction` - 21 edges
+10. `TEST()` - 20 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `Rationale: Rust weaknesses — steep learning curve, slow compiles, poor for quick scripts` --semantically_similar_to--> `Rationale: DL prerequisites — basic Python (track 00-09), school math, no GPU needed`  [INFERRED] [semantically similar]
@@ -378,31 +402,31 @@
 - **Backprop chain: chain rule + forward + backward + autograd** — 07-backprop_readme_chain_rule, 06-neural-net-numpy_readme_forward_pass, 07-backprop_readme_backward_pass, 08-autograd-engine_readme_autograd [INFERRED 0.75]
 - **Transformer block composes attention + MLP + LayerNorm + residual** — 15-attention-transformer_readme_transformer_block, 15-attention-transformer_readme_multihead_attention, 15-attention-transformer_readme_position_mlp, 16-training-practice_readme_layernorm, 15-attention-transformer_readme_residual [INFERRED 0.85]
 
-## Communities (384 total, 48 thin omitted)
+## Communities (416 total, 49 thin omitted)
 
 ### Community 0 - "Python: parse()"
-Cohesion: 0.11
-Nodes (36): Condition, Create, Delete, Insert, parse(), DELETE FROM <table> [WHERE ...]. where — список Condition (пустой, если WHERE не, Разобрать список токенов в один объект запроса (Create/Insert/Select/Delete)., Одна элементарная проверка WHERE: <column> <op> <value>.      op — строка-операт (+28 more)
+Cohesion: 0.14
+Nodes (27): parse(), Разобрать список токенов в один объект запроса (Create/Insert/Select/Delete)., SELECT <columns | *> FROM <table> [WHERE ...] [ORDER BY <col> <ASC|DESC>]., Select, Query, test_parse_create(), test_parse_create_keyword_case_insensitive(), test_parse_create_missing_table_keyword_raises() (+19 more)
 
 ### Community 1 - "DL: CharTokenizer"
 Cohesion: 0.06
 Nodes (45): main(), Tensor, Tensor, get_batch(), Нарезать случайный батч обучающих пар (x, y) из последовательности индексов., GPT-подобная языковая модель: эмбеддинги -> N блоков трансформера -> голова., TransformerLM, CharTokenizer (+37 more)
 
 ### Community 2 - "Python: test_containers.py"
-Cohesion: 0.07
-Nodes (37): flatten(), intersection(), invert_dict(), Построить словарь «слово -> его длина».      Пример: ["кот", "пёс"] -> {"кот": 3, «Расплющить» список списков в один плоский список, сохранив порядок.      Пример, Вернуть множество значений, которые есть и в a, и в b (пересечение).      Резуль, Поменять местами ключи и значения исходного словаря.      Считаем, что значения, Вернуть уникальные значения из xs, отсортированные по возрастанию.      Дубликат (+29 more)
+Cohesion: 0.13
+Nodes (13): flatten(), «Расплющить» список списков в один плоский список, сохранив порядок.      Пример, test_flatten_concatenation_order_preserved(), test_flatten_extreme_cases(), test_flatten_length_is_sum_of_rows(), test_flatten_returns_list(), test_flatten_all_empty_rows(), test_flatten_basic() (+5 more)
 
 ### Community 3 - "DL: DL Glossary"
 Cohesion: 0.07
 Nodes (41): Module 03 — Derivatives, chain rule, gradients, Module 04 — Linear regression from scratch, Module 05 — Logistic regression & classification, DL Glossary, Adam optimizer, Attention, Autograd (automatic differentiation), Autoregression (+33 more)
 
-### Community 4 - "Python: test_models.py"
-Cohesion: 0.05
-Nodes (21): Circle, is_iterable(), Point, Точка на плоскости.      Поля:         x: float — координата по горизонтали., Евклидово расстояние от этой точки до точки other.          distance_to между (x, Базовый класс-абстракция для геометрических фигур.      Сам по себе «фигуры вооб, Площадь фигуры. В базовом классе не определена — переопредели в наследнике., Круг радиуса r. area() = math.pi * r ** 2. (+13 more)
-
 ### Community 5 - "Python: test_gens.py"
-Cohesion: 0.09
-Nodes (39): chunks(), countdown(), Генератор: выдаёт числа n, n-1, …, 1 (по убыванию, включая 1).      Если n <= 0, Вернуть список из первых k элементов итерируемого it.      it может быть списком, Генератор накопительных (нарастающих) сумм элементов xs.      Для [1, 2, 3, 4] в, Генератор: режет список xs на куски-списки по size элементов.      Последний кус, running_total(), take() (+31 more)
+Cohesion: 0.06
+Nodes (56): chunks(), countdown(), Генератор: выдаёт числа n, n-1, …, 1 (по убыванию, включая 1).      Если n <= 0, Вернуть список из первых k элементов итерируемого it.      it может быть списком, Генератор накопительных (нарастающих) сумм элементов xs.      Для [1, 2, 3, 4] в, Генератор: режет список xs на куски-списки по size элементов.      Последний кус, running_total(), take() (+48 more)
+
+### Community 6 - "Python: test_database.py"
+Cohesion: 0.05
+Nodes (6): Database, db(), people(), База с тремя людьми — общая основа для WHERE/ORDER BY тестов., Чистая база на каждый тест., test_two_databases_are_independent()
 
 ### Community 7 - "CAOS: TEST()"
 Cohesion: 0.05
@@ -421,36 +445,36 @@ Cohesion: 0.07
 Nodes (23): cross_entropy(), forward2(), linear(), Softmax по ПОСЛЕДНЕЙ оси, численно стабильный.      Контракт:       - x: np.ndar, Линейное преобразование (полносвязный слой без активации): x·W + b.      Контрак, Forward двухслойной сети (один скрытый слой + выходной). Возвращает ЛОГИТЫ., Средняя кросс-энтропия по батчу (численно устойчиво).      Для примера i с прави, Поэлементный ReLU: max(0, x).      Контракт:       - x: np.ndarray любой формы. (+15 more)
 
 ### Community 12 - "Python: Module 00: Setup and how Python runs"
-Cohesion: 0.05
-Nodes (43): Dynamic typing, Python interpreter and bytecode, pytest and red-green cycle, Virtual environment (venv) and pip, Module 00: Setup and how Python runs, Why interpreted, not compiled (fast edit-test cycle), Basic types: int, float, str, bool, None, Integer vs float division (// vs /) (+35 more)
+Cohesion: 0.14
+Nodes (16): Dynamic typing, Python interpreter and bytecode, pytest and red-green cycle, Module 00: Setup and how Python runs, Why interpreted, not compiled (fast edit-test cycle), Arrange-act-assert test structure (pytest, pytest.raises), mypy static type checking, Parametrized tests (+8 more)
 
 ### Community 13 - "DL: test_regularize.py"
 Cohesion: 0.10
 Nodes (34): dropout_mask(), l2_penalty(), Детерминированно перемешать данные и отрезать валидационную часть.      Контракт, L2-штраф за большие веса: lam * сумма квадратов всех элементов weights.      Кон, Маска дропаута: каждый нейрон с вероятностью p «гасится» (умножается на 0)., Решить, пора ли останавливать обучение (ранняя остановка).      Контракт:, should_early_stop(), train_val_split() (+26 more)
 
 ### Community 14 - "Python: test_stdlibtour.py"
-Cohesion: 0.10
-Nodes (33): days_between(), from_json_str(), group_by_first_letter(), most_common_word(), Вернуть самое частое слово в тексте.      Слова разделяются пробелами (str.split, Сгруппировать слова по их первой букве.      Ключ — первая буква слова, значение, Сериализовать объект Python в JSON-строку (через json.dumps)., Разобрать JSON-строку обратно в объект Python (через json.loads).      Должно вы (+25 more)
+Cohesion: 0.07
+Nodes (49): days_between(), from_json_str(), group_by_first_letter(), most_common_word(), Вернуть самое частое слово в тексте.      Слова разделяются пробелами (str.split, Сгруппировать слова по их первой букве.      Ключ — первая буква слова, значение, Сериализовать объект Python в JSON-строку (через json.dumps)., Разобрать JSON-строку обратно в объект Python (через json.loads).      Должно вы (+41 more)
 
 ### Community 15 - "Python: test_controlflow.py"
-Cohesion: 0.07
-Nodes (23): count_vowels(), factorial(), fib(), fizzbuzz(), gcd(), Вернуть факториал n (n!).      Контракт: factorial(0) == 1, factorial(1) == 1,, Вернуть n-е число Фибоначчи.      Контракт: fib(0) == 0, fib(1) == 1, далее fib(, Сколько в строке английских гласных (a, e, i, o, u), без учёта регистра.      Ко (+15 more)
+Cohesion: 0.17
+Nodes (3): test_count_vowels_basic(), test_count_vowels_empty(), test_count_vowels_no_vowels()
 
 ### Community 16 - "Python: test_textproc.py"
-Cohesion: 0.09
-Nodes (27): test_is_palindrome_empty_is_true(), test_is_palindrome_ignores_case(), test_is_palindrome_ignores_spaces_and_case(), test_is_palindrome_only_spaces_is_true(), test_is_palindrome_simple_false(), test_is_palindrome_simple_true(), test_is_palindrome_single_char(), test_normalize_spaces_basic() (+19 more)
+Cohesion: 0.06
+Nodes (42): test_is_palindrome_doubled_is_palindrome(), test_is_palindrome_extreme_cases(), test_is_palindrome_ignores_case(), test_is_palindrome_matches_definition(), test_is_palindrome_returns_real_bool(), test_normalize_spaces_does_not_mutate_input(), test_normalize_spaces_equals_split_join(), test_normalize_spaces_extreme_cases() (+34 more)
 
 ### Community 17 - "Python: test_datafiles.py"
-Cohesion: 0.11
-Nodes (32): load_json(), parse_csv(), Записать строки в файл, по одной на строку (после каждой добавить '\\n').      О, Прочитать файл и вернуть список строк БЕЗ завершающего '\\n'.      Это обратная, Сохранить объект в файл как JSON (через json.dump).      Открывай файл через wit, Прочитать JSON-файл обратно в объект Python (через json.load).      Обратная опе, Разобрать CSV-текст в список словарей.      Первая строка — заголовок (имена кол, read_lines() (+24 more)
+Cohesion: 0.08
+Nodes (46): load_json(), parse_csv(), Записать строки в файл, по одной на строку (после каждой добавить '\\n').      О, Прочитать файл и вернуть список строк БЕЗ завершающего '\\n'.      Это обратная, Сохранить объект в файл как JSON (через json.dump).      Открывай файл через wit, Прочитать JSON-файл обратно в объект Python (через json.load).      Обратная опе, Разобрать CSV-текст в список словарей.      Первая строка — заголовок (имена кол, read_lines() (+38 more)
 
 ### Community 18 - "CAOS: CAOS course (Computer Architecture & Opera"
 Cohesion: 0.18
 Nodes (12): binary and hexadecimal systems, Module 01 — Number representation, MSB / LSB, bitmask, bitwise operators (& | ^ ~), Module 02 — Bit manipulation, bit flags (packed booleans), bit shifts (<<, >>) (+4 more)
 
 ### Community 19 - "Python: test_funcs.py"
-Cohesion: 0.09
-Nodes (27): apply_twice(), compose(), make_multiplier(), memoize(), Применить f к x дважды: вернуть f(f(x)).      Контракт:       - f — любая функци, Вернуть функцию, умножающую свой аргумент на n (замыкание).      Контракт:, Композиция двух функций: вернуть функцию x -> f(g(x)).      Контракт:       - во, Отсортировать слова по длине (по возрастанию).      Контракт:       - возвращаем (+19 more)
+Cohesion: 0.06
+Nodes (45): apply_twice(), compose(), make_multiplier(), memoize(), Применить f к x дважды: вернуть f(f(x)).      Контракт:       - f — любая функци, Вернуть функцию, умножающую свой аргумент на n (замыкание).      Контракт:, Композиция двух функций: вернуть функцию x -> f(g(x)).      Контракт:       - во, Отсортировать слова по длине (по возрастанию).      Контракт:       - возвращаем (+37 more)
 
 ### Community 20 - "DL: test_backprop.py"
 Cohesion: 0.09
@@ -525,8 +549,8 @@ Cohesion: 0.13
 Nodes (23): add_bias(), Умножить каждый элемент массива на скаляр k.      Контракт:       - вход x — люб, Поделить каждую строку матрицы на сумму её собственных элементов.      Контракт:, Прибавить вектор смещения b к каждой строке матрицы x через broadcasting.      К, Поэлементный ReLU: max(0, x).      Контракт:       - вход x — любой numpy-массив, relu_np(), row_normalize(), scale() (+15 more)
 
 ### Community 40 - "Python: test_typingtest.py"
-Cohesion: 0.13
-Nodes (23): test_clamp_bad_range_raises_value_error(), test_clamp_basic(), test_clamp_equal_bounds_is_allowed(), test_clamp_returns_x_itself_when_inside(), test_merge_counts_all_keys_overlap(), test_merge_counts_both_empty(), test_merge_counts_disjoint_keys(), test_merge_counts_does_not_mutate_inputs() (+15 more)
+Cohesion: 0.08
+Nodes (41): test_clamp_bad_range_raises(), test_clamp_degenerate_range_collapses(), test_clamp_extreme_values(), test_clamp_idempotent(), test_clamp_identity_when_inside(), test_clamp_matches_min_max_formula(), test_clamp_result_within_bounds(), test_merge_counts_does_not_mutate_inputs() (+33 more)
 
 ### Community 41 - "C++: Database"
 Cohesion: 0.08
@@ -535,10 +559,6 @@ Nodes (25): Clock, Entry, Database, clock_, data_, del, expire, expired (+17 mor
 ### Community 42 - "DL: test_linreg.py"
 Cohesion: 0.16
 Nodes (22): gd_step(), gradients(), mse_loss(), predict(), Линейная модель: y_pred = X · w + b.      Аргументы:         X : np.ndarray форм, Среднеквадратичная ошибка (Mean Squared Error).      Аргументы:         y_pred :, Градиенты MSE-loss по параметрам w и b.      Аргументы:         X : np.ndarray ф, Один шаг градиентного спуска: сдвигаем параметры ПРОТИВ градиента.      Аргумент (+14 more)
-
-### Community 43 - "Python: test_errors.py"
-Cohesion: 0.11
-Nodes (9): get_or(), Вернуть xs[i], а если индекса нет — default.      Контракт:       - если i — доп, test_get_or_default_can_be_none(), test_get_or_empty_list_returns_default(), test_get_or_first_and_last(), test_get_or_negative_index(), test_get_or_negative_out_of_range_returns_default(), test_get_or_out_of_range_returns_default() (+1 more)
 
 ### Community 44 - "C++: add_exercise CMake helper macro"
 Cohesion: 0.09
@@ -549,7 +569,7 @@ Cohesion: 0.12
 Nodes (14): Option, Vec, double_all(), max_ref(), push_n(), double_all_doubles_each(), double_all_empty_stays_empty(), double_all_handles_negatives_and_zero() (+6 more)
 
 ### Community 46 - "Python: test_wordfreq.py"
-Cohesion: 0.09
+Cohesion: 0.06
 Nodes (7): CaseSensitive, Counts, HandlesNewlinesAndSpaces, TEST(), TopNByFrequencyThenAlpha, TopNTieBrokenAlphabetically, WordFreq
 
 ### Community 47 - "DL: test_optim.py"
@@ -561,7 +581,7 @@ Cohesion: 0.15
 Nodes (8): HashMap, Option, Result, Self, String, Value, Vec, Database
 
 ### Community 49 - "Python: test_calc.py"
-Cohesion: 0.10
+Cohesion: 0.06
 Nodes (6): Calc, Add, Multiply, Divide, Subtract, TEST()
 
 ### Community 50 - "DL: test_gradients.py"
@@ -617,16 +637,16 @@ Cohesion: 0.13
 Nodes (17): Color, ColorName, map, pair, string, vector, EvensSquared, square_ce() (+9 more)
 
 ### Community 65 - "Python: test_loganalyzer.py"
-Cohesion: 0.18
-Nodes (17): count_levels(), errors_only(), Посчитать, сколько строк каждого уровня.      Строка имеет вид "LEVEL: message", Вернуть только строки уровня ERROR, целиком и в исходном порядке.      Уровень о, test_count_levels_all_three_levels_mixed(), test_count_levels_basic(), test_count_levels_colon_in_message_is_fine(), test_count_levels_empty_input() (+9 more)
+Cohesion: 0.09
+Nodes (35): count_levels(), errors_only(), Посчитать, сколько строк каждого уровня.      Строка имеет вид "LEVEL: message", Вернуть только строки уровня ERROR, целиком и в исходном порядке.      Уровень о, _expected_level(), Строка вида 'LEVEL: message' с корректным уровнем., Строка с двоеточием, но чужим уровнем — должна игнорироваться., Эталонный разбор уровня строки (None, если строка не подходит под формат). (+27 more)
 
 ### Community 66 - "C++: C++ Capstone — MiniDB (Redis-lite in-memory"
 Cohesion: 0.12
 Nodes (19): cpp MiniDB build (lib+app+tests, Threads, POST_BUILD), Text command protocol execute() (Redis-like), C++ Capstone — MiniDB (Redis-lite in-memory DB), Snapshot persistence (save/load text format), MiniDB replaces simpler kvstore — integrates far more of the course, Thread-safe access via std::mutex/lock_guard (module 14), Key TTL with lazy expiration and injected clock, Value via std::variant (string/list/hash) (+11 more)
 
 ### Community 67 - "C++: TEST()"
-Cohesion: 0.13
-Nodes (15): string, Add, Multiply, Zero, Equality, Fraction, MovesSignToNumerator, NormalizesOnConstruction (+7 more)
+Cohesion: 0.22
+Nodes (9): Add, Fraction, Multiply, Zero, Equality, MovesSignToNumerator, NormalizesOnConstruction, TEST() (+1 more)
 
 ### Community 68 - "CAOS: CAOS Module 14 — Tooling, I/O & Debugging"
 Cohesion: 0.12
@@ -657,8 +677,8 @@ Cohesion: 0.21
 Nodes (13): test_mean_basic(), test_mean_constant_array(), test_mean_matches_numpy_reference(), test_mean_returns_python_float(), test_vector_add_basic(), test_vector_add_matches_numpy_reference(), test_vector_add_preserves_shape(), test_vector_add_with_zeros_is_identity() (+5 more)
 
 ### Community 77 - "Python: Fraction"
-Cohesion: 0.13
-Nodes (8): Fraction, Рациональная дробь num/den, хранящаяся в нормализованной форме.      Инварианты, Создать дробь num/den и НОРМАЛИЗОВАТЬ её.          Контракт:           - если de, Сумма self и other как НОВАЯ нормализованная Fraction.          a/b + c/d = (a*d, Произведение self и other как НОВАЯ нормализованная Fraction.          a/b * c/d, Равенство по содержимому.          Для не-Fraction вернуть NotImplemented (не Fa, Строковое представление вида 'a/b' (например, '-1/2', '3/1')., Значение дроби как float (num / den).
+Cohesion: 0.08
+Nodes (29): Fraction, Рациональная дробь num/den, хранящаяся в нормализованной форме.      Инварианты, Создать дробь num/den и НОРМАЛИЗОВАТЬ её.          Контракт:           - если de, Сумма self и other как НОВАЯ нормализованная Fraction.          a/b + c/d = (a*d, Произведение self и other как НОВАЯ нормализованная Fraction.          a/b * c/d, Равенство по содержимому.          Для не-Fraction вернуть NotImplemented (не Fa, Строковое представление вида 'a/b' (например, '-1/2', '3/1')., Значение дроби как float (num / den). (+21 more)
 
 ### Community 78 - "CAOS: TEST()"
 Cohesion: 0.13
@@ -713,8 +733,8 @@ Cohesion: 0.17
 Nodes (11): CopyAssignment, DeepCopyIndependent, EmptyByDefault, FillConstructor, IndexIsWritable, IntVector, MoveAssignment, MoveConstructorStealsBuffer (+3 more)
 
 ### Community 93 - "Python: class, __init__, self, attributes and me"
-Cohesion: 0.05
-Nodes (45): Comprehensions (list/dict/set), dict and set (hash tables), Hashability, Indexing and slicing xs[a:b:c], list (mutable) vs tuple (immutable), Module 03: Collections (list, tuple, dict, set), Choice of data structure dictates which ops are cheap, Text normalization (+37 more)
+Cohesion: 0.18
+Nodes (12): dict and set (hash tables), Hashability, Indexing and slicing xs[a:b:c], list (mutable) vs tuple (immutable), Module 03: Collections (list, tuple, dict, set), Choice of data structure dictates which ops are cheap, Slicing and reversal s[::-1], collections.Counter and defaultdict (+4 more)
 
 ### Community 94 - "Rust: Module 04 — Borrowing & references"
 Cohesion: 0.17
@@ -737,8 +757,8 @@ Cohesion: 0.22
 Nodes (3): numeric_grad(), test_backward_matches_numeric_gradient(), test_deeper_graph_numeric()
 
 ### Community 100 - "Python: Suppress"
-Cohesion: 0.18
-Nodes (10): Контекст-менеджер: подавляет указанные типы исключений внутри блока with.      У, Вход в блок with. Обычно просто возвращает сам менеджер (self)., Suppress, test_suppress_does_not_swallow_unrelated_in_real_use(), test_suppress_enter_returns_manager(), test_suppress_lets_other_exception_through(), test_suppress_multiple_types(), test_suppress_no_exception_is_fine() (+2 more)
+Cohesion: 0.17
+Nodes (11): Контекст-менеджер: подавляет указанные типы исключений внутри блока with.      У, Вход в блок with. Обычно просто возвращает сам менеджер (self)., Suppress, test_suppress_no_exception_runs_body_to_completion(), test_suppress_does_not_swallow_unrelated_in_real_use(), test_suppress_enter_returns_manager(), test_suppress_lets_other_exception_through(), test_suppress_multiple_types() (+3 more)
 
 ### Community 101 - "Python: buggy.py"
 Cohesion: 0.18
@@ -753,8 +773,8 @@ Cohesion: 0.18
 Nodes (11): Stretch: assembler text->bytecode with labels (mini toolchain), Stretch: CALL/RET with call-frame stack, Stretch: control flow jumps JMP/JZ/JNZ (branches and loops), Stretch: memory LOAD/STORE (RAM array, variables), CAOS Capstone — Tiny VM (stack bytecode interpreter), Deep Learning Capstone — nanoLM char-level transformer, Stretch: BPE-lite tokenizer (merge frequent pairs), Stretch: LR schedule (warmup+decay) + checkpoints via state_dict (+3 more)
 
 ### Community 104 - "C++: TEST()"
-Cohesion: 0.20
-Nodes (8): Command, Errors, Expiry, GenericAndCount, Hashes, Lists, StringsBasic, TEST()
+Cohesion: 0.14
+Nodes (11): Command, Database, execute(), string, Errors, Expiry, GenericAndCount, Hashes (+3 more)
 
 ### Community 105 - "Python: __init__.py"
 Cohesion: 0.25
@@ -785,8 +805,8 @@ Cohesion: 0.20
 Nodes (9): Fraction, add, den_, denominator, multiply, num_, numerator, operator== (+1 more)
 
 ### Community 112 - "Python: Module 11: Useful standard library"
-Cohesion: 0.05
-Nodes (41): Глоссарий курса, Запуск и инструменты, Итерация, Коллекции, Модули, пакеты, стандартная библиотека, ООП, Ошибки и ресурсы, Строки и текст (+33 more)
+Cohesion: 0.17
+Nodes (12): Глоссарий курса, Запуск и инструменты, Итерация, Коллекции, Модули, пакеты, стандартная библиотека, ООП, Ошибки и ресурсы, Строки и текст (+4 more)
 
 ### Community 113 - "Rust: Module 03 — Ownership"
 Cohesion: 0.22
@@ -829,8 +849,8 @@ Cohesion: 0.31
 Nodes (7): optional, string, vector, describe(), element_at(), first_even(), to_int()
 
 ### Community 124 - "Python: Module 01: Types, variables, numbers, st"
-Cohesion: 0.06
-Nodes (33): Алгоритмы и многопоточность, Глоссарий курса, Обобщённый код и STL, Объекты и время жизни, Сборка и инструменты, Типы, значения, память, 1. Сначала — доведи курс до конца честно, 2. Закрепление: маленькие самостоятельные проекты (+25 more)
+Cohesion: 0.25
+Nodes (8): Вспомогательные материалы, Как со мной работать (режим «преподаватель»), Как устроен курс, Курс C++: от основ до уровня Junior, Порядок прохождения, Программа курса, Рабочий цикл (запомни его — он один на весь курс), Что нужно установить
 
 ### Community 125 - "C++: Module 04 - Classes, OOP, RAII intro"
 Cohesion: 0.25
@@ -929,12 +949,12 @@ Cohesion: 0.29
 Nodes (6): Distance, Geometry, PerimeterDegenerate, PerimeterSquare, PerimeterTriangle, TEST()
 
 ### Community 150 - "Python: iterable vs iterator (__iter__, __next__"
-Cohesion: 0.11
-Nodes (16): coerce(), Database, QueryError, Ошибка запроса: и синтаксическая (поднимает parser), и семантическая (поднимает, Привести строковый токен к значению: целое число -> int, иначе -> str (как есть), Мини-СУБД: таблицы в оперативной памяти и исполнение SQL-подобных запросов., Создать ПУСТУЮ базу (никаких таблиц).          Заведи внутреннее хранилище табли, Выполнить один SQL-запрос и вернуть результат согласно контракту (см. шапку файл (+8 more)
+Cohesion: 0.22
+Nodes (7): coerce(), QueryError, Ошибка запроса: и синтаксическая (поднимает parser), и семантическая (поднимает, Привести строковый токен к значению: целое число -> int, иначе -> str (как есть), Выполнить один SQL-запрос и вернуть результат согласно контракту (см. шапку файл, Exception, Any
 
 ### Community 151 - "Python: Module 03: Collections (list, tuple, dic"
-Cohesion: 0.19
-Nodes (18): Разбить строку SQL на список токенов (строк).      Токен — это либо «слово» (бук, tokenize(), test_create_table_full(), test_empty_string_is_no_tokens(), test_extra_whitespace_collapses(), test_insert_full(), test_keeps_word_case(), test_numbers_are_word_tokens() (+10 more)
+Cohesion: 0.12
+Nodes (29): Разбить строку SQL на список токенов (строк).      Токен — это либо «слово» (бук, tokenize(), test_always_list_of_nonempty_strings(), test_case_is_preserved(), test_empty_and_whitespace_only_give_empty_list(), test_extra_whitespace_is_irrelevant(), test_full_insert_statement_shape(), test_leading_and_trailing_whitespace_stripped() (+21 more)
 
 ### Community 152 - "Python: Module 08: Errors, exceptions, context m"
 Cohesion: 0.12
@@ -945,8 +965,8 @@ Cohesion: 0.57
 Nodes (6): Result, String, divide(), element_at(), parse_int(), sum_parsed()
 
 ### Community 156 - "Python: greet()"
-Cohesion: 0.33
-Nodes (6): greet(), Вернуть приветствие вида "Привет, {name}!".      Например, greet("Аня") -> "Прив, test_greet_another_name(), test_greet_basic(), test_greet_empty_name(), test_greet_returns_str()
+Cohesion: 0.29
+Nodes (7): greet(), Вернуть приветствие вида "Привет, {name}!".      Например, greet("Аня") -> "Прив, test_greet_wraps_any_name(), test_greet_another_name(), test_greet_basic(), test_greet_empty_name(), test_greet_returns_str()
 
 ### Community 157 - "DL: Module 01 — Tensors, shapes, broadcasting"
 Cohesion: 0.33
@@ -1033,8 +1053,8 @@ Cohesion: 0.83
 Nodes (4): Module 02 — Linear algebra for DL, Linear (fully-connected) layer, Matrix multiplication (matmul), Weights & bias
 
 ### Community 188 - "C++: execute()"
-Cohesion: 0.50
-Nodes (3): Database, execute(), string
+Cohesion: 0.12
+Nodes (30): Database, Мини-СУБД: таблицы в оперативной памяти и исполнение SQL-подобных запросов., Создать ПУСТУЮ базу (никаких таблиц).          Заведи внутреннее хранилище табли, expected_full_rows(), make_db(), oracle_coerce(), То же, что coerce в database.py: целое -> int, иначе str. Независимая реализация, Список строк (каждая — кортеж токенов id, name, age) для таблицы users. (+22 more)
 
 ### Community 189 - "C++: perimeter()"
 Cohesion: 0.50
@@ -1093,12 +1113,12 @@ Cohesion: 0.18
 Nodes (10): 1. `Value` (модули 07/09 — шаблоны, variant, ошибки), 2. `Database` (модули 04/05/06/08/09/**14**), 3. `execute()` (модули 08/09 — строки, парсинг, ошибки), Капстоун — MiniDB: in-memory база «Redis-lite», Майлстоуны (с привязкой к модулям курса), Пример сессии (как заработает REPL, когда реализуешь логику), Что строим, Альтернативные капстоуны (если хочется другого домена) (+2 more)
 
 ### Community 285 - "Community 285"
-Cohesion: 0.18
-Nodes (8): graphify, learning-with-ai, Ветки, Дополнительно, Как устроен курс, Курсы, Работа с ИИ, Установка и запуск
+Cohesion: 0.29
+Nodes (7): learning-with-ai, Ветки, Дополнительно, Как устроен курс, Курсы, Работа с ИИ, Установка и запуск
 
 ### Community 286 - "Community 286"
-Cohesion: 0.18
-Nodes (11): Владение и заимствование — сердце Rust, Глоссарий курса Rust, Замыкания и итераторы, Коллекции и строки, Обобщения, трейты, диспетчеризация, Обработка ошибок, Переменные и типы, Поток управления (+3 more)
+Cohesion: 0.04
+Nodes (42): Владение и заимствование — сердце Rust, Глоссарий курса Rust, Замыкания и итераторы, Коллекции и строки, Обобщения, трейты, диспетчеризация, Обработка ошибок, Переменные и типы, Поток управления (+34 more)
 
 ### Community 287 - "Community 287"
 Cohesion: 0.20
@@ -1128,13 +1148,9 @@ Nodes (9): Задания, Идея 1. `open` + `with`; режимы чтени�
 Cohesion: 0.20
 Nodes (10): CAOS glossary, CAOS next steps (after the course), CAOS progress checklist, C as a near-subset of C++ (honest to the machine), CAOS course (Computer Architecture & Operating Systems), open the hood: understand what runs under your code, CAOS setup (compiler, CMake, sanitizers), CAOS track (5th track) (+2 more)
 
-### Community 294 - "Community 294"
-Cohesion: 0.20
-Nodes (10): Вспомогательные материалы, Главная идея этого курса, Зачем Rust и где он применяется, Как со мной работать (режим «преподаватель»), Как устроен курс, Курс Rust: от основ до уровня Junior, Порядок прохождения, Программа курса (+2 more)
-
 ### Community 295 - "Community 295"
-Cohesion: 0.20
-Nodes (9): Заметки по операционным системам, Команды на каждый день, Почему именно rustup, а не пакетный менеджер?, Установка и настройка окружения, Шаг 1. Установить Rust через `rustup` (рекомендуемый способ), Шаг 2. Проверить, что всё установилось, Шаг 3. Про зависимости — cargo всё качает сам, Шаг 4. Поставить компоненты качества: clippy и rustfmt (+1 more)
+Cohesion: 0.11
+Nodes (17): Вернуть уникальные значения из xs, отсортированные по возрастанию.      Дубликат, unique_sorted(), test_unique_sorted_empty_and_huge(), test_unique_sorted_equals_sorted_set(), test_unique_sorted_has_no_duplicates(), test_unique_sorted_idempotent(), test_unique_sorted_is_sorted(), test_unique_sorted_returns_list() (+9 more)
 
 ### Community 296 - "Community 296"
 Cohesion: 0.22
@@ -1233,8 +1249,8 @@ Cohesion: 0.22
 Nodes (8): Если хочется другого капстоуна, Капстоун — мини-СУБД с SQL-подобным языком запросов, Майлстоуны (привязаны к модулям курса), Пример живой сессии (как это выглядит в REPL), Как запускать, Как работать со мной, Рекомендуемая архитектура, Что мы строим
 
 ### Community 320 - "Community 320"
-Cohesion: 0.22
-Nodes (9): Вспомогательные материалы, Как мы учим (четыре слоя), Как со мной работать (режим «преподаватель»), Как устроен курс, Курс Deep Learning: от математики до своего трансформера, Порядок прохождения, Рабочий цикл (запомни его — он один на весь курс), Что нужно установить (+1 more)
+Cohesion: 0.13
+Nodes (15): Вспомогательные материалы, Как мы учим (четыре слоя), Как со мной работать (режим «преподаватель»), Как устроен курс, Капстоун: нано char-level Transformer (`capstone/`), Курс Deep Learning: от математики до своего трансформера, Порядок прохождения, Программа курса (+7 more)
 
 ### Community 321 - "Community 321"
 Cohesion: 0.25
@@ -1429,7 +1445,7 @@ Cohesion: 0.25
 Nodes (7): Linux (Debian/Ubuntu), macOS, Windows, Минимум, Проверка, Установка по ОС, Что установить перед началом курса CAOS
 
 ### Community 369 - "Community 369"
-Cohesion: 0.25
+Cohesion: 0.22
 Nodes (8): 1. Python 3.11–3.13 (важно — не 3.14), 2. Что поставит скрипт сам (при первом запуске), 3. GPU не нужен, 4. Опционально: matplotlib, 5. Проверка, что всё работает, 6. Заметки по ОС, Если что-то пошло не так, Установка и окружение
 
 ### Community 370 - "Community 370"
@@ -1453,48 +1469,148 @@ Cohesion: 0.33
 Nodes (6): Капстоун: Tiny VM, Программа курса, Часть I. Биты и числа (00–04), Часть II. Память (05–06), Часть III. Машина и архитектура (07–09), Часть IV. Операционная система (10–14)
 
 ### Community 375 - "Community 375"
-Cohesion: 0.33
+Cohesion: 0.24
 Nodes (6): 1. Сначала — доведи курс до конца честно, 2. Закрепление: маленькие самостоятельные проекты, 3. Что добучить за пределами курса, 4. Подготовка к собеседованию junior ML/DL, 5. Soft-навыки, которые реально смотрят, Что дальше: от «прошёл курс» к «работаю junior ML/DL»
 
 ### Community 376 - "Community 376"
 Cohesion: 0.33
 Nodes (6): Капстоун: нано char-level Transformer, Мой прогресс по курсу Deep Learning, Часть I. Математика и numpy-основы, Часть II. Модели с нуля, Часть III. PyTorch, Часть IV. Трансформеры и инженерия
 
-### Community 377 - "Community 377"
-Cohesion: 0.33
-Nodes (6): Капстоун: нано char-level Transformer (`capstone/`), Программа курса, Часть I. Математика и numpy-основы, Часть II. Модели с нуля, Часть III. PyTorch, Часть IV. Трансформеры и инженерия
-
-### Community 378 - "Community 378"
-Cohesion: 0.33
-Nodes (6): 1. Сначала — доведи курс до конца честно, 2. Закрепление: маленькие самостоятельные проекты, 3. Что добучить за пределами курса, 4. Подготовка к собеседованию junior Rust, 5. Soft-навыки, которые реально смотрят, Что дальше: от «прошёл курс» к «работаю junior Rust»
-
 ### Community 379 - "Community 379"
-Cohesion: 0.33
-Nodes (6): Капстоун: мини key-value store (kvstore), Мой прогресс по курсу Rust, Часть I. Основы, Часть II. Владение и заимствование — сердце Rust, Часть III. Типы, перечисления и обобщения, Часть IV. Продвинутое и инструменты
+Cohesion: 0.19
+Nodes (18): Condition, Create, Condition, Create, Delete, Insert, DELETE FROM <table> [WHERE ...]. where — список Condition (пустой, если WHERE не, Одна элементарная проверка WHERE: <column> <op> <value>.      op — строка-операт (+10 more)
+
+### Community 380 - "Community 380"
+Cohesion: 0.15
+Nodes (18): Select, conditions(), deletes(), render_create(), render_insert(), render_select(), selects(), test_create_roundtrip() (+10 more)
 
 ### Community 381 - "Community 381"
-Cohesion: 0.40
-Nodes (5): learning-logs — журнал учебных диалогов, Как улучшать курсы по логам, Как это работает, Управление, Что появляется в этой папке
+Cohesion: 0.22
+Nodes (6): graphify, learning-logs — журнал учебных диалогов, Как улучшать курсы по логам, Как это работает, Управление, Что появляется в этой папке
+
+### Community 385 - "Community 385"
+Cohesion: 0.18
+Nodes (14): Basic types: int, float, str, bool, None, Variable is a label, not a fixed-type box, Default arguments, *args/**kwargs, Branching and loops (if/for/while, break/continue), Functions: def, return vs print, Truthiness, Module 02: Control flow and functions, Control flow is an explicit tool you wield (+6 more)
+
+### Community 387 - "Community 387"
+Cohesion: 0.15
+Nodes (13): intersection(), Вернуть множество значений, которые есть и в a, и в b (пересечение).      Резуль, test_intersection_elements_are_in_both(), test_intersection_extreme_cases(), test_intersection_is_commutative(), test_intersection_matches_set_intersection(), test_intersection_returns_set(), test_intersection_basic() (+5 more)
+
+### Community 388 - "Community 388"
+Cohesion: 0.15
+Nodes (13): invert_dict(), Поменять местами ключи и значения исходного словаря.      Считаем, что значения, test_invert_dict_double_inversion_is_identity(), test_invert_dict_empty_and_mixed_types(), test_invert_dict_returns_dict(), test_invert_dict_size_preserved(), test_invert_dict_swaps_keys_and_values(), test_invert_dict_basic() (+5 more)
+
+### Community 389 - "Community 389"
+Cohesion: 0.15
+Nodes (3): test_suppress_enter_returns_self(), test_suppress_multiple_types_is_union(), test_suppress_swallows_iff_subclass()
+
+### Community 390 - "Community 390"
+Cohesion: 0.17
+Nodes (12): get_or(), Вернуть xs[i], а если индекса нет — default.      Контракт:       - если i — доп, test_get_or_empty_list_always_default(), test_get_or_matches_indexing_inside_range(), test_get_or_never_raises_and_uses_default_out_of_range(), test_get_or_default_can_be_none(), test_get_or_empty_list_returns_default(), test_get_or_first_and_last() (+4 more)
+
+### Community 391 - "Community 391"
+Cohesion: 0.21
+Nodes (12): class, __init__, self, attributes and methods, Dunder methods (__repr__, __eq__), Encapsulation and invariants, @property (computed attribute), Module 06: OOP (classes, dunder, properties), Data and the behavior over it live together, @dataclass, Duck typing (+4 more)
+
+### Community 392 - "Community 392"
+Cohesion: 0.18
+Nodes (12): Context managers (with, __enter__/__exit__), EAFP vs LBYL, Exception hierarchy and custom exceptions, try/except/else/finally and raise, Module 08: Errors, exceptions, context managers, Errors are an expected part of flow, managed explicitly, json: dumps/loads, CSV parsing with header (+4 more)
+
+### Community 393 - "Community 393"
+Cohesion: 0.20
+Nodes (8): Point, Точка на плоскости.      Поля:         x: float — координата по горизонтали., Евклидово расстояние от этой точки до точки other.          distance_to между (x, Базовый класс-абстракция для геометрических фигур.      Сам по себе «фигуры вооб, Площадь фигуры. В базовом классе не определена — переопредели в наследнике., Сумма площадей всех фигур из списка (полиморфизм).      Не разбирай тип каждой ф, Shape, total_area()
+
+### Community 394 - "Community 394"
+Cohesion: 0.20
+Nodes (10): count_vowels(), Сколько в строке английских гласных (a, e, i, o, u), без учёта регистра.      Ко, test_count_vowels_additive(), test_count_vowels_case_insensitive(), test_count_vowels_empty_and_unicode(), test_count_vowels_matches_manual(), test_count_vowels_within_bounds(), test_count_vowels_all_vowels() (+2 more)
+
+### Community 395 - "Community 395"
+Cohesion: 0.20
+Nodes (10): is_iterable(), Утиная проверка: можно ли по obj итерироваться.      Не перечисляй конкретные ти, test_is_iterable_agrees_with_dunder(), test_is_iterable_false_for_scalars(), test_is_iterable_generator_is_true(), test_is_iterable_returns_strict_bool(), test_is_iterable_true_for_containers(), test_is_iterable_false() (+2 more)
+
+### Community 396 - "Community 396"
+Cohesion: 0.22
+Nodes (8): factorial(), fib(), fizzbuzz(), gcd(), Вернуть факториал n (n!).      Контракт: factorial(0) == 1, factorial(1) == 1,, Вернуть n-е число Фибоначчи.      Контракт: fib(0) == 0, fib(1) == 1, далее fib(, Наибольший общий делитель a и b по алгоритму Евклида.      Контракт: gcd(a, 0) =, Вернуть список строк для чисел 1..n.      Контракт:       - число делится на 15
+
+### Community 397 - "Community 397"
+Cohesion: 0.31
+Nodes (6): string, add(), Fraction(), multiply(), operator==(), to_string()
+
+### Community 398 - "Community 398"
+Cohesion: 0.22
+Nodes (8): Integer vs float division (// vs /), f-strings and formatting, String immutability, Module 01: Types, variables, numbers, strings, Text normalization, String methods: split/join/strip/lower/replace, Module 04: Strings and text processing, Take then transform then return (immutable strings)
+
+### Community 399 - "Community 399"
+Cohesion: 0.22
+Nodes (9): 1. Python 3.11+ (обязательно), 2. venv и pytest — ставит сам скрипт, 3. git (желательно), 4. Редактор (желательно), Linux (Debian/Ubuntu), macOS, Windows, Быстрая проверка готовности (+1 more)
+
+### Community 400 - "Community 400"
+Cohesion: 0.25
+Nodes (7): AreaOverloads, ControlFlow, Factorial, Fibonacci, FizzBuzz, Gcd, TEST()
+
+### Community 401 - "Community 401"
+Cohesion: 0.25
+Nodes (7): Linux (Debian/Ubuntu), macOS, Windows, Минимум, Проверка, Установка по ОС, Что установить перед началом курса C++
+
+### Community 402 - "Community 402"
+Cohesion: 0.25
+Nodes (8): Вспомогательные материалы, Как со мной работать (режим «преподаватель»), Как устроен курс, Курс Python: от основ до уровня Junior, Порядок прохождения, Программа курса, Рабочий цикл (запомни его — он один на весь курс), Что нужно установить
+
+### Community 403 - "Community 403"
+Cohesion: 0.29
+Nodes (7): Virtual environment (venv) and pip, Formatter black and linter ruff, git for junior (status/add/commit/log/diff/branch), Debugger pdb (breakpoint()), venv, pip and requirements.txt, Module 14: Tooling and code quality, Craft: tooling catches errors earlier and keeps style uniform
+
+### Community 404 - "Community 404"
+Cohesion: 0.33
+Nodes (7): Comprehensions (list/dict/set), Generator expressions, Generators (yield and laziness), iterable vs iterator (__iter__, __next__, StopIteration), Laziness (memory and infinite sequences), Module 09: Iterators and generators, Iteration is a protocol, not magic
+
+### Community 405 - "Community 405"
+Cohesion: 0.33
+Nodes (4): Circle, Круг радиуса r. area() = math.pi * r ** 2., Сохрани радиус в self.r., Площадь круга: π * r^2 (используй math.pi).
+
+### Community 406 - "Community 406"
+Cohesion: 0.33
+Nodes (4): Прямоугольник ширины w и высоты h. area() = w * h., Сохрани ширину в self.w и высоту в self.h., Площадь прямоугольника: w * h., Rectangle
+
+### Community 407 - "Community 407"
+Cohesion: 0.33
+Nodes (6): Алгоритмы и многопоточность, Глоссарий курса, Обобщённый код и STL, Объекты и время жизни, Сборка и инструменты, Типы, значения, память
+
+### Community 408 - "Community 408"
+Cohesion: 0.33
+Nodes (6): 1. Сначала — доведи курс до конца честно, 2. Закрепление: маленькие самостоятельные проекты, 3. Что добучить за пределами курса, 4. Подготовка к собеседованию junior C++, 5. Soft-навыки, которые реально смотрят, Что дальше: от «прошёл курс» к «работаю junior»
+
+### Community 409 - "Community 409"
+Cohesion: 0.33
+Nodes (6): Капстоун, Мой прогресс по курсу, Часть I. Фундамент, Часть II. Память и объектная модель, Часть III. Обобщённый и стандартный C++, Часть IV. Инженерия и CS-фундамент
+
+### Community 410 - "Community 410"
+Cohesion: 0.33
+Nodes (6): 1. Сначала — доведи курс до конца честно, 2. Закрепление: маленькие самостоятельные проекты, 3. Что добучить сверх курса, 4. Подготовка к собеседованию на junior Python, 5. Soft-навыки, которые реально смотрят, Что дальше: от «прошёл курс» к «работаю junior»
+
+### Community 411 - "Community 411"
+Cohesion: 0.33
+Nodes (6): Капстоун — CLI-менеджер задач (todo) с хранением в JSON, Мой прогресс по курсу, Часть I. Основы, Часть II. Данные и структуры, Часть III. Функции и ООП, Часть IV. Инженерия
 
 ## Knowledge Gaps
 - **1374 isolated node(s):** `vector`, `VmBasic`, `PushHalt`, `PushNegativeOperand`, `VmArith` (+1369 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **48 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **49 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `Курс CAOS: архитектура компьютера и операционные системы` connect `Community 367` to `Community 374`, `Community 382`?**
+- **Why does `Курс Deep Learning: от математики до своего трансформера` connect `Community 320` to `Community 375`?**
   _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **Why does `Курс Rust: от основ до уровня Junior` connect `Community 294` to `Community 383`?**
+- **Why does `Установка: что нужно ДО начала курса` connect `Community 399` to `Community 412`?**
   _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **Why does `Программа курса` connect `Community 374` to `Community 367`?**
-  _High betweenness centrality (0.001) - this node is a cross-community bridge._
+- **Are the 16 inferred relationships involving `tokenize()` (e.g. with `test_create_table_full()` and `test_empty_string_is_no_tokens()`) actually correct?**
+  _`tokenize()` has 16 INFERRED edges - model-reasoned connections that need verification._
 - **What connects `Текст видимого ответа ассистента: только блоки type=='text' (без thinking и tool`, `Текст человеческого запроса. Пусто, если это tool_result, команда или системный`, `(user_text, assistant_text, assistant_uuid, timestamp) для последнего обмена, ил` to the rest of the system?**
-  _1614 weakly-connected nodes found - possible documentation gaps or missing edges._
+  _1620 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `Python: parse()` be split into smaller, more focused modules?**
-  _Cohesion score 0.10953058321479374 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.14285714285714285 - nodes in this community are weakly interconnected._
 - **Should `DL: CharTokenizer` be split into smaller, more focused modules?**
   _Cohesion score 0.06229508196721312 - nodes in this community are weakly interconnected._
 - **Should `Python: test_containers.py` be split into smaller, more focused modules?**
-  _Cohesion score 0.0707070707070707 - nodes in this community are weakly interconnected._
+  _Cohesion score 0.13157894736842105 - nodes in this community are weakly interconnected._
