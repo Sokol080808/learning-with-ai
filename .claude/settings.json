@@ -30,6 +30,16 @@
             "statusMessage": "graphify: updating knowledge graph (whole project, main only)"
           }
         ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/capture_dialogue.py\"",
+            "async": true,
+            "statusMessage": "saving learning dialogue"
+          }
+        ]
       }
     ]
   }
