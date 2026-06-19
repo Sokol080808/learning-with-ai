@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <vector>
 
 // n! (факториал). factorial(0) == 1.
 int factorial(int n);
@@ -16,3 +17,16 @@ std::string fizzbuzz(int n);
 // Перегрузка: площадь квадрата и площадь прямоугольника.
 int area(int side);
 int area(int w, int h);
+
+// --- Дополнительные (более сложные) задания ---
+
+// Наименьшее общее кратное. lcm(0, x) == 0. Гарантируется a >= 0, b >= 0.
+int lcm(int a, int b);
+
+// Решето Эратосфена: все простые числа от 2 до n включительно, по возрастанию.
+// При n < 2 — пустой вектор.
+std::vector<int> sieve(int n);
+
+// Бинарный поиск в отсортированном по возрастанию векторе.
+// Возвращает индекс элемента, равного target, или -1, если его нет.
+int binary_search(const std::vector<int>& v, int target);

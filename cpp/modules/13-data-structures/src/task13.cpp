@@ -17,3 +17,30 @@ std::optional<std::pair<int, int>> two_sum(const std::vector<int>& v, int target
     (void)v; (void)target;
     return std::nullopt;
 }
+
+// ── Задание 7. BST ─────────────────────────────────────────────────────────
+// Подсказка по структуре: рекурсия удобно работает с std::unique_ptr<Node>&.
+// Можешь завести приватные свободные хелперы в этом .cpp.
+
+void BST::insert(int value) {
+    // TODO: спускайся от корня; меньше — налево, больше — направо;
+    //       равно — ничего не делать (дубликат). На пустом месте — создать узел,
+    //       не забудь увеличить size_.
+    (void)value;
+}
+
+bool BST::contains(int value) const {
+    // TODO: спускайся от корня, сравнивая value с узлами.
+    (void)value;
+    return false;
+}
+
+std::vector<int> BST::inorder() const {
+    // TODO: рекурсивный обход лево-корень-право складывает значения по возрастанию.
+    return {};
+}
+
+std::size_t BST::size() const {
+    // TODO
+    return 0;
+}
