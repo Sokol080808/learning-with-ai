@@ -1,0 +1,24 @@
+# --- ОС и редакторы ---
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# --- Python-кэш (от инструментов в окружении) ---
+.pytest_cache/
+__pycache__/
+
+# --- Артефакты сборки C++ ---
+cpp/build/
+*.o
+*.obj
+*.exe
+compile_commands.json
+
+# --- graphify: коммитим только граф + читаемые доки, остальное локально ---
+# (graph.html, cache/, manifest.json, cost.json и служебные .graphify_* — машинно-
+#  зависимые/перестраиваемые, в git не идут)
+graphify-out/*
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+!graphify-out/wiki/
