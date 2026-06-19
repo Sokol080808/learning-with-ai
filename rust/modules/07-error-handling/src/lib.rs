@@ -61,3 +61,65 @@ pub fn element_at(v: &[i64], i: usize) -> Result<i64, String> {
 pub fn sum_parsed(parts: &[&str]) -> Result<i64, String> {
     todo!("реализуй sum_parsed через parse_int(...)? и накопление суммы")
 }
+
+// ---------------------------------------------------------------------------
+// Задание 5. CsvError и parse_csv_record
+// ---------------------------------------------------------------------------
+
+/// Ошибка при разборе одной строки CSV-формата (поля разделены запятой,
+/// каждое поле — целое число `i64`).
+///
+/// Два возможных варианта:
+/// - `BadField`          — конкретное поле (по номеру колонки) не разобралось в число;
+/// - `WrongColumnCount`  — строка содержит не то количество полей, что ожидалось.
+#[derive(Debug, PartialEq)]
+pub enum CsvError {
+    /// Поле с индексом `col` (нумерация с нуля) не является корректным числом `i64`.
+    BadField {
+        /// Индекс колонки (нумерация с нуля).
+        col: usize,
+        /// Описание причины: текст исходной ошибки разбора.
+        reason: String,
+    },
+    /// Строка содержит `got` полей, а ожидалось `expected`.
+    WrongColumnCount {
+        /// Сколько полей ожидалось.
+        expected: usize,
+        /// Сколько полей реально нашлось.
+        got: usize,
+    },
+}
+
+impl std::fmt::Display for CsvError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        todo!()
+    }
+}
+
+impl std::error::Error for CsvError {}
+
+/// Конверсия `ParseIntError` → `CsvError::BadField` с неизвестным номером колонки.
+///
+/// В реальном разборе мы конвертируем ошибку вручную через `map_err` с явным `col`,
+/// поэтому этот `From` служит запасным вариантом и позволяет использовать `?` в
+/// контекстах, где номер колонки доступен из `map_err`.
+impl From<std::num::ParseIntError> for CsvError {
+    fn from(e: std::num::ParseIntError) -> Self {
+        todo!()
+    }
+}
+
+/// Разобрать одну строку CSV-формата в вектор чисел `i64`.
+///
+/// Контракт:
+/// - поля разделяются запятой (`,`); пробелы вокруг поля обрезаются (`trim`);
+/// - если количество полей не равно `expected_cols` — вернуть
+///   `Err(CsvError::WrongColumnCount { expected: expected_cols, got: фактически })`;
+/// - если поле не разбирается в `i64` — вернуть
+///   `Err(CsvError::BadField { col: индекс_поля, reason: текст_ошибки })`;
+/// - иначе вернуть `Ok(Vec<i64>)` с разобранными числами в том же порядке.
+///
+/// Проверка количества полей выполняется ДО попытки разбора чисел.
+pub fn parse_csv_record(line: &str, expected_cols: usize) -> Result<Vec<i64>, CsvError> {
+    todo!()
+}
