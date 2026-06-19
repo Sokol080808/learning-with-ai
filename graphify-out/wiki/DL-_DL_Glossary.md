@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **DL Glossary** (16 connections) — `deep-learning/GLOSSARY.md`
+- **DL Glossary** (15 connections) — `deep-learning/GLOSSARY.md`
 - **Adam optimizer** (3 connections) — `deep-learning/GLOSSARY.md`
 - **Momentum** (2 connections) — `deep-learning/GLOSSARY.md`
 - **Overfitting** (2 connections) — `deep-learning/GLOSSARY.md`
@@ -14,10 +14,10 @@
 
 ## Relationships
 
-- [[DL: Capstone Milestone 2 — transformer model]] (4 shared connections)
+- [[DL: Transformer]] (2 shared connections)
 - [[DL: Backpropagation]] (2 shared connections)
 - [[DL: Capstone — nanoLM char-level Transformer]] (2 shared connections)
-- [[DL: Deep Learning Course README]] (1 shared connections)
+- [[DL: Capstone Milestone 2 — transformer model]] (2 shared connections)
 - [[DL: Gradient descent]] (1 shared connections)
 - [[DL: Module 05 — Logistic regression & classifica]] (1 shared connections)
 
@@ -27,7 +27,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 27 (100%)
+- EXTRACTED: 26 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

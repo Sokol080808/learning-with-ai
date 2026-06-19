@@ -4,23 +4,23 @@
 
 ## Key Concepts
 
-- **TEST()** (10 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **TEST()** (9 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 - **Pair** (7 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **task07.hpp** (6 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **T** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **sum_vector()** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **First** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **clamp_value()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **is_power_of_two()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **.Pair()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **.swapped()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **Second** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **vector** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **is_power_of_two()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **my_max()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **ClampValue** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 - **first** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
 - **second** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
-- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 - **MyMax** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 - **PairSwapped** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 - **SumVector** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
@@ -38,8 +38,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 56 (90%)
-- INFERRED: 6 (10%)
+- EXTRACTED: 56 (93%)
+- INFERRED: 4 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

@@ -17,8 +17,9 @@ __pycache__/
 target/
 **/target/
 
-# --- Артефакты сборки C++ ---
+# --- Артефакты сборки C/C++ (CMake) ---
 cpp/build/
+caos/build/
 *.o
 *.obj
 *.exe

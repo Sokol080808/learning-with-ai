@@ -1,31 +1,35 @@
 # Rust: Module 04 — Borrowing & references
 
-> 6 nodes · cohesion 0.33
+> 12 nodes · cohesion 0.17
 
 ## Key Concepts
 
-- **Module 04 — Borrowing & references** (4 connections) — `rust/modules/04-borrowing/README.md`
-- **Borrow checker** (3 connections) — `rust/modules/03-ownership/README.md`
-- **Borrowing rules (many readers XOR one writer)** (3 connections) — `rust/modules/04-borrowing/README.md`
+- **Module 04 — Borrowing & references** (3 connections) — `rust/modules/04-borrowing/README.md`
+- **Module 08 — Collections: Vec, String, HashMap** (3 connections) — `rust/modules/08-collections/README.md`
+- **References (&T, &mut T)** (2 connections) — `rust/modules/04-borrowing/README.md`
+- **Borrowing rules (many readers XOR one writer)** (2 connections) — `rust/modules/04-borrowing/README.md`
+- **String vs &str** (2 connections) — `rust/modules/08-collections/README.md`
+- **Lifetimes ('a annotations)** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
+- **Module 12 — Lifetimes & slices** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
+- **Slices (&[T] / &str)** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
 - **No dangling references** (1 connections) — `rust/modules/04-borrowing/README.md`
 - **Rationale: many-readers-XOR-one-writer rule statically excludes data races** (1 connections) — `rust/modules/04-borrowing/README.md`
-- **Rationale: fighting the borrow checker is the learning; compiler errors are caught bugs to read, not fear** (1 connections) — `rust/README.md`
+- **HashMap<K, V>** (1 connections) — `rust/modules/08-collections/README.md`
+- **Vec<T>** (1 connections) — `rust/modules/08-collections/README.md`
 
 ## Relationships
 
-- [[Rust: Module 03 — Ownership]] (1 shared connections)
-- [[Rust: Rust Course (root README)]] (1 shared connections)
-- [[Rust: Module 08 — Collections: Vec, String, Hash]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `rust/README.md`
-- `rust/modules/03-ownership/README.md`
 - `rust/modules/04-borrowing/README.md`
+- `rust/modules/08-collections/README.md`
+- `rust/modules/12-lifetimes-slices/README.md`
 
 ## Audit Trail
 
-- EXTRACTED: 13 (100%)
+- EXTRACTED: 22 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

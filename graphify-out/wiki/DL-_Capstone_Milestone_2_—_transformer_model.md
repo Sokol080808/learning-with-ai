@@ -1,30 +1,23 @@
 # DL: Capstone Milestone 2 — transformer model
 
-> 15 nodes · cohesion 0.17
+> 7 nodes · cohesion 0.29
 
 ## Key Concepts
 
 - **Capstone Milestone 2 — transformer model** (6 connections) — `deep-learning/capstone/README.md`
-- **Transformer** (6 connections) — `deep-learning/GLOSSARY.md`
-- **Transformer block (attention + MLP)** (5 connections) — `deep-learning/capstone/README.md`
-- **Attention** (4 connections) — `deep-learning/GLOSSARY.md`
 - **Capstone Milestone 4 — generation (sampling)** (3 connections) — `deep-learning/capstone/README.md`
 - **Causal mask** (3 connections) — `deep-learning/GLOSSARY.md`
-- **Self-attention** (3 connections) — `deep-learning/GLOSSARY.md`
 - **Autoregression** (2 connections) — `deep-learning/GLOSSARY.md`
 - **Embedding** (2 connections) — `deep-learning/GLOSSARY.md`
-- **LayerNorm** (2 connections) — `deep-learning/GLOSSARY.md`
-- **nanoGPT** (2 connections) — `deep-learning/GLOSSARY.md`
-- **Residual / skip connection** (2 connections) — `deep-learning/GLOSSARY.md`
 - **Softmax** (2 connections) — `deep-learning/GLOSSARY.md`
 - **Positional embedding** (1 connections) — `deep-learning/capstone/README.md`
-- **Query / Key / Value** (1 connections) — `deep-learning/GLOSSARY.md`
 
 ## Relationships
 
-- [[DL: DL Glossary]] (4 shared connections)
-- [[DL: Capstone — nanoLM char-level Transformer]] (3 shared connections)
-- [[DL: Deep Learning Course README]] (1 shared connections)
+- [[DL: Capstone — nanoLM char-level Transformer]] (2 shared connections)
+- [[DL: Transformer]] (2 shared connections)
+- [[DL: DL Glossary]] (2 shared connections)
+- [[DL: Linear (fully-connected) layer]] (1 shared connections)
 
 ## Source Files
 
@@ -33,8 +26,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 43 (98%)
-- INFERRED: 1 (2%)
+- EXTRACTED: 18 (95%)
+- INFERRED: 1 (5%)
 - AMBIGUOUS: 0 (0%)
 
 ---

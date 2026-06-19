@@ -16,13 +16,13 @@
 - **string** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
 - **Add** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 - **Multiply** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 - **Equality** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 - **MovesSignToNumerator** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 - **NormalizesOnConstruction** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 - **denominator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
 - **numerator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
 - **ToString** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 
 ## Relationships
 

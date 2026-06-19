@@ -4,7 +4,7 @@
 
 ## Key Concepts
 
-- **Module 01 — Variables, types, functions** (6 connections) — `rust/modules/01-basics/README.md`
+- **Module 01 — Variables, types, functions** (5 connections) — `rust/modules/01-basics/README.md`
 - **Expressions vs statements** (1 connections) — `rust/modules/01-basics/README.md`
 - **Immutability by default (let/mut)** (1 connections) — `rust/modules/01-basics/README.md`
 - **Scalar & compound types** (1 connections) — `rust/modules/01-basics/README.md`
@@ -13,7 +13,7 @@
 
 ## Relationships
 
-- [[Rust: Rust Course (root README)]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -21,7 +21,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 11 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

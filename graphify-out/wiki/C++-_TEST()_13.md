@@ -1,31 +1,31 @@
 # C++: TEST()
 
-> 8 nodes · cohesion 0.25
+> 9 nodes · cohesion 0.22
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Basics** (2 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Average3** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **IsEven** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **MinOfThree** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **test_task01.cpp** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **ToFahrenheit** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **TripleByReference** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **TEST()** (9 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **Erase** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **KvStoreCore** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **KvStorePersistence** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **LoadMissingFileReturnsFalse** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **OverwriteValue** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **SaveThenLoad** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **SetAndGet** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **SizeAndKeysSorted** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
 
 ## Relationships
 
-- [[Python: test_basics.py]] (1 shared connections)
-- [[C++: task01.cpp]] (1 shared connections)
+- [[C++: TEST()]] (1 shared connections)
 
 ## Source Files
 
-- `cpp/modules/01-basics/tests/test_task01.cpp`
+- `cpp/capstone/tests/test_kvstore.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (94%)
-- INFERRED: 1 (6%)
+- EXTRACTED: 17 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---
