@@ -30,7 +30,8 @@ function(add_exercise)
     target_include_directories(${EX_NAME} PRIVATE ${EX_INCLUDE})
   endif()
 
-  target_link_libraries(${EX_NAME} PRIVATE GTest::gtest_main)
+  # Threads::Threads — чтобы std::thread/std::mutex (модуль 14) линковались и на Linux (-pthread).
+  target_link_libraries(${EX_NAME} PRIVATE GTest::gtest_main Threads::Threads)
 
   # Чуть строже к качеству кода — junior должен привыкать к предупреждениям.
   if(NOT MSVC)
