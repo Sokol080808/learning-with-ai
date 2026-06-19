@@ -1,14 +1,14 @@
 # CAOS: buggy.c
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 
 - **buggy.c** (5 connections) — `caos/modules/14-tooling/src/buggy.c`
-- **max_in()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
 - **sum_first_n()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
-- **count_char()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
+- **max_in()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
 - **reverse_array()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
+- **count_char()** (1 connections) — `caos/modules/14-tooling/src/buggy.c`
 
 ## Relationships
 

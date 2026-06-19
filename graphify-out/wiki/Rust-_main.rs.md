@@ -1,6 +1,6 @@
 # Rust: main.rs
 
-> 4 nodes · cohesion 0.67
+> 4 nodes
 
 ## Key Concepts
 

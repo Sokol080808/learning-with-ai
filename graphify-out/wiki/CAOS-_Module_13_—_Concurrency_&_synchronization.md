@@ -1,6 +1,6 @@
 # CAOS: Module 13 — Concurrency & synchronization
 
-> 11 nodes · cohesion 0.22
+> 11 nodes
 
 ## Key Concepts
 
@@ -11,10 +11,10 @@
 - **concurrency** (2 connections) — `caos/modules/13-concurrency-sync/README.md`
 - **critical section** (2 connections) — `caos/modules/13-concurrency-sync/README.md`
 - **mutex** (2 connections) — `caos/modules/13-concurrency-sync/README.md`
-- **atomic operation** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
 - **condition variable** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
-- **deadlock** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
 - **semaphore** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
+- **atomic operation** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
+- **deadlock** (1 connections) — `caos/modules/13-concurrency-sync/README.md`
 
 ## Relationships
 

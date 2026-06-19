@@ -1,14 +1,14 @@
 # CAOS: cstrings.c
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 
 - **cstrings.c** (4 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
-- **my_strcmp()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
 - **my_strlen()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
-- **reverse_string()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
 - **safe_copy()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
+- **reverse_string()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
+- **my_strcmp()** (1 connections) — `caos/modules/06-arrays-strings/src/cstrings.c`
 
 ## Relationships
 

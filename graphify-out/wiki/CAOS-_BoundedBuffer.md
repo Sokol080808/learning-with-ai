@@ -1,15 +1,15 @@
 # CAOS: BoundedBuffer
 
-> 6 nodes · cohesion 0.53
+> 6 nodes
 
 ## Key Concepts
 
-- **BoundedBuffer** (4 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
 - **syncbuf.c** (4 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
-- **bb_destroy()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
-- **bb_get()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
+- **BoundedBuffer** (4 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
 - **bb_init()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
 - **bb_put()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
+- **bb_get()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
+- **bb_destroy()** (2 connections) — `caos/modules/13-concurrency-sync/src/syncbuf.c`
 
 ## Relationships
 

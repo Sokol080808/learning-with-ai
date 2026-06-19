@@ -1,6 +1,6 @@
 # Rust: Rust Setup (rustup/cargo)
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

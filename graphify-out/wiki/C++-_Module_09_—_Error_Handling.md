@@ -1,6 +1,6 @@
 # C++: Module 09 — Error Handling
 
-> 7 nodes · cohesion 0.38
+> 7 nodes
 
 ## Key Concepts
 

@@ -1,13 +1,13 @@
 # Rust: warmup.rs
 
-> 7 nodes · cohesion 0.29
+> 7 nodes
 
 ## Key Concepts
 
 - **warmup.rs** (6 connections) — `rust/modules/00-setup/tests/warmup.rs`
 - **add_basic()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
-- **add_negatives()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
 - **add_with_zero()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
+- **add_negatives()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
 - **seconds_in_one_hour()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
 - **seconds_in_several_hours()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`
 - **seconds_in_zero()** (1 connections) — `rust/modules/00-setup/tests/warmup.rs`

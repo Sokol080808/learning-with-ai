@@ -1,6 +1,6 @@
 # DL: Transformer
 
-> 7 nodes · cohesion 0.43
+> 7 nodes
 
 ## Key Concepts
 

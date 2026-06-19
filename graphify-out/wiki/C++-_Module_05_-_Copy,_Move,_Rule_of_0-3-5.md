@@ -1,6 +1,6 @@
 # C++: Module 05 - Copy, Move, Rule of 0/3/5
 
-> 12 nodes · cohesion 0.20
+> 12 nodes
 
 ## Key Concepts
 
@@ -9,13 +9,13 @@
 - **Move Semantics (std::move, rvalue ref)** (4 connections) — `cpp/modules/05-copy-move/README.md`
 - **std::unique_ptr (sole ownership)** (4 connections) — `cpp/modules/06-smart-pointers/README.md`
 - **IntVector Micro-project (manual memory)** (3 connections) — `cpp/modules/05-copy-move/README.md`
-- **RAII (Resource Acquisition Is Initialization)** (2 connections) — `cpp/GLOSSARY.md`
 - **Stack and Heap** (2 connections) — `cpp/GLOSSARY.md`
-- **Copy-and-swap Idiom** (1 connections) — `cpp/modules/05-copy-move/README.md`
+- **RAII (Resource Acquisition Is Initialization)** (2 connections) — `cpp/GLOSSARY.md`
 - **Constructor / Destructor** (1 connections) — `cpp/GLOSSARY.md`
-- **Copy vs Move** (1 connections) — `cpp/GLOSSARY.md`
 - **lvalue / rvalue** (1 connections) — `cpp/GLOSSARY.md`
+- **Copy vs Move** (1 connections) — `cpp/GLOSSARY.md`
 - **Rule of 0/3/5** (1 connections) — `cpp/GLOSSARY.md`
+- **Copy-and-swap Idiom** (1 connections) — `cpp/modules/05-copy-move/README.md`
 
 ## Relationships
 

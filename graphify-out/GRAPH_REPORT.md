@@ -1,13 +1,13 @@
 # Graph Report - .  (2026-06-19)
 
 ## Corpus Check
-- 386 files · ~201,932 words
+- 388 files · ~203,012 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3066 nodes · 3775 edges · 268 communities (225 shown, 43 thin omitted)
+- 3085 nodes · 3805 edges · 271 communities (227 shown, 44 thin omitted)
 - Extraction: 84% EXTRACTED · 16% INFERRED · 0% AMBIGUOUS · INFERRED: 622 edges (avg confidence: 0.81)
-- Token cost: 126,384 input · 0 output
+- Token cost: 23,596 input · 0 output
 
 ## Community Hubs (Navigation)
 - [[_COMMUNITY_DL CharTokenizer|DL: CharTokenizer]]
@@ -86,6 +86,7 @@
 - [[_COMMUNITY_C++ Module 03 - Pointers and Memory Model|C++: Module 03 - Pointers and Memory Model]]
 - [[_COMMUNITY_CAOS TEST()|CAOS: TEST()]]
 - [[_COMMUNITY_C++ KvStore|C++: KvStore]]
+- [[_COMMUNITY_capture_dialogue.py|capture_dialogue.py]]
 - [[_COMMUNITY_CAOS binary and hexadecimal systems|CAOS: binary and hexadecimal systems]]
 - [[_COMMUNITY_C++ Module 05 - Copy, Move, Rule of 035|C++: Module 05 - Copy, Move, Rule of 0/3/5]]
 - [[_COMMUNITY_DL Module 08 Scalar autograd (micrograd)|DL: Module 08: Scalar autograd (micrograd)]]
@@ -169,6 +170,7 @@
 - [[_COMMUNITY_Python add()|Python: add()]]
 - [[_COMMUNITY_Python wordfreq.py|Python: wordfreq.py]]
 - [[_COMMUNITY_C++ TEST()|C++: TEST()]]
+- [[_COMMUNITY_Dialogue-capture Stop hook (.claudehookscaptur|Dialogue-capture Stop hook (.claude/hooks/captur]]
 - [[_COMMUNITY_Python Module 11 Useful standard library|Python: Module 11: Useful standard library]]
 - [[_COMMUNITY_Rust Module 00 — Setup, cargo, build cycle|Rust: Module 00 — Setup, cargo, build cycle]]
 - [[_COMMUNITY_Rust Module 09 — Generics & traits|Rust: Module 09 — Generics & traits]]
@@ -190,6 +192,7 @@
 - [[_COMMUNITY_Python run.sh|Python: run.sh]]
 - [[_COMMUNITY_Rust run.sh|Rust: run.sh]]
 - [[_COMMUNITY_DL Module 00 — What is Deep Learning|DL: Module 00 — What is Deep Learning]]
+- [[_COMMUNITY_CAOS CAOS module build target (add_exercise C|CAOS: CAOS module build target (add_exercise: C ]]
 - [[_COMMUNITY_DL DL Next Steps (toward junior MLDL)|DL: DL Next Steps (toward junior ML/DL)]]
 - [[_COMMUNITY_DL DL Progress Checklist|DL: DL Progress Checklist]]
 - [[_COMMUNITY_DL DL Setup & Environment|DL: DL Setup & Environment]]
@@ -243,8 +246,8 @@
   cpp/modules/01-basics/tests/test_task01.cpp → cpp/modules/01-basics/src/task01.cpp
 - `TaskStore` --uses--> `TaskStore`  [INFERRED]
   python/capstone/tasks/commands.py → python/capstone/tasks/store.py
-- `nn.Module / nn.Linear` --semantically_similar_to--> `MLP (multi-layer perceptron)`  [INFERRED] [semantically similar]
-  deep-learning/modules/12-pytorch-mlp/README.md → deep-learning/modules/06-neural-net-numpy/README.md
+- `Rationale: whole-workspace graphify rule (query/path/explain first; regen only on main)` --references--> `Deep Learning Course (math to your own transformer)`  [INFERRED]
+  CLAUDE.md → deep-learning/README.md
 
 ## Import Cycles
 - 1-file cycle: `rust/capstone/tests/acceptance.rs -> rust/capstone/tests/acceptance.rs`
@@ -262,7 +265,7 @@
 - **Backprop chain: chain rule + forward + backward + autograd** — 07-backprop_readme_chain_rule, 06-neural-net-numpy_readme_forward_pass, 07-backprop_readme_backward_pass, 08-autograd-engine_readme_autograd [INFERRED 0.75]
 - **Transformer block composes attention + MLP + LayerNorm + residual** — 15-attention-transformer_readme_transformer_block, 15-attention-transformer_readme_multihead_attention, 15-attention-transformer_readme_position_mlp, 16-training-practice_readme_layernorm, 15-attention-transformer_readme_residual [INFERRED 0.85]
 
-## Communities (268 total, 43 thin omitted)
+## Communities (271 total, 44 thin omitted)
 
 ### Community 0 - "DL: CharTokenizer"
 Cohesion: 0.06
@@ -568,390 +571,398 @@ Nodes (12): LruCache, CapacityOne, CapacityThreeSequence, CreateReturnsNonNull, 
 Cohesion: 0.18
 Nodes (11): map, string, KvStore, data_, erase, get, keys, load (+3 more)
 
-### Community 85 - "CAOS: binary and hexadecimal systems"
+### Community 84 - "capture_dialogue.py"
+Cohesion: 0.29
+Nodes (12): assistant_text(), capture(), current_branch(), detect_context(), human_text(), latest_exchange(), load_transcript(), main() (+4 more)
+
+### Community 86 - "CAOS: binary and hexadecimal systems"
 Cohesion: 0.18
 Nodes (12): binary and hexadecimal systems, Module 01 — Number representation, MSB / LSB, bitmask, bitwise operators (& | ^ ~), Module 02 — Bit manipulation, bit flags (packed booleans), bit shifts (<<, >>) (+4 more)
 
-### Community 86 - "C++: Module 05 - Copy, Move, Rule of 0/3/5"
+### Community 87 - "C++: Module 05 - Copy, Move, Rule of 0/3/5"
 Cohesion: 0.20
 Nodes (12): RAII (constructor acquires, destructor releases), Copy-and-swap Idiom, IntVector Micro-project (manual memory), Module 05 - Copy, Move, Rule of 0/3/5, Move Semantics (std::move, rvalue ref), std::unique_ptr (sole ownership), Constructor / Destructor, Copy vs Move (+4 more)
 
-### Community 87 - "DL: Module 08: Scalar autograd (micrograd)"
+### Community 88 - "DL: Module 08: Scalar autograd (micrograd)"
 Cohesion: 0.20
 Nodes (12): Computational graph, Autograd engine, Idea: autograd automates manual backprop, Module 08: Scalar autograd (micrograd), Gradient accumulation (+=), Topological-order backward pass, Value node (.data, .grad), Computational graph (auto-built) (+4 more)
 
-### Community 88 - "C++: Module 12 — Tooling and Code Quality"
+### Community 89 - "C++: Module 12 — Tooling and Code Quality"
 Cohesion: 0.23
 Nodes (12): Find-and-Fix Bugs Exercise (buggy.cpp), Debugger (gdb: break, run, backtrace), Git Basics for Junior, Module 12 — Tooling and Code Quality, Sanitizers (ASan, UBSan), Formatting and Static Analysis (clang-format, clang-tidy), Work Division and std::async / std::future, std::atomic<T> (indivisible operations) (+4 more)
 
-### Community 89 - "C++: TEST()"
+### Community 90 - "C++: TEST()"
 Cohesion: 0.18
 Nodes (10): AtomicCounter, Concurrency, vector, MutexCounter, ParallelSum, ParallelSumUneven, atomic_increment(), concurrent_increment() (+2 more)
 
-### Community 90 - "CAOS: TEST()"
+### Community 91 - "CAOS: TEST()"
 Cohesion: 0.17
 Nodes (11): ClassicRotation, EqualBursts, FcfsAvgWaiting, MixedBursts, OneProcessWaitsZero, OrderMattersForWaitingSum, QuantumCoversAllBecomesFcfs, QuantumOneRoundRobin (+3 more)
 
-### Community 91 - "C++: TEST()"
+### Community 92 - "C++: TEST()"
 Cohesion: 0.17
 Nodes (11): CopyAssignment, DeepCopyIndependent, EmptyByDefault, FillConstructor, IndexIsWritable, IntVector, MoveAssignment, MoveConstructorStealsBuffer (+3 more)
 
-### Community 92 - "C++: kvstore.cpp"
+### Community 93 - "C++: kvstore.cpp"
 Cohesion: 0.24
 Nodes (11): optional, size_t, string, vector, erase(), get(), keys(), load() (+3 more)
 
-### Community 93 - "Python: class, __init__, self, attributes and me"
+### Community 94 - "Python: class, __init__, self, attributes and me"
 Cohesion: 0.21
 Nodes (12): class, __init__, self, attributes and methods, Dunder methods (__repr__, __eq__), Encapsulation and invariants, @property (computed attribute), Module 06: OOP (classes, dunder, properties), Data and the behavior over it live together, @dataclass, Duck typing (+4 more)
 
-### Community 94 - "Rust: Module 04 — Borrowing & references"
+### Community 95 - "Rust: Module 04 — Borrowing & references"
 Cohesion: 0.17
 Nodes (12): No dangling references, Module 04 — Borrowing & references, References (&T, &mut T), Borrowing rules (many readers XOR one writer), Rationale: many-readers-XOR-one-writer rule statically excludes data races, HashMap<K, V>, Module 08 — Collections: Vec, String, HashMap, String vs &str (+4 more)
 
-### Community 96 - "CAOS: Module 13 — Concurrency & synchronization"
+### Community 97 - "CAOS: Module 13 — Concurrency & synchronization"
 Cohesion: 0.22
 Nodes (11): undefined behavior (UB), thread (shared memory within a process), atomic operation, concurrency, condition variable, critical section, data race, deadlock (+3 more)
 
-### Community 97 - "DL: Module 06: Neural net forward pass (numpy)"
+### Community 98 - "DL: Module 06: Neural net forward pass (numpy)"
 Cohesion: 0.24
 Nodes (11): Cross-entropy loss, Module 06: Neural net forward pass (numpy), Linear layer (x·W + b), Numerical stability (log-sum-exp), Logits, MLP (multi-layer perceptron), Idea: net = chain of linear + nonlinearity, Nonlinearity (+3 more)
 
-### Community 98 - "DL: test_micrograd.py"
+### Community 99 - "DL: test_micrograd.py"
 Cohesion: 0.22
 Nodes (3): numeric_grad(), test_backward_matches_numeric_gradient(), test_deeper_graph_numeric()
 
-### Community 99 - "Python: buggy.py"
+### Community 100 - "Python: buggy.py"
 Cohesion: 0.18
 Nodes (10): average(), has_duplicate(), max_in(), Сумма ПЕРВЫХ n элементов списка xs.      Контракт: вернуть сумму xs[0], xs[1], ., Максимальный элемент непустого списка xs.      Контракт: вернуть наибольшее из з, Среднее арифметическое непустого списка xs.      Контракт: вернуть sum(xs) / len, Есть ли в списке xs хотя бы одно повторяющееся значение.      Контракт: True, ес, Строка s, повторённая ровно times раз.      Контракт: repeat("ab", 3) == "ababab (+2 more)
 
-### Community 100 - "Python: __init__.py"
+### Community 101 - "Python: __init__.py"
 Cohesion: 0.25
 Nodes (8): add(), mul(), Вернуть сумму двух целых: a + b.      Контракт:       add(2, 3) == 5       add(-, Вернуть произведение двух целых: a * b.      Контракт:       mul(2, 3) == 6, factorial(), fib(), n-е число Фибоначчи (нумерация с нуля).      Последовательность: 0, 1, 1, 2, 3,, Факториал n: произведение всех целых от 1 до n.      По определению 0! == 1.
 
-### Community 101 - "CAOS: Module 08 — Cache & locality"
+### Community 102 - "CAOS: Module 08 — Cache & locality"
 Cohesion: 0.24
 Nodes (10): memory address, cache, cache miss, Module 08 — Cache & locality, locality, Module 12 — Virtual memory, page (fixed-size block), page fault (+2 more)
 
-### Community 102 - "CAOS: Module 05 — Memory layout"
+### Community 103 - "CAOS: Module 05 — Memory layout"
 Cohesion: 0.24
 Nodes (10): alignment, Module 05 — Memory layout, pointer (T*) and dereference, segmentation fault, buffer overflow, C string (null-terminated char array), dangling pointer, Module 06 — Arrays, strings & buffer safety (+2 more)
 
-### Community 103 - "CAOS: Module 07 — Assembly & the machine"
+### Community 104 - "CAOS: Module 07 — Assembly & the machine"
 Cohesion: 0.22
 Nodes (10): CPU (executes machine instructions), Module 07 — Assembly & the machine, instruction / opcode, register, x86-64 architecture, memory hierarchy, bytecode, Capstone — Tiny VM (stack machine) (+2 more)
 
-### Community 104 - "CAOS: CAOS course (Computer Architecture & Opera"
+### Community 105 - "CAOS: CAOS course (Computer Architecture & Opera"
 Cohesion: 0.20
 Nodes (10): CAOS glossary, CAOS next steps (after the course), CAOS progress checklist, C as a near-subset of C++ (honest to the machine), CAOS course (Computer Architecture & Operating Systems), open the hood: understand what runs under your code, CAOS setup (compiler, CMake, sanitizers), CAOS track (5th track) (+2 more)
 
-### Community 105 - "C++: Stack"
+### Community 106 - "C++: Stack"
 Cohesion: 0.24
 Nodes (5): size_t, T, vector, Stack, data_
 
-### Community 106 - "C++: Fraction"
+### Community 107 - "C++: Fraction"
 Cohesion: 0.20
 Nodes (9): Fraction, add, den_, denominator, multiply, num_, numerator, operator== (+1 more)
 
-### Community 107 - "Python: Module 01: Types, variables, numbers, st"
+### Community 108 - "Python: Module 01: Types, variables, numbers, st"
 Cohesion: 0.20
 Nodes (9): Basic types: int, float, str, bool, None, Integer vs float division (// vs /), f-strings and formatting, String immutability, Module 01: Types, variables, numbers, strings, Variable is a label, not a fixed-type box, Truthiness, String methods: split/join/strip/lower/replace (+1 more)
 
-### Community 108 - "Rust: Module 03 — Ownership"
+### Community 109 - "Rust: Module 03 — Ownership"
 Cohesion: 0.22
 Nodes (10): Borrow checker, Copy & Clone, Drop at end of scope (no GC), Move semantics, Ownership, Module 03 — Ownership, Box<T> (heap ownership), Rc<T> (shared ownership) (+2 more)
 
-### Community 109 - "Rust: Rectangle"
+### Community 110 - "Rust: Rectangle"
 Cohesion: 0.20
 Nodes (3): Point, Color, Rectangle
 
-### Community 111 - "Python: basics.py"
+### Community 112 - "Python: basics.py"
 Cohesion: 0.22
 Nodes (8): average3(), is_even(), min_of_three(), Вернуть True, если n чётное, иначе False.      Подсказка: чётное число делится н, Вернуть наименьшее из трёх чисел a, b, c., Вернуть среднее арифметическое трёх чисел.      Результат должен быть ТОЧНЫМ дро, Перевести температуру из градусов Цельсия в градусы Фаренгейта.      Формула: C, to_fahrenheit()
 
-### Community 112 - "DL: Module 05 — Logistic regression & classifica"
+### Community 113 - "DL: Module 05 — Logistic regression & classifica"
 Cohesion: 0.31
 Nodes (9): Module 05 — Logistic regression & classification, Capstone Milestone 3 — training loop, Classification, Cross-entropy loss, Decision boundary, Forward pass, Logistic regression, Loss function (+1 more)
 
-### Community 113 - "CAOS: Module 11 — Scheduling"
+### Community 114 - "CAOS: Module 11 — Scheduling"
 Cohesion: 0.25
 Nodes (9): context switch, Module 10 — Processes & threads, process (isolated memory), Module 11 — Scheduling, FCFS (First-Come-First-Served), Round-Robin (RR), scheduler, time slice (quantum) (+1 more)
 
-### Community 114 - "DL: Attention (query, key, value)"
+### Community 115 - "DL: Attention (query, key, value)"
 Cohesion: 0.31
 Nodes (9): Attention (query, key, value), Causal mask, Module 15: Attention and transformers, Multi-head attention, Position-wise MLP (feed-forward), Residual connection, Scaled dot-product attention (÷√d_k), Self-attention (+1 more)
 
-### Community 115 - "C++: TEST()"
+### Community 116 - "C++: TEST()"
 Cohesion: 0.25
 Nodes (7): Average, Buggy, MaxIn, SumFirstN, TEST(), HasDuplicate, Repeat
 
-### Community 116 - "Rust: Rust Course (from basics to junior level)"
+### Community 117 - "Rust: Rust Course (from basics to junior level)"
 Cohesion: 0.25
 Nodes (9): Rationale: whole-workspace graphify rule (query/path/explain first; regen only on main), Deep Learning Course (math to your own transformer), Rationale: DL prerequisites — basic Python (track 00-09), school math, no GPU needed, Rationale: what is ML/DL — learn rules from examples; the train loop is all there is, Rust Course (from basics to junior level), Rationale: Rust prereqs — basic programming (from C++ track), no prior Rust required, Rationale: Rust strengths — fearless concurrency, C/C++ perf, great tooling, Rationale: Rust weaknesses — steep learning curve, slow compiles, poor for quick scripts (+1 more)
 
-### Community 117 - "C++: IntList"
+### Community 118 - "C++: IntList"
 Cohesion: 0.22
 Nodes (8): unique_ptr, IntList, contains, head_, push_front, size, to_vector, Node
 
-### Community 118 - "C++: TEST()"
+### Community 119 - "C++: TEST()"
 Cohesion: 0.22
 Nodes (9): Erase, KvStoreCore, KvStorePersistence, LoadMissingFileReturnsFalse, OverwriteValue, SaveThenLoad, SetAndGet, SizeAndKeysSorted (+1 more)
 
-### Community 119 - "Python: Module 05: Functions deep (closures, dec"
+### Community 120 - "Python: Module 05: Functions deep (closures, dec"
 Cohesion: 0.31
 Nodes (9): Default arguments, *args/**kwargs, Functions: def, return vs print, Module 02: Control flow and functions, *args/**kwargs and unpacking, Closures, Decorators and functools.wraps, Functions as first-class objects, lambda and higher-order functions (map/filter/sorted) (+1 more)
 
-### Community 120 - "Python: dict and set (hash tables)"
+### Community 121 - "Python: dict and set (hash tables)"
 Cohesion: 0.25
 Nodes (9): dict and set (hash tables), Hashability, Indexing and slicing xs[a:b:c], list (mutable) vs tuple (immutable), Module 03: Collections (list, tuple, dict, set), Choice of data structure dictates which ops are cheap, Text normalization, Slicing and reversal s[::-1] (+1 more)
 
-### Community 121 - "C++: Compilation Pipeline (preprocess/compile/li"
+### Community 122 - "C++: Compilation Pipeline (preprocess/compile/li"
 Cohesion: 0.25
 Nodes (8): Compilation Pipeline (preprocess/compile/link), Compile vs Link Errors, Module 00 - Setup and Build Pipeline, CMake, Compilation, Linking, Preprocessor, Translation Unit
 
-### Community 122 - "C++: Module 04 - Classes, OOP, RAII intro"
+### Community 123 - "C++: Module 04 - Classes, OOP, RAII intro"
 Cohesion: 0.25
 Nodes (8): GCD (Euclid's algorithm), const-correctness with Pointers, const Methods, Encapsulation and Invariants, Fraction Class Exercise, Module 04 - Classes, OOP, RAII intro, Operator Overloading, const
 
-### Community 123 - "DL: Backpropagation"
+### Community 124 - "DL: Backpropagation"
 Cohesion: 0.32
 Nodes (8): Module 03 — Derivatives, chain rule, gradients, Autograd (automatic differentiation), Backpropagation, Chain rule, Computational graph, Derivative, Gradient, Value (micrograd scalar node)
 
-### Community 124 - "DL: Backpropagation"
+### Community 125 - "DL: Backpropagation"
 Cohesion: 0.29
 Nodes (8): Forward pass, Backpropagation, Idea: backprop is just the chain rule over the graph, Backward pass (gradients layer by layer), Chain rule, Module 07: Backpropagation from scratch, Numerical gradient checking, Local derivative per operation
 
-### Community 125 - "DL: Module 09: Optimizers (SGD, momentum, Adam)"
+### Community 126 - "DL: Module 09: Optimizers (SGD, momentum, Adam)"
 Cohesion: 0.32
 Nodes (8): Gradient, Adam (adaptive per-parameter step), Bias correction, Module 09: Optimizers (SGD, momentum, Adam), Momentum, Optimizer, SGD (gradient descent step), Loss function + torch.optim
 
-### Community 126 - "C++: Module 07 - Templates and Concepts"
+### Community 127 - "C++: Module 07 - Templates and Concepts"
 Cohesion: 0.25
 Nodes (8): Class Template, Concepts (std::integral, requires), Function Template, Module 07 - Templates and Concepts, KvStore class (Milestone 1), Concept (C++20), std::optional<T>, Template
 
-### Community 127 - "DL: nn.Module / nn.Linear"
+### Community 128 - "DL: nn.Module / nn.Linear"
 Cohesion: 0.29
 Nodes (8): Module 12: MLP on PyTorch (nn.Module), nn.Module / nn.Linear, train/eval modes, Counting trainable parameters, Module 17: Reproducibility and engineering, Idea: reproducibility is discipline, not luck, Seeding (random/numpy/torch), Save/load via state_dict
 
-### Community 128 - "CAOS: TEST()"
+### Community 129 - "CAOS: TEST()"
 Cohesion: 0.29
 Nodes (7): AddBasic, AddZeroAndNegative, TEST(), Warmup, SecondsInManyHours, SecondsInOneHour, SecondsInZeroHours
 
-### Community 129 - "C++: TEST()"
+### Community 130 - "C++: TEST()"
 Cohesion: 0.25
 Nodes (7): Average3, Basics, IsEven, MinOfThree, TEST(), ToFahrenheit, TripleByReference
 
-### Community 130 - "C++: Capstone - Mini Key-Value Store (kvstore)"
+### Community 131 - "C++: Capstone - Mini Key-Value Store (kvstore)"
 Cohesion: 0.25
 Nodes (8): Capstone Build (lib + app + tests), Command execute() (Milestone 2), Capstone - Mini Key-Value Store (kvstore), Persistence save/load (Milestone 3), REPL (read-eval-print loop), add_exercise() Helper Pattern, Root CMake Build (C++20, FetchContent, auto-modules), GoogleTest
 
-### Community 131 - "DL: Capstone — nanoLM char-level Transformer"
+### Community 132 - "DL: Capstone — nanoLM char-level Transformer"
 Cohesion: 0.32
 Nodes (8): Capstone Milestone 1 — tokenizer & data, Capstone — nanoLM char-level Transformer, Char-level language model, CNN (convolutional network), nanoGPT, Reproducibility (seeds), state_dict / checkpoint, Tokenization
 
-### Community 132 - "C++: IntVector"
+### Community 133 - "C++: IntVector"
 Cohesion: 0.25
 Nodes (7): size_t, IntVector, capacity, data_, empty, push_back, size
 
-### Community 133 - "C++: buggy.cpp"
+### Community 134 - "C++: buggy.cpp"
 Cohesion: 0.36
 Nodes (7): max_in(), sum_first_n(), string, vector, average(), has_duplicate(), repeat()
 
-### Community 134 - "Rust: lib.rs"
+### Community 135 - "Rust: lib.rs"
 Cohesion: 0.25
 Nodes (3): String, Vec, fizzbuzz()
 
-### Community 135 - "Rust: lib.rs"
+### Community 136 - "Rust: lib.rs"
 Cohesion: 0.32
 Nodes (6): Option, Shape, String, describe(), first_even(), safe_div()
 
-### Community 136 - "Rust: lib.rs"
+### Community 137 - "Rust: lib.rs"
 Cohesion: 0.36
 Nodes (6): String, T, Article, largest(), my_max(), Summary
 
-### Community 137 - "C++: Module 02 - Control Flow and Functions"
+### Community 138 - "C++: Module 02 - Control Flow and Functions"
 Cohesion: 0.29
 Nodes (7): CLI Calculator Micro-project, Declaration vs Definition (hpp/cpp split), Module 02 - Control Flow and Functions, Function Overloading, Recursion, Templates Live in Headers, One Definition Rule (ODR)
 
-### Community 138 - "CAOS: Module 09 — Allocators & dynamic memory"
+### Community 139 - "CAOS: Module 09 — Allocators & dynamic memory"
 Cohesion: 0.29
 Nodes (7): stack vs heap, allocator (heap manager), arena / pool (bump) allocator, Module 09 — Allocators & dynamic memory, fragmentation, malloc / free, stack machine
 
-### Community 139 - "C++: Module 06 - Smart Pointers and Ownership"
+### Community 140 - "C++: Module 06 - Smart Pointers and Ownership"
 Cohesion: 0.33
 Nodes (7): The Big Five (special member functions), Rule of Zero, Module 06 - Smart Pointers and Ownership, Ownership Expressed in the Type, std::shared_ptr (shared ownership), std::weak_ptr (breaks cycles), Smart Pointer
 
-### Community 140 - "DL: Module 16: Training in practice"
+### Community 141 - "DL: Module 16: Training in practice"
 Cohesion: 0.29
 Nodes (7): Learning rate, Training loop (forward→loss→backward→step), Module 16: Training in practice, LayerNorm, LR schedule (warmup + decay), Overfit a single batch (debug test), Weight initialization (1/√fan_in)
 
-### Community 141 - "C++: Module 09 — Error Handling"
+### Community 142 - "C++: Module 09 — Error Handling"
 Cohesion: 0.38
 Nodes (7): Exception Safety via RAII, Choosing Exception vs optional, Exceptions (throw / try / catch, std::exception hierarchy), Module 09 — Error Handling, noexcept Specifier, std::optional<T> (value or nothing), std::variant<A,B,...> (type-safe union, std::visit)
 
-### Community 142 - "DL: Module 10: Overfitting and regularization"
+### Community 143 - "DL: Module 10: Overfitting and regularization"
 Cohesion: 0.38
 Nodes (7): Module 10: Overfitting and regularization, Dropout, Early stopping, Idea: regularization removes freedom to memorize, L2 regularization (weight decay), Overfitting, train/val/test split
 
-### Community 143 - "DL: RNN (recurrence, hidden state)"
+### Community 144 - "DL: RNN (recurrence, hidden state)"
 Cohesion: 0.33
 Nodes (7): Module 14: Sequences (embeddings, RNN), Embeddings (nn.Embedding), Hidden state, LSTM (cell state, gates), RNN (recurrence, hidden state), Sequential data and order, Vanishing/exploding gradient over time
 
-### Community 144 - "CAOS: TEST()"
+### Community 145 - "CAOS: TEST()"
 Cohesion: 0.29
 Nodes (6): BoundedBuffer, Capacity1Stress, FifoOrderSingleThread, ProducerConsumerOrderAndSum, TEST(), WrapAroundKeepsOrder
 
-### Community 145 - "DL: Capstone Milestone 2 — transformer model"
+### Community 146 - "DL: Capstone Milestone 2 — transformer model"
 Cohesion: 0.29
 Nodes (7): Capstone Milestone 2 — transformer model, Capstone Milestone 4 — generation (sampling), Autoregression, Causal mask, Embedding, Positional embedding, Softmax
 
-### Community 147 - "C++: int_vector.cpp"
+### Community 148 - "C++: int_vector.cpp"
 Cohesion: 0.38
 Nodes (4): size_t, capacity(), IntVector(), size()
 
-### Community 148 - "C++: top_n()"
+### Community 149 - "C++: top_n()"
 Cohesion: 0.38
 Nodes (6): map, pair, string, vector, top_n(), word_count()
 
-### Community 149 - "DL: DL Glossary"
+### Community 150 - "DL: DL Glossary"
 Cohesion: 0.38
 Nodes (7): DL Glossary, Adam optimizer, Momentum, Overfitting, Regularization, ReLU, RNN (recurrent network)
 
-### Community 150 - "C++: TEST()"
+### Community 151 - "C++: TEST()"
 Cohesion: 0.29
 Nodes (6): Distance, Geometry, PerimeterDegenerate, PerimeterSquare, PerimeterTriangle, TEST()
 
-### Community 151 - "DL: Transformer"
+### Community 152 - "DL: Transformer"
 Cohesion: 0.43
 Nodes (7): Attention, LayerNorm, Query / Key / Value, Residual / skip connection, Self-attention, Transformer, Transformer block (attention + MLP)
 
-### Community 152 - "Python: Module 14: Tooling and code quality"
+### Community 153 - "Python: Module 14: Tooling and code quality"
 Cohesion: 0.29
 Nodes (7): Virtual environment (venv) and pip, Formatter black and linter ruff, git for junior (status/add/commit/log/diff/branch), Debugger pdb (breakpoint()), venv, pip and requirements.txt, Module 14: Tooling and code quality, Craft: tooling catches errors earlier and keeps style uniform
 
-### Community 153 - "Python: iterable vs iterator (__iter__, __next__"
+### Community 154 - "Python: iterable vs iterator (__iter__, __next__"
 Cohesion: 0.33
 Nodes (7): Comprehensions (list/dict/set), Generator expressions, Generators (yield and laziness), iterable vs iterator (__iter__, __next__, StopIteration), Laziness (memory and infinite sequences), Module 09: Iterators and generators, Iteration is a protocol, not magic
 
-### Community 154 - "Rust: Result"
+### Community 155 - "Rust: Result"
 Cohesion: 0.57
 Nodes (6): Result, String, divide(), element_at(), parse_int(), sum_parsed()
 
-### Community 157 - "CAOS: Module 03 — Integers & endianness"
+### Community 158 - "CAOS: Module 03 — Integers & endianness"
 Cohesion: 0.40
 Nodes (6): two's complement (signed integers), Module 03 — Integers & endianness, endianness (little/big-endian), integer overflow, sign extension, signed vs unsigned
 
-### Community 158 - "Python: greet()"
+### Community 159 - "Python: greet()"
 Cohesion: 0.33
 Nodes (6): greet(), Вернуть приветствие вида "Привет, {name}!".      Например, greet("Аня") -> "Прив, test_greet_another_name(), test_greet_basic(), test_greet_empty_name(), test_greet_returns_str()
 
-### Community 159 - "DL: Module 01 — Tensors, shapes, broadcasting"
+### Community 160 - "DL: Module 01 — Tensors, shapes, broadcasting"
 Cohesion: 0.33
 Nodes (6): Module 01 — Tensors, shapes, broadcasting, Axis / dim, Batch, Broadcasting, Shape, Tensor
 
-### Community 160 - "DL: Gradient descent"
+### Community 161 - "DL: Gradient descent"
 Cohesion: 0.53
 Nodes (6): Module 04 — Linear regression from scratch, Gradient descent, Learning rate, Linear regression, Mean Squared Error (MSE), SGD
 
-### Community 161 - "DL: Convolutional network (CNN)"
+### Community 162 - "DL: Convolutional network (CNN)"
 Cohesion: 0.40
 Nodes (6): Channels (N,C,H,W), Convolutional network (CNN), Convolution (sliding filter, weight sharing), Module 13: Convolutional networks (CNN), Idea: inductive bias for images (locality, shift-invariance), Pooling (max-pooling)
 
-### Community 162 - "CAOS: LruCache"
+### Community 163 - "CAOS: LruCache"
 Cohesion: 0.60
 Nodes (5): LruCache, lru_create(), lru_free(), lru_get(), lru_put()
 
-### Community 163 - "CAOS: Arena"
+### Community 164 - "CAOS: Arena"
 Cohesion: 0.60
 Nodes (5): Arena, arena_alloc(), arena_init(), arena_remaining(), arena_reset()
 
-### Community 164 - "CAOS: BoundedBuffer"
+### Community 165 - "CAOS: BoundedBuffer"
 Cohesion: 0.53
 Nodes (5): BoundedBuffer, bb_destroy(), bb_get(), bb_init(), bb_put()
 
-### Community 165 - "Python: main()"
+### Community 166 - "Python: main()"
 Cohesion: 0.47
 Nodes (5): main(), Главный цикл Read–Eval–Print: читаем строку, выполняем, печатаем ответ.      Зав, Точка входа: создаём пустое хранилище и запускаем REPL., repl(), TaskStore
 
-### Community 166 - "Rust: Module 01 — Variables, types, functions"
+### Community 167 - "Rust: Module 01 — Variables, types, functions"
 Cohesion: 0.33
 Nodes (6): Expressions vs statements, Immutability by default (let/mut), Module 01 — Variables, types, functions, Scalar & compound types, Shadowing, Type inference
 
-### Community 169 - "CAOS: Module 00 — Setup & how a program becomes "
+### Community 170 - "CAOS: Module 00 — Setup & how a program becomes "
 Cohesion: 0.40
 Nodes (5): bit and byte, build pipeline (preprocess → compile → assemble → link), build → test → fix cycle, Module 00 — Setup & how a program becomes bits, assembly (mov, add, jmp)
 
-### Community 170 - "Python: add()"
+### Community 171 - "Python: add()"
 Cohesion: 0.40
 Nodes (4): add(), Сколько секунд содержится в `hours` часах.      В одном часе 3600 секунд (60 * 6, Вернуть сумму двух целых чисел.      Контракт:       add(2, 3) == 5       add(-1, seconds_in()
 
-### Community 171 - "Python: wordfreq.py"
+### Community 172 - "Python: wordfreq.py"
 Cohesion: 0.40
 Nodes (4): Частоты слов в тексте.      Слова разделяются пробелами (split()), регистр не уч, n самых частых слов как пары (слово, частота).      Порядок: по убыванию частоты, top_n(), word_count()
 
-### Community 172 - "C++: TEST()"
+### Community 173 - "C++: TEST()"
 Cohesion: 0.50
 Nodes (4): AddSumsNumbers, TEST(), Warmup, SecondsInHours
 
-### Community 174 - "Python: Module 11: Useful standard library"
+### Community 175 - "Dialogue-capture Stop hook (.claude/hooks/captur"
+Cohesion: 0.70
+Nodes (5): Capture is gated to learning branches: main and course/* are skipped (course authorship), so only solutions-branch study dialogues are saved, Dialogue-capture Stop hook (.claude/hooks/capture_dialogue.py): saves each student question + teacher answer to journal.jsonl + dated markdown, only on learning branches, tagged with course/module context, Course-improvement loop: analyze journal grouped by context to find where the learner got stuck / unclear explanations / missing hints, then propose targeted material PRs to main, Git main/solutions model: dialogue capture happens on solutions; improvements land on main and are pulled into solutions via git merge main, learning-logs workspace README (dialogue journal system)
+
+### Community 176 - "Python: Module 11: Useful standard library"
 Cohesion: 0.40
 Nodes (5): collections.Counter and defaultdict, datetime: parsing and date diff, pathlib.Path, Module 11: Useful standard library, Batteries included: reach for stdlib before writing from scratch
 
-### Community 175 - "Rust: Module 00 — Setup, cargo, build cycle"
+### Community 177 - "Rust: Module 00 — Setup, cargo, build cycle"
 Cohesion: 0.40
 Nodes (5): build → test → fix cycle, cargo (build/test/deps), Crate & workspace, Module 00 — Setup, cargo, build cycle, todo!() stub macro
 
-### Community 176 - "Rust: Module 09 — Generics & traits"
+### Community 178 - "Rust: Module 09 — Generics & traits"
 Cohesion: 0.50
 Nodes (5): Trait bounds (T: Trait), Generics (monomorphization), Module 09 — Generics & traits, Static dispatch, Trait (interface)
 
-### Community 183 - "DL: Linear (fully-connected) layer"
+### Community 185 - "DL: Linear (fully-connected) layer"
 Cohesion: 0.83
 Nodes (4): Module 02 — Linear algebra for DL, Linear (fully-connected) layer, Matrix multiplication (matmul), Weights & bias
 
-### Community 185 - "C++: perimeter()"
+### Community 187 - "C++: perimeter()"
 Cohesion: 0.50
 Nodes (3): Point, vector, perimeter()
 
-### Community 186 - "C++: Point"
+### Community 188 - "C++: Point"
 Cohesion: 0.50
 Nodes (3): Point, x, y
 
-### Community 187 - "Python: Module 10: Modules, packages, imports"
+### Community 189 - "Python: Module 10: Modules, packages, imports"
 Cohesion: 0.67
 Nodes (4): import, from..import, sys.path, Module = .py file, package = dir with __init__.py, if __name__ == '__main__', Module 10: Modules, packages, imports
 
-### Community 188 - "Rust: Module 05 — Structs & methods"
+### Community 190 - "Rust: Module 05 — Structs & methods"
 Cohesion: 0.50
 Nodes (4): impl, methods & associated functions, Module 05 — Structs & methods, self / &self / &mut self receivers, struct (record type)
 
-### Community 189 - "Rust: Module 10 — Trait objects & dynamic dispat"
+### Community 191 - "Rust: Module 10 — Trait objects & dynamic dispat"
 Cohesion: 0.50
 Nodes (4): Box<dyn Trait>, Trait objects (dyn Trait), Dynamic dispatch (vtable), Module 10 — Trait objects & dynamic dispatch
 
-### Community 190 - "Rust: main.rs"
+### Community 192 - "Rust: main.rs"
 Cohesion: 0.67
 Nodes (3): main(), print_banner(), Write
 
-### Community 196 - "Rust: Module 14 — Tooling & code quality"
+### Community 198 - "Rust: Module 14 — Tooling & code quality"
 Cohesion: 0.67
 Nodes (3): cargo doc, tests & code organization, cargo fmt & clippy, Module 14 — Tooling & code quality
 
 ## Knowledge Gaps
 - **659 isolated node(s):** `vector`, `VmBasic`, `PushHalt`, `PushNegativeOperand`, `VmArith` (+654 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **43 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
+- **44 thin communities (<3 nodes) omitted from report** — run `graphify query` to explore isolated nodes.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
+- **Why does `TaskStore` connect `Python: TaskStore` to `Python: execute()`?**
+  _High betweenness centrality (0.001) - this node is a cross-community bridge._
 - **Why does `Capstone: CLI Todo Manager` connect `Python: Capstone: CLI Todo Manager` to `Python: dict and set (hash tables)`, `Python: Module 01: Types, variables, numbers, st`, `Python: class, __init__, self, attributes and me`, `Python: Python Course README`?**
   _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **Why does `Module 05 — Memory layout` connect `CAOS: Module 05 — Memory layout` to `CAOS: Module 09 — Allocators & dynamic memory`, `CAOS: Module 08 — Cache & locality`?**
+- **Why does `TEST()` connect `CAOS: TEST()` to `C++: TEST()`?**
   _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **Why does `Module 00: Setup and how Python runs` connect `Python: Python Course README` to `Python: Module 14: Tooling and code quality`?**
-  _High betweenness centrality (0.001) - this node is a cross-community bridge._
-- **What connects `vector`, `VmBasic`, `PushHalt` to the rest of the system?**
-  _879 weakly-connected nodes found - possible documentation gaps or missing edges._
+- **What connects `Текст видимого ответа ассистента: только блоки type=='text' (без thinking и tool`, `Текст человеческого запроса. Пусто, если это tool_result, команда или системный`, `(user_text, assistant_text, assistant_uuid, timestamp) для последнего обмена, ил` to the rest of the system?**
+  _883 weakly-connected nodes found - possible documentation gaps or missing edges._
 - **Should `DL: CharTokenizer` be split into smaller, more focused modules?**
   _Cohesion score 0.06229508196721312 - nodes in this community are weakly interconnected._
 - **Should `Python: TaskStore` be split into smaller, more focused modules?**

@@ -1,22 +1,21 @@
 # CAOS: TEST()
 
-> 13 nodes · cohesion 0.17
+> 12 nodes
 
 ## Key Concepts
 
-- **TEST()** (12 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **LruCache** (2 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **test_lrucache.cpp** (2 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **CapacityOne** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **CapacityThreeSequence** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **CreateReturnsNonNull** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **EvictsLeastRecentlyUsed** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **FreeNullIsSafe** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **GetFromEmptyMisses** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **GetRefreshesRecency** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **PutRefreshesRecency** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **PutSameKeyUpdatesValue** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
-- **PutThenGetHits** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **TEST()** (11 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **test_scheduling.cpp** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **FcfsAvgWaiting** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **OneProcessWaitsZero** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **EqualBursts** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **MixedBursts** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **OrderMattersForWaitingSum** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **RoundRobinOrder** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **QuantumCoversAllBecomesFcfs** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **SingleProcessSplitByQuantum** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **ClassicRotation** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **QuantumOneRoundRobin** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
 
 ## Relationships
 
@@ -24,11 +23,11 @@
 
 ## Source Files
 
-- `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- `caos/modules/11-scheduling/tests/test_scheduling.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 26 (100%)
+- EXTRACTED: 22 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

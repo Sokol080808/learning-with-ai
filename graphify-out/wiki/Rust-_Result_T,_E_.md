@@ -1,6 +1,6 @@
 # Rust: Result<T, E>
 
-> 17 nodes · cohesion 0.12
+> 17 nodes
 
 ## Key Concepts
 
@@ -9,8 +9,8 @@
 - **Module 06 — Enums, Option, match** (3 connections) — `rust/modules/06-enums-match/README.md`
 - **Module 07 — Error handling: Result & ?** (3 connections) — `rust/modules/07-error-handling/README.md`
 - **Module 11 — Closures & iterators** (3 connections) — `rust/modules/11-closures-iterators/README.md`
-- **if / loop / while / for** (2 connections) — `rust/modules/02-control-flow/README.md`
 - **match (exhaustive pattern matching)** (2 connections) — `rust/modules/02-control-flow/README.md`
+- **if / loop / while / for** (2 connections) — `rust/modules/02-control-flow/README.md`
 - **enum with data** (2 connections) — `rust/modules/06-enums-match/README.md`
 - **Option<T> (no null)** (2 connections) — `rust/modules/06-enums-match/README.md`
 - **? operator** (2 connections) — `rust/modules/07-error-handling/README.md`

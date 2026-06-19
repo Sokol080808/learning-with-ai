@@ -1,17 +1,16 @@
 # CAOS: TEST()
 
-> 8 nodes · cohesion 0.29
+> 7 nodes
 
 ## Key Concepts
 
-- **TEST()** (7 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **test_warmup.cpp** (2 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **Warmup** (2 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **AddBasic** (1 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **AddZeroAndNegative** (1 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **SecondsInManyHours** (1 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **SecondsInOneHour** (1 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
-- **SecondsInZeroHours** (1 connections) — `caos/modules/00-setup/tests/test_warmup.cpp`
+- **TEST()** (6 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **test_syncbuf.cpp** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **BoundedBuffer** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **FifoOrderSingleThread** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **WrapAroundKeepsOrder** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **ProducerConsumerOrderAndSum** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
+- **Capacity1Stress** (1 connections) — `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
 
 ## Relationships
 
@@ -19,11 +18,11 @@
 
 ## Source Files
 
-- `caos/modules/00-setup/tests/test_warmup.cpp`
+- `caos/modules/13-concurrency-sync/tests/test_syncbuf.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 16 (100%)
+- EXTRACTED: 12 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

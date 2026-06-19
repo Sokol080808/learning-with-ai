@@ -1,17 +1,17 @@
 # C++: IntVector
 
-> 8 nodes · cohesion 0.25
+> 8 nodes
 
 ## Key Concepts
 
 - **IntVector** (7 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
-- **size_t** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
 - **int_vector.hpp** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
-- **capacity** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
-- **data_** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
-- **empty** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
 - **push_back** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
 - **size** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
+- **capacity** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
+- **empty** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
+- **data_** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
+- **size_t** (1 connections) — `cpp/modules/05-copy-move/include/int_vector.hpp`
 
 ## Relationships
 

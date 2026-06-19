@@ -1,14 +1,14 @@
 # Rust: Module 09 — Generics & traits
 
-> 5 nodes · cohesion 0.50
+> 5 nodes
 
 ## Key Concepts
 
 - **Module 09 — Generics & traits** (4 connections) — `rust/modules/09-generics-traits/README.md`
-- **Trait bounds (T: Trait)** (2 connections) — `rust/modules/09-generics-traits/README.md`
 - **Generics (monomorphization)** (2 connections) — `rust/modules/09-generics-traits/README.md`
-- **Static dispatch** (1 connections) — `rust/modules/09-generics-traits/README.md`
+- **Trait bounds (T: Trait)** (2 connections) — `rust/modules/09-generics-traits/README.md`
 - **Trait (interface)** (1 connections) — `rust/modules/09-generics-traits/README.md`
+- **Static dispatch** (1 connections) — `rust/modules/09-generics-traits/README.md`
 
 ## Relationships
 

@@ -1,11 +1,11 @@
 # Python: main()
 
-> 6 nodes · cohesion 0.47
+> 6 nodes
 
 ## Key Concepts
 
-- **main()** (4 connections) — `python/capstone/app.py`
 - **repl()** (4 connections) — `python/capstone/app.py`
+- **main()** (4 connections) — `python/capstone/app.py`
 - **app.py** (2 connections) — `python/capstone/app.py`
 - **TaskStore** (2 connections) — `python/capstone/app.py`
 - **Главный цикл Read–Eval–Print: читаем строку, выполняем, печатаем ответ.      Зав** (1 connections) — `python/capstone/app.py`

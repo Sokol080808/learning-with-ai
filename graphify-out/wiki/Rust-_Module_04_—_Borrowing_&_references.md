@@ -1,6 +1,6 @@
 # Rust: Module 04 — Borrowing & references
 
-> 12 nodes · cohesion 0.17
+> 12 nodes
 
 ## Key Concepts
 
@@ -9,13 +9,13 @@
 - **References (&T, &mut T)** (2 connections) — `rust/modules/04-borrowing/README.md`
 - **Borrowing rules (many readers XOR one writer)** (2 connections) — `rust/modules/04-borrowing/README.md`
 - **String vs &str** (2 connections) — `rust/modules/08-collections/README.md`
-- **Lifetimes ('a annotations)** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
 - **Module 12 — Lifetimes & slices** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
+- **Lifetimes ('a annotations)** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
 - **Slices (&[T] / &str)** (2 connections) — `rust/modules/12-lifetimes-slices/README.md`
 - **No dangling references** (1 connections) — `rust/modules/04-borrowing/README.md`
 - **Rationale: many-readers-XOR-one-writer rule statically excludes data races** (1 connections) — `rust/modules/04-borrowing/README.md`
-- **HashMap<K, V>** (1 connections) — `rust/modules/08-collections/README.md`
 - **Vec<T>** (1 connections) — `rust/modules/08-collections/README.md`
+- **HashMap<K, V>** (1 connections) — `rust/modules/08-collections/README.md`
 
 ## Relationships
 

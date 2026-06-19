@@ -1,6 +1,6 @@
 # CAOS: Module 05 — Memory layout
 
-> 10 nodes · cohesion 0.24
+> 10 nodes
 
 ## Key Concepts
 
@@ -10,8 +10,8 @@
 - **dangling pointer** (3 connections) — `caos/modules/06-arrays-strings/README.md`
 - **alignment** (2 connections) — `caos/modules/05-memory-layout/README.md`
 - **segmentation fault** (2 connections) — `caos/modules/05-memory-layout/README.md`
-- **buffer overflow** (2 connections) — `caos/modules/06-arrays-strings/README.md`
 - **C string (null-terminated char array)** (2 connections) — `caos/modules/06-arrays-strings/README.md`
+- **buffer overflow** (2 connections) — `caos/modules/06-arrays-strings/README.md`
 - **cache line (64 bytes)** (2 connections) — `caos/modules/08-cache-locality/README.md`
 - **memory leak** (2 connections) — `caos/modules/09-allocators/README.md`
 

@@ -1,6 +1,6 @@
 # Python: __init__.py
 
-> 11 nodes · cohesion 0.25
+> 11 nodes
 
 ## Key Concepts
 
@@ -13,8 +13,8 @@
 - **fib()** (3 connections) — `python/modules/10-modules-packages/mathx/sequences.py`
 - **Вернуть сумму двух целых: a + b.      Контракт:       add(2, 3) == 5       add(-** (1 connections) — `python/modules/10-modules-packages/mathx/arithmetic.py`
 - **Вернуть произведение двух целых: a * b.      Контракт:       mul(2, 3) == 6** (1 connections) — `python/modules/10-modules-packages/mathx/arithmetic.py`
-- **n-е число Фибоначчи (нумерация с нуля).      Последовательность: 0, 1, 1, 2, 3,** (1 connections) — `python/modules/10-modules-packages/mathx/sequences.py`
 - **Факториал n: произведение всех целых от 1 до n.      По определению 0! == 1.** (1 connections) — `python/modules/10-modules-packages/mathx/sequences.py`
+- **n-е число Фибоначчи (нумерация с нуля).      Последовательность: 0, 1, 1, 2, 3,** (1 connections) — `python/modules/10-modules-packages/mathx/sequences.py`
 
 ## Relationships
 

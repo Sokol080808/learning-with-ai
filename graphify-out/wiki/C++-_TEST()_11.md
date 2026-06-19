@@ -1,21 +1,26 @@
 # C++: TEST()
 
-> 12 nodes · cohesion 0.17
+> 17 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **CopyAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **DeepCopyIndependent** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **EmptyByDefault** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **FillConstructor** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **IndexIsWritable** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **IntVector** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **MoveAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **MoveConstructorStealsBuffer** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **PushBackGrows** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **SelfAssignmentSafe** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
-- **test_int_vector.cpp** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **TEST()** (10 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **task08.cpp** (5 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **vector** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **char_frequency()** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **count_greater()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **sorted_desc()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **evens()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **squared()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **map** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **string** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
+- **test_task08.cpp** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Stl** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Evens** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **CountGreater** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **Squared** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **SortedDesc** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **CharFrequency** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
 
 ## Relationships
 
@@ -23,12 +28,13 @@
 
 ## Source Files
 
-- `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- `cpp/modules/08-stl/src/task08.cpp`
+- `cpp/modules/08-stl/tests/test_task08.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 36 (86%)
+- INFERRED: 6 (14%)
 - AMBIGUOUS: 0 (0%)
 
 ---

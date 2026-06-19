@@ -1,10 +1,10 @@
-# C++: std::mutex / std::lock_guard
+# CAOS: CAOS module build target (add_exercise: C 
 
 > 1 nodes
 
 ## Key Concepts
 
-- **std::mutex / std::lock_guard** (0 connections) — `cpp/GLOSSARY.md`
+- **CAOS module build target (add_exercise: C source + C++ GoogleTest via extern "C", POST_BUILD discovery)** (0 connections) — `caos/modules/00-setup/CMakeLists.txt`
 
 ## Relationships
 
@@ -12,7 +12,7 @@
 
 ## Source Files
 
-- `cpp/GLOSSARY.md`
+- `caos/modules/00-setup/CMakeLists.txt`
 
 ## Audit Trail
 

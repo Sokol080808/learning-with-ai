@@ -1,16 +1,16 @@
 # DL: Module 10: Overfitting and regularization
 
-> 7 nodes · cohesion 0.38
+> 7 nodes
 
 ## Key Concepts
 
 - **Module 10: Overfitting and regularization** (5 connections) — `deep-learning/modules/10-regularization/README.md`
 - **Overfitting** (5 connections) — `deep-learning/modules/10-regularization/README.md`
-- **Dropout** (2 connections) — `deep-learning/modules/10-regularization/README.md`
 - **L2 regularization (weight decay)** (2 connections) — `deep-learning/modules/10-regularization/README.md`
+- **Dropout** (2 connections) — `deep-learning/modules/10-regularization/README.md`
+- **train/val/test split** (1 connections) — `deep-learning/modules/10-regularization/README.md`
 - **Early stopping** (1 connections) — `deep-learning/modules/10-regularization/README.md`
 - **Idea: regularization removes freedom to memorize** (1 connections) — `deep-learning/modules/10-regularization/README.md`
-- **train/val/test split** (1 connections) — `deep-learning/modules/10-regularization/README.md`
 
 ## Relationships
 

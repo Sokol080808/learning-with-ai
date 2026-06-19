@@ -1,6 +1,6 @@
 # C++: STL Algorithms (sort, count_if, find, accum
 
-> 29 nodes · cohesion 0.10
+> 29 nodes
 
 ## Key Concepts
 
@@ -18,17 +18,17 @@
 - **Lambdas (capture lists, [=], [&])** (2 connections) — `cpp/modules/08-stl/README.md`
 - **Word Frequency Dictionary Micro-Project** (2 connections) — `cpp/modules/08-stl/README.md`
 - **auto Type Deduction** (2 connections) — `cpp/modules/10-modern-idioms/README.md`
-- **constexpr (compile-time computation)** (2 connections) — `cpp/modules/10-modern-idioms/README.md`
 - **Structured Bindings** (2 connections) — `cpp/modules/10-modern-idioms/README.md`
-- **CMake Targets (add_library, target_link_libraries, PUBLIC/PRIVATE)** (2 connections) — `cpp/modules/11-projects/README.md`
-- **Namespaces** (2 connections) — `cpp/modules/11-projects/README.md`
+- **constexpr (compile-time computation)** (2 connections) — `cpp/modules/10-modern-idioms/README.md`
 - **ODR — One Definition Rule** (2 connections) — `cpp/modules/11-projects/README.md`
-- **Array vs Linked List (cache locality, access cost)** (2 connections) — `cpp/modules/13-data-structures/README.md`
+- **Namespaces** (2 connections) — `cpp/modules/11-projects/README.md`
+- **CMake Targets (add_library, target_link_libraries, PUBLIC/PRIVATE)** (2 connections) — `cpp/modules/11-projects/README.md`
 - **Big-O Complexity Analysis** (2 connections) — `cpp/modules/13-data-structures/README.md`
-- **Search and Sort (linear, binary, insertion, std::sort)** (2 connections) — `cpp/modules/13-data-structures/README.md`
+- **Array vs Linked List (cache locality, access cost)** (2 connections) — `cpp/modules/13-data-structures/README.md`
 - **Stack (LIFO) and Queue (FIFO)** (2 connections) — `cpp/modules/13-data-structures/README.md`
 - **Stack<T> Template over std::vector** (2 connections) — `cpp/modules/13-data-structures/README.md`
-- **Prefer Algorithms over Manual Loops** (1 connections) — `cpp/modules/08-stl/README.md`
+- **Search and Sort (linear, binary, insertion, std::sort)** (2 connections) — `cpp/modules/13-data-structures/README.md`
+- **Standard Template Library (STL)** (1 connections) — `cpp/modules/08-stl/README.md`
 - *... and 4 more nodes in this community*
 
 ## Relationships

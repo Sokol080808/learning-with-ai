@@ -1,24 +1,22 @@
 # CAOS: TEST()
 
-> 15 nodes · cohesion 0.13
+> 13 nodes
 
 ## Key Concepts
 
-- **TEST()** (14 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **AllBits** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **Basic** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **FullWidth** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **CaseInsensitive** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **CountSetBits** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **Empty** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **FormatBinary** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **LeadingZeros** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **NullTerminated** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **OnlyLowBits** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **ParseBinary** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **ParseHex** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **test_numrep.cpp** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
-- **Wide** (1 connections) — `caos/modules/01-number-representation/tests/test_numrep.cpp`
+- **TEST()** (12 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **test_lrucache.cpp** (2 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **LruCache** (2 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **CreateReturnsNonNull** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **FreeNullIsSafe** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **GetFromEmptyMisses** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **PutThenGetHits** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **PutSameKeyUpdatesValue** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **EvictsLeastRecentlyUsed** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **GetRefreshesRecency** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **PutRefreshesRecency** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **CapacityThreeSequence** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
+- **CapacityOne** (1 connections) — `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
 
 ## Relationships
 
@@ -26,11 +24,11 @@
 
 ## Source Files
 
-- `caos/modules/01-number-representation/tests/test_numrep.cpp`
+- `caos/modules/08-cache-locality/tests/test_lrucache.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
+- EXTRACTED: 26 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

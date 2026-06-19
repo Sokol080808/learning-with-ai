@@ -1,44 +1,41 @@
 # C++: TEST()
 
-> 17 nodes · cohesion 0.14
+> 19 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/capstone/tests/test_command.cpp`
-- **KvStore** (7 connections) — `cpp/capstone/src/command.cpp`
-- **Command** (4 connections) — `cpp/capstone/tests/test_command.cpp`
-- **main.cpp** (3 connections) — `cpp/capstone/app/main.cpp`
-- **execute()** (3 connections) — `cpp/capstone/src/command.cpp`
-- **test_command.cpp** (3 connections) — `cpp/capstone/tests/test_command.cpp`
-- **command.cpp** (2 connections) — `cpp/capstone/src/command.cpp`
-- **test_kvstore.cpp** (2 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **Count** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **main()** (1 connections) — `cpp/capstone/app/main.cpp`
-- **string** (1 connections) — `cpp/capstone/src/command.cpp`
-- **Del** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **GetExistingAndMissing** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **Keys** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **SetReturnsOk** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **UnknownCommand** (1 connections) — `cpp/capstone/tests/test_command.cpp`
-- **ValueCanContainSpaces** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **TEST()** (9 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **fraction.cpp** (8 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **Fraction()** (4 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **Fraction** (3 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **add()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **multiply()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **operator==()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **to_string()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **test_fraction.cpp** (2 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **numerator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **denominator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **string** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
+- **NormalizesOnConstruction** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **MovesSignToNumerator** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Add** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Multiply** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **Equality** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **ToString** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
 
 ## Relationships
 
-- [[Rust: main.rs]] (1 shared connections)
-- [[C++: kvstore.cpp]] (1 shared connections)
-- [[Rust: acceptance.rs]] (1 shared connections)
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `cpp/capstone/app/main.cpp`
-- `cpp/capstone/src/command.cpp`
-- `cpp/capstone/tests/test_command.cpp`
-- `cpp/capstone/tests/test_kvstore.cpp`
+- `cpp/modules/04-classes/src/fraction.cpp`
+- `cpp/modules/04-classes/tests/test_fraction.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 42 (100%)
+- EXTRACTED: 44 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

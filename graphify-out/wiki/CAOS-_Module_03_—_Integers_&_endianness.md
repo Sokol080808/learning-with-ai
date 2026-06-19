@@ -1,6 +1,6 @@
 # CAOS: Module 03 — Integers & endianness
 
-> 6 nodes · cohesion 0.40
+> 6 nodes
 
 ## Key Concepts
 

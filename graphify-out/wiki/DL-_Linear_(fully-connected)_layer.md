@@ -1,6 +1,6 @@
 # DL: Linear (fully-connected) layer
 
-> 4 nodes · cohesion 0.83
+> 4 nodes
 
 ## Key Concepts
 

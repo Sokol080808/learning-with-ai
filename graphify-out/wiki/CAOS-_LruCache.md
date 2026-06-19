@@ -1,15 +1,15 @@
 # CAOS: LruCache
 
-> 6 nodes · cohesion 0.60
+> 6 nodes
 
 ## Key Concepts
 
-- **LruCache** (5 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
 - **lrucache.c** (5 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
+- **LruCache** (5 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
 - **lru_create()** (2 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
-- **lru_free()** (2 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
 - **lru_get()** (2 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
 - **lru_put()** (2 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
+- **lru_free()** (2 connections) — `caos/modules/08-cache-locality/src/lrucache.c`
 
 ## Relationships
 

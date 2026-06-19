@@ -1,6 +1,6 @@
 # Python: Module 01: Types, variables, numbers, st
 
-> 10 nodes · cohesion 0.20
+> 10 nodes
 
 ## Key Concepts
 
@@ -9,9 +9,9 @@
 - **String methods: split/join/strip/lower/replace** (4 connections) — `python/modules/04-strings/README.md`
 - **String immutability** (2 connections) — `python/modules/01-basics/README.md`
 - **Truthiness** (2 connections) — `python/modules/02-control-flow/README.md`
-- **Type conversions int()/float()/str()** (1 connections) — `python/modules/01-basics/README.md`
 - **Integer vs float division (// vs /)** (1 connections) — `python/modules/01-basics/README.md`
 - **f-strings and formatting** (1 connections) — `python/modules/01-basics/README.md`
+- **Type conversions int()/float()/str()** (1 connections) — `python/modules/01-basics/README.md`
 - **Variable is a label, not a fixed-type box** (1 connections) — `python/modules/01-basics/README.md`
 - **Take then transform then return (immutable strings)** (1 connections) — `python/modules/04-strings/README.md`
 

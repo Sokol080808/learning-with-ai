@@ -1,14 +1,14 @@
 # Python: iterable vs iterator (__iter__, __next__
 
-> 7 nodes · cohesion 0.33
+> 7 nodes
 
 ## Key Concepts
 
-- **iterable vs iterator (__iter__, __next__, StopIteration)** (4 connections) — `python/modules/09-iterators-generators/README.md`
 - **Module 09: Iterators and generators** (4 connections) — `python/modules/09-iterators-generators/README.md`
+- **iterable vs iterator (__iter__, __next__, StopIteration)** (4 connections) — `python/modules/09-iterators-generators/README.md`
 - **Comprehensions (list/dict/set)** (2 connections) — `python/modules/03-collections/README.md`
-- **Generator expressions** (2 connections) — `python/modules/09-iterators-generators/README.md`
 - **Generators (yield and laziness)** (2 connections) — `python/modules/09-iterators-generators/README.md`
+- **Generator expressions** (2 connections) — `python/modules/09-iterators-generators/README.md`
 - **Laziness (memory and infinite sequences)** (1 connections) — `python/modules/09-iterators-generators/README.md`
 - **Iteration is a protocol, not magic** (1 connections) — `python/modules/09-iterators-generators/README.md`
 

@@ -1,26 +1,23 @@
 # C++: TEST()
 
-> 17 nodes · cohesion 0.15
+> 14 nodes
 
 ## Key Concepts
 
-- **TEST()** (10 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **task08.cpp** (5 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **vector** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **char_frequency()** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **count_greater()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **sorted_desc()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **evens()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **squared()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **CharFrequency** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **CountGreater** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **map** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **string** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **Evens** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **SortedDesc** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Squared** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Stl** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **test_task08.cpp** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **TEST()** (12 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **task03.cpp** (5 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **sum_array()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **swap_ints()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **count_value()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **max_element_ptr()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **reverse_in_place()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **test_task03.cpp** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **Pointers** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SumArray** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SwapInts** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **CountValue** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **MaxElementPtr** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **ReverseInPlace** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Relationships
 
@@ -28,13 +25,13 @@
 
 ## Source Files
 
-- `cpp/modules/08-stl/src/task08.cpp`
-- `cpp/modules/08-stl/tests/test_task08.cpp`
+- `cpp/modules/03-pointers-memory/src/task03.cpp`
+- `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 36 (86%)
-- INFERRED: 6 (14%)
+- EXTRACTED: 24 (71%)
+- INFERRED: 10 (29%)
 - AMBIGUOUS: 0 (0%)
 
 ---

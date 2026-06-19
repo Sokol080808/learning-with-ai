@@ -1,6 +1,6 @@
 # C++: Module 06 - Smart Pointers and Ownership
 
-> 7 nodes · cohesion 0.33
+> 7 nodes
 
 ## Key Concepts
 
@@ -8,9 +8,9 @@
 - **Rule of Zero** (3 connections) — `cpp/modules/05-copy-move/README.md`
 - **The Big Five (special member functions)** (2 connections) — `cpp/modules/05-copy-move/README.md`
 - **Ownership Expressed in the Type** (2 connections) — `cpp/modules/06-smart-pointers/README.md`
+- **Smart Pointer** (1 connections) — `cpp/GLOSSARY.md`
 - **std::shared_ptr (shared ownership)** (1 connections) — `cpp/modules/06-smart-pointers/README.md`
 - **std::weak_ptr (breaks cycles)** (1 connections) — `cpp/modules/06-smart-pointers/README.md`
-- **Smart Pointer** (1 connections) — `cpp/GLOSSARY.md`
 
 ## Relationships
 

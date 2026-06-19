@@ -1,6 +1,6 @@
 # Rust: Rust Course (from basics to junior level)
 
-> 9 nodes · cohesion 0.25
+> 9 nodes
 
 ## Key Concepts
 
@@ -10,9 +10,9 @@
 - **Rationale: DL prerequisites — basic Python (track 00-09), school math, no GPU needed** (2 connections) — `deep-learning/README.md`
 - **Rationale: Rust weaknesses — steep learning curve, slow compiles, poor for quick scripts** (2 connections) — `rust/README.md`
 - **Rationale: what is ML/DL — learn rules from examples; the train loop is all there is** (1 connections) — `deep-learning/README.md`
-- **Rationale: Rust prereqs — basic programming (from C++ track), no prior Rust required** (1 connections) — `rust/README.md`
-- **Rationale: Rust strengths — fearless concurrency, C/C++ perf, great tooling** (1 connections) — `rust/README.md`
 - **Rationale: what/why Rust — systems language, compiler proves memory safety, no GC** (1 connections) — `rust/README.md`
+- **Rationale: Rust strengths — fearless concurrency, C/C++ perf, great tooling** (1 connections) — `rust/README.md`
+- **Rationale: Rust prereqs — basic programming (from C++ track), no prior Rust required** (1 connections) — `rust/README.md`
 
 ## Relationships
 

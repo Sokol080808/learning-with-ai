@@ -1,21 +1,31 @@
 # CAOS: TEST()
 
-> 12 nodes · cohesion 0.17
+> 22 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **ClassicRotation** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **EqualBursts** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **FcfsAvgWaiting** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **MixedBursts** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **OneProcessWaitsZero** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **OrderMattersForWaitingSum** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **QuantumCoversAllBecomesFcfs** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **QuantumOneRoundRobin** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **RoundRobinOrder** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **SingleProcessSplitByQuantum** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
-- **test_scheduling.cpp** (1 connections) — `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- **TEST()** (21 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **test_paging.cpp** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **PageNumber** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **FirstPageIsZero** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **CrossingTheBoundary** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **OtherPageSizes** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **PageOffset** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **BasicOffsets** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **PageNumberOffset** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **ReconstructAddress** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **FifoPageFaults** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **AllUniqueAllCold** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **AllSameOnlyOneCold** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **FramesCoverWorkingSet** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **ClassicBeladyThreeFrames** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **BeladyAnomalyFourFrames** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **TextbookString** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **LruPageFaults** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **TextbookStringBeatsFifo** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **NoAnomalyMoreFramesNotWorse** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **LruVsFifo** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
+- **CyclicWorstCaseTies** (1 connections) — `caos/modules/12-virtual-memory/tests/test_paging.cpp`
 
 ## Relationships
 
@@ -23,11 +33,11 @@
 
 ## Source Files
 
-- `caos/modules/11-scheduling/tests/test_scheduling.cpp`
+- `caos/modules/12-virtual-memory/tests/test_paging.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 22 (100%)
+- EXTRACTED: 42 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

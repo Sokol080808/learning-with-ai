@@ -1,15 +1,15 @@
 # Rust: Result
 
-> 7 nodes · cohesion 0.57
+> 7 nodes
 
 ## Key Concepts
 
-- **Result** (4 connections) — `rust/modules/07-error-handling/src/lib.rs`
 - **lib.rs** (4 connections) — `rust/modules/07-error-handling/src/lib.rs`
+- **Result** (4 connections) — `rust/modules/07-error-handling/src/lib.rs`
 - **String** (4 connections) — `rust/modules/07-error-handling/src/lib.rs`
+- **parse_int()** (3 connections) — `rust/modules/07-error-handling/src/lib.rs`
 - **divide()** (3 connections) — `rust/modules/07-error-handling/src/lib.rs`
 - **element_at()** (3 connections) — `rust/modules/07-error-handling/src/lib.rs`
-- **parse_int()** (3 connections) — `rust/modules/07-error-handling/src/lib.rs`
 - **sum_parsed()** (3 connections) — `rust/modules/07-error-handling/src/lib.rs`
 
 ## Relationships

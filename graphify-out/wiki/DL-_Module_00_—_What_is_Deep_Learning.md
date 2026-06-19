@@ -1,6 +1,6 @@
 # DL: Module 00 — What is Deep Learning
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

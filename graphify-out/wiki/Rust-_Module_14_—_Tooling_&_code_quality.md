@@ -1,12 +1,12 @@
 # Rust: Module 14 — Tooling & code quality
 
-> 3 nodes · cohesion 0.67
+> 3 nodes
 
 ## Key Concepts
 
 - **Module 14 — Tooling & code quality** (2 connections) — `rust/modules/14-tooling/README.md`
-- **cargo doc, tests & code organization** (1 connections) — `rust/modules/14-tooling/README.md`
 - **cargo fmt & clippy** (1 connections) — `rust/modules/14-tooling/README.md`
+- **cargo doc, tests & code organization** (1 connections) — `rust/modules/14-tooling/README.md`
 
 ## Relationships
 

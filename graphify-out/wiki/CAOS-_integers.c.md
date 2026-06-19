@@ -1,15 +1,15 @@
 # CAOS: integers.c
 
-> 6 nodes · cohesion 0.33
+> 6 nodes
 
 ## Key Concepts
 
 - **integers.c** (5 connections) — `caos/modules/03-integers-endianness/src/integers.c`
 - **add_overflows()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
-- **is_little_endian()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
-- **sign_extend()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
 - **swap16()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
 - **swap32()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
+- **sign_extend()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
+- **is_little_endian()** (1 connections) — `caos/modules/03-integers-endianness/src/integers.c`
 
 ## Relationships
 

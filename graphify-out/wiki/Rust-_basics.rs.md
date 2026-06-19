@@ -1,19 +1,19 @@
 # Rust: basics.rs
 
-> 10 nodes · cohesion 0.20
+> 10 nodes
 
 ## Key Concepts
 
 - **basics.rs** (9 connections) — `rust/modules/01-basics/tests/basics.rs`
-- **abs_diff_edge_cases()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
-- **abs_diff_is_symmetric()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
-- **fahrenheit_body_temperature()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 - **fahrenheit_known_points()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
+- **fahrenheit_body_temperature()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 - **fahrenheit_minus_forty_is_the_fixed_point()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 - **is_even_basic()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 - **is_even_handles_negatives()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
-- **min_of_three_all_equal()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 - **min_of_three_picks_smallest()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
+- **min_of_three_all_equal()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
+- **abs_diff_is_symmetric()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
+- **abs_diff_edge_cases()** (1 connections) — `rust/modules/01-basics/tests/basics.rs`
 
 ## Relationships
 

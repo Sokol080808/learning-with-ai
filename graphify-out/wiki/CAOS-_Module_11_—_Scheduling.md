@@ -1,6 +1,6 @@
 # CAOS: Module 11 — Scheduling
 
-> 9 nodes · cohesion 0.25
+> 9 nodes
 
 ## Key Concepts
 

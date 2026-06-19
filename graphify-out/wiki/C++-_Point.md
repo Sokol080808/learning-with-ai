@@ -1,6 +1,6 @@
 # C++: Point
 
-> 4 nodes · cohesion 0.50
+> 4 nodes
 
 ## Key Concepts
 

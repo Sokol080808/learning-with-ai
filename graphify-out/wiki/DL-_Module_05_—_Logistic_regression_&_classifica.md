@@ -1,18 +1,18 @@
 # DL: Module 05 — Logistic regression & classifica
 
-> 9 nodes · cohesion 0.31
+> 9 nodes
 
 ## Key Concepts
 
-- **Module 05 — Logistic regression & classification** (5 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 - **Capstone Milestone 3 — training loop** (5 connections) — `deep-learning/capstone/README.md`
+- **Module 05 — Logistic regression & classification** (5 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 - **Cross-entropy loss** (5 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 - **Logistic regression** (4 connections) — `deep-learning/modules/05-logistic-regression/README.md`
-- **Classification** (2 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 - **Loss function** (2 connections) — `deep-learning/modules/04-linear-regression/README.md`
 - **Sigmoid** (2 connections) — `deep-learning/modules/05-logistic-regression/README.md`
-- **Decision boundary** (1 connections) — `deep-learning/modules/05-logistic-regression/README.md`
+- **Classification** (2 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 - **Forward pass** (1 connections) — `deep-learning/GLOSSARY.md`
+- **Decision boundary** (1 connections) — `deep-learning/modules/05-logistic-regression/README.md`
 
 ## Relationships
 

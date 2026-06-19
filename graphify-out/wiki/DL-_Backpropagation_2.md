@@ -1,6 +1,6 @@
 # DL: Backpropagation
 
-> 8 nodes · cohesion 0.29
+> 8 nodes
 
 ## Key Concepts
 
@@ -9,9 +9,9 @@
 - **Chain rule** (3 connections) — `deep-learning/modules/07-backprop/README.md`
 - **Forward pass** (2 connections) — `deep-learning/modules/06-neural-net-numpy/README.md`
 - **Local derivative per operation** (2 connections) — `deep-learning/modules/08-autograd-engine/README.md`
-- **Idea: backprop is just the chain rule over the graph** (1 connections) — `deep-learning/modules/07-backprop/README.md`
 - **Backward pass (gradients layer by layer)** (1 connections) — `deep-learning/modules/07-backprop/README.md`
 - **Numerical gradient checking** (1 connections) — `deep-learning/modules/07-backprop/README.md`
+- **Idea: backprop is just the chain rule over the graph** (1 connections) — `deep-learning/modules/07-backprop/README.md`
 
 ## Relationships
 

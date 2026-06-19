@@ -1,6 +1,6 @@
 # CAOS: floats.h
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

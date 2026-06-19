@@ -1,44 +1,45 @@
 # C++: TEST()
 
-> 20 nodes · cohesion 0.13
+> 17 nodes
 
 ## Key Concepts
 
-- **TEST()** (12 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **task10.cpp** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **color_name()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **minmax_of()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **sum_values()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **evens_squared()** (3 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **string** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **vector** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **square_ce()** (2 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
-- **Color** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **ColorName** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **map** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **pair** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
-- **EvensSquared** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **task10.hpp** (1 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
-- **MinMax** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **Modern** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **SquareConstexpr** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **SumValues** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
-- **test_task10.cpp** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **TEST()** (9 connections) — `cpp/capstone/tests/test_command.cpp`
+- **KvStore** (7 connections) — `cpp/capstone/src/command.cpp`
+- **Command** (4 connections) — `cpp/capstone/tests/test_command.cpp`
+- **main.cpp** (3 connections) — `cpp/capstone/app/main.cpp`
+- **execute()** (3 connections) — `cpp/capstone/src/command.cpp`
+- **test_command.cpp** (3 connections) — `cpp/capstone/tests/test_command.cpp`
+- **command.cpp** (2 connections) — `cpp/capstone/src/command.cpp`
+- **test_kvstore.cpp** (2 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **main()** (1 connections) — `cpp/capstone/app/main.cpp`
+- **string** (1 connections) — `cpp/capstone/src/command.cpp`
+- **SetReturnsOk** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **GetExistingAndMissing** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **ValueCanContainSpaces** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **Del** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **Count** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **Keys** (1 connections) — `cpp/capstone/tests/test_command.cpp`
+- **UnknownCommand** (1 connections) — `cpp/capstone/tests/test_command.cpp`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[Rust: main.rs]] (1 shared connections)
+- [[C++: kvstore.cpp]] (1 shared connections)
+- [[Rust: acceptance.rs]] (1 shared connections)
+- [[C++: TEST()]] (1 shared connections)
 
 ## Source Files
 
-- `cpp/modules/10-modern-idioms/include/task10.hpp`
-- `cpp/modules/10-modern-idioms/src/task10.cpp`
-- `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- `cpp/capstone/app/main.cpp`
+- `cpp/capstone/src/command.cpp`
+- `cpp/capstone/tests/test_command.cpp`
+- `cpp/capstone/tests/test_kvstore.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (79%)
-- INFERRED: 10 (21%)
+- EXTRACTED: 42 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

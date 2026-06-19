@@ -1,23 +1,23 @@
 # C++: Capstone - Mini Key-Value Store (kvstore)
 
-> 8 nodes · cohesion 0.25
+> 8 nodes
 
 ## Key Concepts
 
 - **Capstone - Mini Key-Value Store (kvstore)** (5 connections) — `cpp/capstone/README.md`
 - **Root CMake Build (C++20, FetchContent, auto-modules)** (3 connections) — `cpp/CMakeLists.txt`
+- **GoogleTest** (2 connections) — `cpp/GLOSSARY.md`
 - **Capstone Build (lib + app + tests)** (2 connections) — `cpp/capstone/CMakeLists.txt`
 - **Command execute() (Milestone 2)** (2 connections) — `cpp/capstone/README.md`
-- **GoogleTest** (2 connections) — `cpp/GLOSSARY.md`
+- **add_exercise() Helper Pattern** (1 connections) — `cpp/CMakeLists.txt`
 - **Persistence save/load (Milestone 3)** (1 connections) — `cpp/capstone/README.md`
 - **REPL (read-eval-print loop)** (1 connections) — `cpp/capstone/README.md`
-- **add_exercise() Helper Pattern** (1 connections) — `cpp/CMakeLists.txt`
 
 ## Relationships
 
-- [[C++: Module 02 - Control Flow and Functions]] (1 shared connections)
-- [[C++: Module 07 - Templates and Concepts]] (1 shared connections)
 - [[C++: Compilation Pipeline (preprocess/compile/li]] (1 shared connections)
+- [[C++: Module 07 - Templates and Concepts]] (1 shared connections)
+- [[C++: Module 02 - Control Flow and Functions]] (1 shared connections)
 
 ## Source Files
 

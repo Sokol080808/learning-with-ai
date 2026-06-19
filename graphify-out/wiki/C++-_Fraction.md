@@ -1,19 +1,19 @@
 # C++: Fraction
 
-> 10 nodes · cohesion 0.20
+> 10 nodes
 
 ## Key Concepts
 
 - **Fraction** (9 connections) — `cpp/modules/04-classes/include/fraction.hpp`
 - **fraction.hpp** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
-- **add** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
-- **den_** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
-- **denominator** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
-- **multiply** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
-- **num_** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
 - **numerator** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
+- **denominator** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
+- **add** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
+- **multiply** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
 - **operator==** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
 - **to_string** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
+- **num_** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
+- **den_** (1 connections) — `cpp/modules/04-classes/include/fraction.hpp`
 
 ## Relationships
 

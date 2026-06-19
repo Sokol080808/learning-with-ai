@@ -1,13 +1,13 @@
 # Rust: Module 05 — Structs & methods
 
-> 4 nodes · cohesion 0.50
+> 4 nodes
 
 ## Key Concepts
 
 - **Module 05 — Structs & methods** (3 connections) — `rust/modules/05-structs/README.md`
+- **struct (record type)** (1 connections) — `rust/modules/05-structs/README.md`
 - **impl, methods & associated functions** (1 connections) — `rust/modules/05-structs/README.md`
 - **self / &self / &mut self receivers** (1 connections) — `rust/modules/05-structs/README.md`
-- **struct (record type)** (1 connections) — `rust/modules/05-structs/README.md`
 
 ## Relationships
 

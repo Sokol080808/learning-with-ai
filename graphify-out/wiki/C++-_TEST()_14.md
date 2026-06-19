@@ -1,31 +1,29 @@
 # C++: TEST()
 
-> 8 nodes · cohesion 0.25
+> 7 nodes
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Basics** (2 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **Average3** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **IsEven** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **MinOfThree** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **test_task01.cpp** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **ToFahrenheit** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
-- **TripleByReference** (1 connections) — `cpp/modules/01-basics/tests/test_task01.cpp`
+- **TEST()** (6 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **test_geometry.cpp** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **Geometry** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **Distance** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterSquare** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterTriangle** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **PerimeterDegenerate** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
 
 ## Relationships
 
-- [[Python: test_basics.py]] (1 shared connections)
-- [[C++: task01.cpp]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `cpp/modules/01-basics/tests/test_task01.cpp`
+- `cpp/modules/11-projects/tests/test_geometry.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 15 (94%)
-- INFERRED: 1 (6%)
+- EXTRACTED: 12 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

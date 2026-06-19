@@ -1,14 +1,17 @@
 # Rust: lib.rs
 
-> 5 nodes · cohesion 0.40
+> 8 nodes
 
 ## Key Concepts
 
-- **lib.rs** (4 connections) — `rust/modules/01-basics/src/lib.rs`
-- **abs_diff()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **is_even()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **min_of_three()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **to_fahrenheit()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **lib.rs** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **Article** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **my_max()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **T** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **largest()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **Summary** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **String** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **.summarize()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
 
 ## Relationships
 
@@ -16,11 +19,11 @@
 
 ## Source Files
 
-- `rust/modules/01-basics/src/lib.rs`
+- `rust/modules/09-generics-traits/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

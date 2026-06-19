@@ -1,24 +1,23 @@
 # CAOS: TEST()
 
-> 15 nodes · cohesion 0.13
+> 14 nodes
 
 ## Key Concepts
 
-- **TEST()** (14 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **MutexCounter** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **ParallelSum** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **ContendedNoLostUpdates** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **EmptyArray** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **FourThreads** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **LargeArray** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **ManyThreadsSameResult** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **NegativeNumbers** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **OneThreadSimple** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **SmallCase** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **test_threads.cpp** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **ThreadPerElement** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **UnevenSplit** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
-- **ZeroPerThread** (1 connections) — `caos/modules/10-processes-threads/tests/test_threads.cpp`
+- **TEST()** (13 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **test_arena.cpp** (3 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **aligned8()** (2 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **Arena** (2 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **InitGivesFullCapacity** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **SingleAllocInsideBufferAndAligned** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **EveryBlockIsAligned** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **SequentialBlocksDoNotOverlap** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **AllocatedMemoryIsUsable** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **RemainingShrinksByAtLeastRequest** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **AllocTooBigReturnsNull** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **RunsOutOfSpace** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **ResetRestoresFullCapacity** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
+- **ZeroSizedAllocIsAlignedAndNonNull** (1 connections) — `caos/modules/09-allocators/tests/test_arena.cpp`
 
 ## Relationships
 
@@ -26,11 +25,11 @@
 
 ## Source Files
 
-- `caos/modules/10-processes-threads/tests/test_threads.cpp`
+- `caos/modules/09-allocators/tests/test_arena.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 28 (100%)
+- EXTRACTED: 30 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

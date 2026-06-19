@@ -1,6 +1,6 @@
 # Python: Module 11: Useful standard library
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 
@@ -12,8 +12,8 @@
 
 ## Relationships
 
-- [[Python: dict and set (hash tables)]] (1 shared connections)
 - [[Python: Capstone: CLI Todo Manager]] (1 shared connections)
+- [[Python: dict and set (hash tables)]] (1 shared connections)
 
 ## Source Files
 

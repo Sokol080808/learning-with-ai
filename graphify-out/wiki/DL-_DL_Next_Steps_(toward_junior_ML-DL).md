@@ -1,6 +1,6 @@
 # DL: DL Next Steps (toward junior ML/DL)
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

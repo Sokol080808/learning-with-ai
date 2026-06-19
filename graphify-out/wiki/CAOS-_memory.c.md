@@ -1,6 +1,6 @@
 # CAOS: memory.c
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 

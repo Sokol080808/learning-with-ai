@@ -1,13 +1,13 @@
 # CAOS: Arena
 
-> 6 nodes · cohesion 0.60
+> 6 nodes
 
 ## Key Concepts
 
-- **Arena** (5 connections) — `caos/modules/09-allocators/src/arena.c`
 - **arena.c** (5 connections) — `caos/modules/09-allocators/src/arena.c`
-- **arena_alloc()** (2 connections) — `caos/modules/09-allocators/src/arena.c`
+- **Arena** (5 connections) — `caos/modules/09-allocators/src/arena.c`
 - **arena_init()** (2 connections) — `caos/modules/09-allocators/src/arena.c`
+- **arena_alloc()** (2 connections) — `caos/modules/09-allocators/src/arena.c`
 - **arena_remaining()** (2 connections) — `caos/modules/09-allocators/src/arena.c`
 - **arena_reset()** (2 connections) — `caos/modules/09-allocators/src/arena.c`
 

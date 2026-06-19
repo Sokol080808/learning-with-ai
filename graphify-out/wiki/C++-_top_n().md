@@ -1,16 +1,16 @@
 # C++: top_n()
 
-> 7 nodes · cohesion 0.38
+> 7 nodes
 
 ## Key Concepts
 
 - **top_n()** (5 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
 - **word_count()** (3 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
+- **word_freq.cpp** (2 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
 - **map** (2 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
 - **string** (2 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
-- **word_freq.cpp** (2 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
-- **pair** (1 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
 - **vector** (1 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
+- **pair** (1 connections) — `cpp/modules/08-stl/project/src/word_freq.cpp`
 
 ## Relationships
 

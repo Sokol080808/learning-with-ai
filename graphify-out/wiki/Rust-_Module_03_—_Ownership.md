@@ -1,6 +1,6 @@
 # Rust: Module 03 — Ownership
 
-> 10 nodes · cohesion 0.22
+> 10 nodes
 
 ## Key Concepts
 
@@ -10,10 +10,10 @@
 - **Box<T> (heap ownership)** (2 connections) — `rust/modules/13-smart-pointers/README.md`
 - **Rc<T> (shared ownership)** (2 connections) — `rust/modules/13-smart-pointers/README.md`
 - **RefCell<T> (interior mutability)** (2 connections) — `rust/modules/13-smart-pointers/README.md`
-- **Borrow checker** (1 connections) — `rust/modules/03-ownership/README.md`
+- **Move semantics** (1 connections) — `rust/modules/03-ownership/README.md`
 - **Copy & Clone** (1 connections) — `rust/modules/03-ownership/README.md`
 - **Drop at end of scope (no GC)** (1 connections) — `rust/modules/03-ownership/README.md`
-- **Move semantics** (1 connections) — `rust/modules/03-ownership/README.md`
+- **Borrow checker** (1 connections) — `rust/modules/03-ownership/README.md`
 
 ## Relationships
 

@@ -1,13 +1,13 @@
 # DL: Backpropagation
 
-> 8 nodes · cohesion 0.32
+> 8 nodes
 
 ## Key Concepts
 
 - **Backpropagation** (5 connections) — `deep-learning/GLOSSARY.md`
 - **Gradient** (4 connections) — `deep-learning/modules/03-gradients/README.md`
-- **Module 03 — Derivatives, chain rule, gradients** (3 connections) — `deep-learning/modules/03-gradients/README.md`
 - **Autograd (automatic differentiation)** (3 connections) — `deep-learning/GLOSSARY.md`
+- **Module 03 — Derivatives, chain rule, gradients** (3 connections) — `deep-learning/modules/03-gradients/README.md`
 - **Chain rule** (3 connections) — `deep-learning/modules/03-gradients/README.md`
 - **Computational graph** (2 connections) — `deep-learning/GLOSSARY.md`
 - **Derivative** (2 connections) — `deep-learning/modules/03-gradients/README.md`

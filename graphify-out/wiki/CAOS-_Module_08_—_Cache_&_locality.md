@@ -1,6 +1,6 @@
 # CAOS: Module 08 — Cache & locality
 
-> 10 nodes · cohesion 0.24
+> 10 nodes
 
 ## Key Concepts
 
@@ -8,11 +8,11 @@
 - **Module 12 — Virtual memory** (5 connections) — `caos/modules/12-virtual-memory/README.md`
 - **memory address** (4 connections) — `caos/modules/05-memory-layout/README.md`
 - **cache** (2 connections) — `caos/modules/08-cache-locality/README.md`
-- **cache miss** (2 connections) — `caos/modules/08-cache-locality/README.md`
 - **locality** (2 connections) — `caos/modules/08-cache-locality/README.md`
+- **cache miss** (2 connections) — `caos/modules/08-cache-locality/README.md`
 - **page (fixed-size block)** (2 connections) — `caos/modules/12-virtual-memory/README.md`
-- **page fault** (2 connections) — `caos/modules/12-virtual-memory/README.md`
 - **TLB (Translation Lookaside Buffer)** (2 connections) — `caos/modules/12-virtual-memory/README.md`
+- **page fault** (2 connections) — `caos/modules/12-virtual-memory/README.md`
 - **page table** (1 connections) — `caos/modules/12-virtual-memory/README.md`
 
 ## Relationships

@@ -1,29 +1,35 @@
 # CAOS: TEST()
 
-> 20 nodes · cohesion 0.10
+> 26 nodes
 
 ## Key Concepts
 
-- **TEST()** (19 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **AllZeroAndAllOne** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **IsPowerOfTwo** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **ClearBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **ClearsTargetBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **EdgeCases** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **FlipsTargetBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **GetBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **HighBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **LeavesOtherBitsAlone** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **NotPowers** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **ReadsIndividualBits** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **ReverseBytes** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **SetBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **SetsTargetBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **SwapsByteOrder** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **test_bits.cpp** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **ToggleBit** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **TruePowers** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
-- **TwiceRestoresOriginal** (1 connections) — `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
+- **TEST()** (25 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **test_cstrings.cpp** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **MyStrlen** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **EmptyString** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **SimpleWords** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **StopsAtNulByte** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **MatchesLibc** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **SafeCopy** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **FitsExactly** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **EmptySource** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **TruncatesToCapMinusOne** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **AlwaysNulTerminates** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **CapOneGivesEmptyString** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **TruncationDetectableByReturn** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **ReverseString** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **OddLength** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **EvenLength** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **SingleChar** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **Palindrome** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **WithSpaces** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **MyStrcmp** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **EqualStrings** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **FirstLessSecond** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **FirstGreaterSecond** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- **SignMatchesLibc** (1 connections) — `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
+- *... and 1 more nodes in this community*
 
 ## Relationships
 
@@ -31,11 +37,11 @@
 
 ## Source Files
 
-- `caos/modules/02-bit-manipulation/tests/test_bits.cpp`
+- `caos/modules/06-arrays-strings/tests/test_cstrings.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 38 (100%)
+- EXTRACTED: 50 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

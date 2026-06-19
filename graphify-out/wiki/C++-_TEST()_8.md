@@ -1,25 +1,21 @@
 # C++: TEST()
 
-> 16 nodes · cohesion 0.16
+> 12 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **two_sum()** (5 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **vector** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **task13.cpp** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **binary_search_idx()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **insertion_sort()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **Algo** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **BinarySearch** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **optional** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **pair** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **InsertionSort** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **PushTopPopSize** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **Stack** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **test_task13.cpp** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **TwoSum** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **WorksForStrings** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- **TEST()** (11 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **test_int_vector.cpp** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IntVector** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **EmptyByDefault** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **FillConstructor** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **PushBackGrows** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IndexIsWritable** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **DeepCopyIndependent** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **CopyAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **SelfAssignmentSafe** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveConstructorStealsBuffer** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Relationships
 
@@ -27,13 +23,12 @@
 
 ## Source Files
 
-- `cpp/modules/13-data-structures/src/task13.cpp`
-- `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (84%)
-- INFERRED: 6 (16%)
+- EXTRACTED: 22 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

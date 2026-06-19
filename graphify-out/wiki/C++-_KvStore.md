@@ -1,6 +1,6 @@
 # C++: KvStore
 
-> 13 nodes · cohesion 0.18
+> 13 nodes
 
 ## Key Concepts
 
@@ -9,14 +9,14 @@
 - **map** (2 connections) — `cpp/capstone/include/kvstore.hpp`
 - **string** (2 connections) — `cpp/capstone/include/kvstore.hpp`
 - **command.hpp** (1 connections) — `cpp/capstone/include/command.hpp`
-- **data_** (1 connections) — `cpp/capstone/include/kvstore.hpp`
-- **erase** (1 connections) — `cpp/capstone/include/kvstore.hpp`
-- **get** (1 connections) — `cpp/capstone/include/kvstore.hpp`
-- **keys** (1 connections) — `cpp/capstone/include/kvstore.hpp`
-- **load** (1 connections) — `cpp/capstone/include/kvstore.hpp`
-- **save** (1 connections) — `cpp/capstone/include/kvstore.hpp`
 - **set** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **get** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **erase** (1 connections) — `cpp/capstone/include/kvstore.hpp`
 - **size** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **keys** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **save** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **load** (1 connections) — `cpp/capstone/include/kvstore.hpp`
+- **data_** (1 connections) — `cpp/capstone/include/kvstore.hpp`
 
 ## Relationships
 

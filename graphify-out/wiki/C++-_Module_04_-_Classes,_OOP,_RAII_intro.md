@@ -1,6 +1,6 @@
 # C++: Module 04 - Classes, OOP, RAII intro
 
-> 8 nodes · cohesion 0.25
+> 8 nodes
 
 ## Key Concepts
 

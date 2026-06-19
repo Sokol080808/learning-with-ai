@@ -1,15 +1,15 @@
 # Rust: Module 01 — Variables, types, functions
 
-> 6 nodes · cohesion 0.33
+> 6 nodes
 
 ## Key Concepts
 
 - **Module 01 — Variables, types, functions** (5 connections) — `rust/modules/01-basics/README.md`
-- **Expressions vs statements** (1 connections) — `rust/modules/01-basics/README.md`
 - **Immutability by default (let/mut)** (1 connections) — `rust/modules/01-basics/README.md`
 - **Scalar & compound types** (1 connections) — `rust/modules/01-basics/README.md`
-- **Shadowing** (1 connections) — `rust/modules/01-basics/README.md`
 - **Type inference** (1 connections) — `rust/modules/01-basics/README.md`
+- **Expressions vs statements** (1 connections) — `rust/modules/01-basics/README.md`
+- **Shadowing** (1 connections) — `rust/modules/01-basics/README.md`
 
 ## Relationships
 

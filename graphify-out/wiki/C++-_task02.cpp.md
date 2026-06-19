@@ -1,16 +1,16 @@
 # C++: task02.cpp
 
-> 7 nodes · cohesion 0.29
+> 7 nodes
 
 ## Key Concepts
 
 - **task02.cpp** (5 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
 - **fizzbuzz()** (2 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
-- **string** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
-- **area()** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
 - **factorial()** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
 - **fib()** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
 - **gcd()** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
+- **string** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
+- **area()** (1 connections) — `cpp/modules/02-control-flow/src/task02.cpp`
 
 ## Relationships
 

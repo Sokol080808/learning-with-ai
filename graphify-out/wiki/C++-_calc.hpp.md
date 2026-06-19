@@ -1,6 +1,6 @@
 # C++: calc.hpp
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

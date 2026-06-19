@@ -1,31 +1,44 @@
 # C++: TEST()
 
-> 9 nodes · cohesion 0.22
+> 20 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **Erase** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **KvStoreCore** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **KvStorePersistence** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **LoadMissingFileReturnsFalse** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **OverwriteValue** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SaveThenLoad** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SetAndGet** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SizeAndKeysSorted** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **TEST()** (12 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **task10.cpp** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **minmax_of()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **color_name()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **sum_values()** (4 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **evens_squared()** (3 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **square_ce()** (2 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
+- **vector** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **string** (2 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **task10.hpp** (1 connections) — `cpp/modules/10-modern-idioms/include/task10.hpp`
+- **pair** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **Color** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **map** (1 connections) — `cpp/modules/10-modern-idioms/src/task10.cpp`
+- **test_task10.cpp** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **Modern** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **MinMax** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **ColorName** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **SquareConstexpr** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **EvensSquared** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
+- **SumValues** (1 connections) — `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
 
 ## Relationships
 
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `cpp/capstone/tests/test_kvstore.cpp`
+- `cpp/modules/10-modern-idioms/include/task10.hpp`
+- `cpp/modules/10-modern-idioms/src/task10.cpp`
+- `cpp/modules/10-modern-idioms/tests/test_task10.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 17 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 38 (79%)
+- INFERRED: 10 (21%)
 - AMBIGUOUS: 0 (0%)
 
 ---

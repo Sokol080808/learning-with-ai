@@ -1,21 +1,31 @@
 # C++: TEST()
 
-> 12 nodes · cohesion 0.18
+> 22 nodes
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **task14.cpp** (3 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **atomic_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **concurrent_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **parallel_sum()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **AtomicCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **Concurrency** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **vector** (1 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **MutexCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSum** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSumUneven** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **test_task14.cpp** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- **TEST()** (9 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Pair** (7 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **task07.hpp** (6 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **T** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **sum_vector()** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **clamp_value()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **First** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **Second** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.Pair()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.swapped()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **my_max()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **vector** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **is_power_of_two()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **first** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **second** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **test_task07.cpp** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Templates** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **MyMax** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **ClampValue** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **SumVector** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **PairSwapped** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Relationships
 
@@ -23,13 +33,13 @@
 
 ## Source Files
 
-- `cpp/modules/14-concurrency/src/task14.cpp`
-- `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- `cpp/modules/07-templates/include/task07.hpp`
+- `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (83%)
-- INFERRED: 4 (17%)
+- EXTRACTED: 56 (93%)
+- INFERRED: 4 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

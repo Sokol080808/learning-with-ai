@@ -1,13 +1,13 @@
 # CAOS: floats.c
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 
 - **floats.c** (4 connections) — `caos/modules/04-floating-point/src/floats.c`
 - **float_bits()** (1 connections) — `caos/modules/04-floating-point/src/floats.c`
-- **float_raw_exponent()** (1 connections) — `caos/modules/04-floating-point/src/floats.c`
 - **float_sign()** (1 connections) — `caos/modules/04-floating-point/src/floats.c`
+- **float_raw_exponent()** (1 connections) — `caos/modules/04-floating-point/src/floats.c`
 - **my_isnan()** (1 connections) — `caos/modules/04-floating-point/src/floats.c`
 
 ## Relationships

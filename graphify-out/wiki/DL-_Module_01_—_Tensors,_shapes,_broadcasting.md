@@ -1,15 +1,15 @@
 # DL: Module 01 — Tensors, shapes, broadcasting
 
-> 6 nodes · cohesion 0.33
+> 6 nodes
 
 ## Key Concepts
 
 - **Module 01 — Tensors, shapes, broadcasting** (5 connections) — `deep-learning/modules/01-tensors/README.md`
 - **Batch** (2 connections) — `deep-learning/GLOSSARY.md`
+- **Tensor** (1 connections) — `deep-learning/modules/01-tensors/README.md`
+- **Shape** (1 connections) — `deep-learning/modules/01-tensors/README.md`
 - **Axis / dim** (1 connections) — `deep-learning/modules/01-tensors/README.md`
 - **Broadcasting** (1 connections) — `deep-learning/modules/01-tensors/README.md`
-- **Shape** (1 connections) — `deep-learning/modules/01-tensors/README.md`
-- **Tensor** (1 connections) — `deep-learning/modules/01-tensors/README.md`
 
 ## Relationships
 

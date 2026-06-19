@@ -1,6 +1,6 @@
 # C++: add_exercise CMake helper macro
 
-> 24 nodes · cohesion 0.09
+> 24 nodes
 
 ## Key Concepts
 
@@ -13,9 +13,9 @@
 - **Module 00 Setup CMakeLists (m00_warmup)** (2 connections) — `cpp/modules/00-setup/CMakeLists.txt`
 - **Module 08 STL CMakeLists (m08_stl + wordfreq project)** (2 connections) — `cpp/modules/08-stl/CMakeLists.txt`
 - **Module 11 Projects CMakeLists (explicit geometry lib+app+tests)** (2 connections) — `cpp/modules/11-projects/CMakeLists.txt`
-- **Sequential module progression (each builds on prior)** (1 connections) — `cpp/README.md`
-- **Stub-with-TODO fill-in workflow** (1 connections) — `cpp/README.md`
 - **C++ track (junior course)** (1 connections) — `cpp/README.md`
+- **Stub-with-TODO fill-in workflow** (1 connections) — `cpp/README.md`
+- **Sequential module progression (each builds on prior)** (1 connections) — `cpp/README.md`
 - **Module 01 Basics CMakeLists (m01_basics)** (1 connections) — `cpp/modules/01-basics/CMakeLists.txt`
 - **Module 02 Control Flow CMakeLists** (1 connections) — `cpp/modules/02-control-flow/CMakeLists.txt`
 - **Module 03 Pointers/Memory CMakeLists** (1 connections) — `cpp/modules/03-pointers-memory/CMakeLists.txt`

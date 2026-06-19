@@ -1,6 +1,6 @@
 # DL: Module 16: Training in practice
 
-> 7 nodes · cohesion 0.29
+> 7 nodes
 
 ## Key Concepts
 

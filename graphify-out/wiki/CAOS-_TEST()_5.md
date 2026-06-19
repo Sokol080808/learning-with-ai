@@ -1,42 +1,43 @@
 # CAOS: TEST()
 
-> 21 nodes · cohesion 0.10
+> 22 nodes
 
 ## Key Concepts
 
-- **TEST()** (21 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **AllNegative** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **AllSame** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **EmptyString** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **EvenLength** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **MaxIn** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **OddLength** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **SumFirstN** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **CountChar** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **DoesNotTouchNeighbours** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **EmptyIsZero** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **ManyTimes** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **MaxIsLast** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **MixedValues** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **NotPresent** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **OnceOnly** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **ReverseArray** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **SeveralElements** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **SingleElement** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **SinglePositive** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
-- **WithNegatives** (1 connections) — `caos/modules/14-tooling/tests/test_buggy.cpp`
+- **TEST()** (21 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **test_integers.cpp** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **AddOverflows** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **SimpleNoOverflow** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **PositivePlusPositiveOverflows** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **NegativePlusNegativeOverflows** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **EdgesThatJustFit** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **Swap16** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **Basic** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **Edges** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **TwiceIsIdentity** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **Swap32** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **SignExtend** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **EightBits** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **IgnoresHigherBits** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **FourBits** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **TwelveBits** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **OneBit** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **FullWidth** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **IsLittleEndian** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **MatchesMemoryLayout** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
+- **ReturnsBoolean** (1 connections) — `caos/modules/03-integers-endianness/tests/test_integers.cpp`
 
 ## Relationships
 
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `caos/modules/14-tooling/tests/test_buggy.cpp`
+- `caos/modules/03-integers-endianness/tests/test_integers.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 41 (100%)
+- EXTRACTED: 42 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,6 +1,6 @@
 # CAOS: binary and hexadecimal systems
 
-> 12 nodes · cohesion 0.18
+> 12 nodes
 
 ## Key Concepts
 
@@ -9,8 +9,8 @@
 - **Module 01 — Number representation** (3 connections) — `caos/modules/01-number-representation/README.md`
 - **Module 04 — Floating point** (3 connections) — `caos/modules/04-floating-point/README.md`
 - **MSB / LSB** (2 connections) — `caos/modules/01-number-representation/README.md`
-- **bitwise operators (& | ^ ~)** (2 connections) — `caos/modules/02-bit-manipulation/README.md`
 - **bit shifts (<<, >>)** (2 connections) — `caos/modules/02-bit-manipulation/README.md`
+- **bitwise operators (& | ^ ~)** (2 connections) — `caos/modules/02-bit-manipulation/README.md`
 - **IEEE 754** (2 connections) — `caos/modules/04-floating-point/README.md`
 - **bitmask** (1 connections) — `caos/modules/02-bit-manipulation/README.md`
 - **bit flags (packed booleans)** (1 connections) — `caos/modules/02-bit-manipulation/README.md`
@@ -19,8 +19,8 @@
 
 ## Relationships
 
-- [[CAOS: Module 00 — Setup & how a program becomes ]] (1 shared connections)
 - [[CAOS: Module 03 — Integers & endianness]] (1 shared connections)
+- [[CAOS: Module 00 — Setup & how a program becomes ]] (1 shared connections)
 
 ## Source Files
 
