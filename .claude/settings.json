@@ -25,16 +25,6 @@
         "hooks": [
           {
             "type": "command",
-            "command": "DIR=\"${CLAUDE_PROJECT_DIR:-.}\"; [ -f \"$DIR/graphify-out/graph.json\" ] && [ \"$(git -C \"$DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" = \"main\" ] && { cd \"$DIR\" && graphify update . >/dev/null 2>&1; } || true",
-            "async": true,
-            "statusMessage": "graphify: updating knowledge graph (whole project, main only)"
-          }
-        ]
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "python3 \"${CLAUDE_PROJECT_DIR:-.}/.claude/hooks/capture_dialogue.py\"",
             "async": true,
             "statusMessage": "saving learning dialogue"
