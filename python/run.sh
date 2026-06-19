@@ -21,9 +21,10 @@ fi
 
 # --- .venv + pytest (создаётся один раз) ---
 if [ ! -x "$VENV/bin/pytest" ]; then
-  echo "==> Создаю виртуальное окружение и ставлю pytest (один раз)…"
+  echo "==> Создаю виртуальное окружение и ставлю pytest + hypothesis (один раз)…"
   python3 -m venv "$VENV"
-  "$VENV/bin/python" -m pip install -q --upgrade pip pytest
+  # hypothesis нужен для рандомизированных property-тестов (файлы test_*_props.py).
+  "$VENV/bin/python" -m pip install -q --upgrade pip pytest hypothesis
 fi
 PYTEST="$VENV/bin/pytest"
 

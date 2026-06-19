@@ -58,7 +58,7 @@ jobs:
           python-version: "3.12"
       - name: Импорт-проверка (collect-only; тесты намеренно красные)
         run: |
-          python -m pip install -U pip pytest
+          python -m pip install -U pip pytest hypothesis
           python -m pytest python -p no:cacheprovider --collect-only -q
 
   deep-learning:

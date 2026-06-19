@@ -12,6 +12,8 @@ __pycache__/
 **/.venv/
 .mypy_cache/
 .ruff_cache/
+.hypothesis/
+**/.hypothesis/
 
 # --- Rust: артефакты сборки cargo ---
 target/
