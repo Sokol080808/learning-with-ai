@@ -205,3 +205,145 @@ def is_iterable(obj) -> bool:
 Реализуешь — покажи код, скажу, в верном ли направлении. Особенно интересно про задание
 4: попробуй мысленно прогнать его на `range(5)`, на генераторе и на `42` — и объясни мне,
 почему ответы именно такие.
+
+---
+
+## Задание (существенное): Protocol + dataclass-фигуры + агрегатор холста
+
+Пока что ты работал с наследованием: `Circle(Shape)`, `Rectangle(Shape)`. В реальном
+коде классы часто приходят из разных мест и не могут «просто унаследоваться» от общего
+предка — они уже готовы, или живут в чужой библиотеке. Питон решает это через **Protocol**
+из модуля `typing`: ты описываешь *что умеет* нужный объект (его интерфейс), и любой класс
+с такими методами **автоматически** считается совместимым — без явного `class Foo(MyProtocol)`.
+
+Это и есть **структурная типизация** — статическая родственница утиной типизации.
+
+### Что нужно реализовать
+
+Всё пишется в `models.py`. Скелет уже добавлен — тебе нужно заполнить тела методов.
+
+#### 1. Протокол `Drawable`
+
+```python
+from typing import Protocol, runtime_checkable
+
+@runtime_checkable
+class Drawable(Protocol):
+    def area(self) -> float: ...
+    def label(self) -> str: ...
+```
+
+`@runtime_checkable` позволяет проверять протокол через `isinstance` во время работы
+программы (по умолчанию Protocol — только для статических анализаторов).
+
+Контракт:
+- `area() -> float` — площадь объекта; обязана быть `>= 0`.
+- `label() -> str` — короткая читаемая метка вида `"ИмяТипа(параметры)"`.
+
+#### 2. Dataclass `Disk`
+
+```python
+@dataclass
+class Disk:
+    r: float          # радиус >= 0
+
+    def area(self) -> float: ...    # math.pi * r²
+    def label(self) -> str: ...     # "Disk(r=<r>)"  — например "Disk(r=3.0)"
+```
+
+`Disk` **не наследует** `Drawable` — и всё равно удовлетворяет протоколу, потому что у
+него есть нужные методы.
+
+#### 3. Dataclass `Rect`
+
+```python
+@dataclass
+class Rect:
+    w: float          # ширина >= 0
+    h: float          # высота >= 0
+
+    def area(self) -> float: ...    # w * h
+    def label(self) -> str: ...     # "Rect(<w>x<h>)"  — например "Rect(4.0x5.0)"
+```
+
+#### 4. Dataclass `Ring`
+
+```python
+@dataclass
+class Ring:
+    outer: float      # внешний радиус
+    inner: float      # внутренний радиус (дырка); 0 <= inner <= outer
+
+    def area(self) -> float: ...    # math.pi * (outer² - inner²)
+    def label(self) -> str: ...     # "Ring(outer=<outer>, inner=<inner>)"
+```
+
+Подвох: когда `inner == 0`, кольцо вырождается в диск. Когда `inner == outer`, площадь
+равна нулю.
+
+#### 5. Функция `describe_canvas`
+
+```python
+def describe_canvas(shapes: list[Drawable]) -> list[str]:
+    ...
+```
+
+Принимает список *любых* объектов, удовлетворяющих `Drawable` (не только `Disk`/`Rect`/`Ring` —
+любой класс с методами `area()` и `label()` тоже подойдёт).
+
+Возвращает список строк вида:
+```
+"<label>: area=<площадь>"
+```
+где `<площадь>` — `round(shape.area(), 4)`. Список **отсортирован по убыванию площади**
+(самая большая фигура — первой). Для пустого списка — `[]`.
+
+Пример:
+```python
+describe_canvas([Rect(w=2.0, h=3.0), Disk(r=1.0)])
+# → ['Rect(2.0x3.0): area=6.0', 'Disk(r=1.0): area=3.1416']
+```
+
+### Подсказки
+
+<details>
+<summary>Что такое Protocol и зачем @runtime_checkable</summary>
+
+`Protocol` — это способ описать интерфейс без базового класса. Если ты напишешь
+`class Disk:` (без `(Drawable)`), mypy и pyright всё равно будут рады принять `Disk`
+туда, где ожидается `Drawable`, — потому что у него есть методы `area` и `label`.
+`@runtime_checkable` добавляет возможность `isinstance(obj, Drawable)` — без него
+такая проверка упадёт с ошибкой. Нужно помнить: runtime-проверка смотрит только на
+**наличие** атрибутов, не на их сигнатуры.
+</details>
+
+<details>
+<summary>Как реализовать area() и label() у трёх фигур</summary>
+
+- `Disk.area`: `math.pi * self.r ** 2`
+- `Disk.label`: `f"Disk(r={self.r})"`
+- `Rect.area`: `self.w * self.h`
+- `Rect.label`: `f"Rect({self.w}x{self.h})"`
+- `Ring.area`: `math.pi * (self.outer**2 - self.inner**2)` — та же формула Пифагора:
+  площадь большого диска минус площадь дырки.
+- `Ring.label`: `f"Ring(outer={self.outer}, inner={self.inner})"`
+</details>
+
+<details>
+<summary>Как построить describe_canvas: сортировка и форматирование</summary>
+
+Тебе нужно: (1) отсортировать по убыванию `area()`, (2) составить строку для каждой фигуры.
+Подсказка по сортировке: `sorted(shapes, key=..., reverse=True)`. Какой ключ передать?
+Тот, по которому хочешь упорядочить. Подсказка по строке: `f"{shape.label()}: area={round(shape.area(), 4)}"`.
+Собери это в list comprehension.
+</details>
+
+<details>
+<summary>Почему это «структурная», а не «утиная» типизация?</summary>
+
+Утиная типизация — это когда ты вызываешь метод в рантайме и надеешься, что он есть
+(никакой явной проверки). Структурная типизация — когда статический анализатор (mypy,
+pyright) проверяет совместимость *по форме* интерфейса, не требуя общего предка. Protocol
+выражает именно это: «мне не важно, кто ты по иерархии — важно, что ты умеешь». Python
+проверит это статически (через аннотации) и, с `@runtime_checkable`, ещё и в рантайме.
+</details>

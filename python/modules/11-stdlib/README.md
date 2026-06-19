@@ -205,3 +205,135 @@ p.read_text(encoding="utf-8")            # прочитать весь файл 
 
 Напишешь функцию — покажи код, и я скажу, в верном ли направлении ты идёшь (и заодно подскажу,
 где «батарейка» из стандартной библиотеки сэкономила бы тебе ещё пару строк).
+
+---
+
+## Задание (существенное): RecordAggregator — типизированный агрегатор записей
+
+### Мотивация
+
+Пять заданий выше — это отдельные «батарейки»: `Counter`, `defaultdict`, `json`, `datetime` —
+каждая сама по себе. Но на практике эти инструменты работают *вместе*: ты получаешь поток
+событий (логи, транзакции, клики), хочешь посчитать сводку, найти топ-категории, сравнить дни
+— и в конце сохранить или передать результат через JSON. Задача этого задания — построить один
+небольшой, но *нетривиальный* класс, который объединяет все четыре «батарейки» в единый
+инструмент.
+
+### Спецификация API
+
+Реализуй класс `RecordAggregator` в файле `stdlibtour.py`.
+
+**Запись** — это `dict` с тремя обязательными полями:
+
+| Поле       | Тип           | Контракт                                              |
+|------------|---------------|-------------------------------------------------------|
+| `"date"`   | `str`         | ISO-формат `"YYYY-MM-DD"`, проверять через `fromisoformat` |
+| `"category"` | `str`       | непустая строка                                       |
+| `"value"`  | `int` / `float` | конечное число (не NaN, не Inf)                     |
+
+**Методы:**
+
+```python
+agg = RecordAggregator()
+
+agg.add(record: dict) -> None
+    # Добавить запись. Валидировать все три поля; при нарушении — ValueError/TypeError.
+
+agg.summary() -> dict
+    # Ключи: count, categories, total_value, min_value, max_value, first_date, last_date.
+    # На пустом агрегаторе: count=0, total_value=0.0, min_value/max_value/first_date/last_date=None,
+    # categories={}.
+
+agg.top_categories(n: int = 3) -> list[tuple[str, int]]
+    # Топ-N категорий по убыванию частоты. Counter.most_common(n).
+    # При n=0 или нет записей — [].
+
+agg.daily_totals() -> dict[str, float]
+    # {ISO-дата: сумма value}. Использовать defaultdict(float).
+
+agg.to_json() -> str
+    # Сериализовать состояние через json.dumps. Достаточно для round-trip.
+
+RecordAggregator.from_json(s: str) -> RecordAggregator
+    # Класс-метод. Восстановить через json.loads. После from_json(to_json(agg)):
+    # summary() и daily_totals() совпадают с оригиналом.
+```
+
+**Краевые случаи:**
+
+- Пустой агрегатор — все «нет данных» поля `None` или `{}` или `0.0`.
+- `top_categories(n)` при `n` большем числа категорий — вернуть все категории.
+- Отрицательный `value` — разрешён (возвраты, кредиты); `min_value` может быть отрицательным.
+- Одна и та же дата в нескольких записях — суммы в `daily_totals()` накапливаются.
+- `add()` должна проверять поля **перед** сохранением: невалидная запись не изменяет состояние.
+
+### Подсказки
+
+<details><summary>Шаг 1 — внутреннее состояние __init__</summary>
+
+Думай о том, что потребуется для каждого метода:
+
+- `summary()` нужны: счётчик записей, список всех `value`, список всех `date`, счётчик категорий.
+- `daily_totals()` нужен: `defaultdict(float)` с накопленными суммами по датам.
+- `to_json()` / `from_json()` нужно сохранить всё это в JSON-совместимые типы.
+
+Заведи `self._records: list[dict]` — это проще всего: при `add()` просто добавляй в список,
+а в остальных методах пересчитывай из него. Это не самый эффективный вариант (O(n) на каждый
+вызов), но достаточный для учебной задачи.
+</details>
+
+<details><summary>Шаг 2 — валидация в add()</summary>
+
+Три проверки по порядку:
+
+1. **date**: `date.fromisoformat(record["date"])` — сам кинет `ValueError` на неправильном формате.
+2. **category**: `if not record["category"]: raise ValueError(...)` — пустая строка фальшива.
+3. **value**: `if not isinstance(record["value"], (int, float)): raise TypeError(...)`.
+   Но осторожно: `bool` — подкласс `int` в Python (`isinstance(True, int)` — `True`).
+   Реши, пропускать ли `bool` или тоже отбрасывать — смотри тесты, они подскажут.
+   Для проверки конечности: `import math; math.isfinite(v)`.
+</details>
+
+<details><summary>Шаг 3 — summary()</summary>
+
+Если `self._records` пуст — верни словарь с нулями/None прямо сразу.
+
+Иначе:
+- `count = len(self._records)`
+- `categories = dict(Counter(r["category"] for r in self._records))`
+- `values = [r["value"] for r in self._records]`; `total_value = float(sum(values))`; `min/max` — встроенные функции.
+- `dates = [r["date"] for r in self._records]`; `first_date = min(dates)`, `last_date = max(dates)` — ISO-строки сортируются лексикографически правильно!
+</details>
+
+<details><summary>Шаг 4 — daily_totals()</summary>
+
+```python
+from collections import defaultdict
+totals = defaultdict(float)
+for r in self._records:
+    totals[r["date"]] += r["value"]
+return dict(totals)
+```
+
+Всё. `defaultdict(float)` создаёт `0.0` для нового ключа, поэтому `+=` работает с первого раза.
+</details>
+
+<details><summary>Шаг 5 — to_json() / from_json()</summary>
+
+Простейший вариант — сохранять сам список `self._records`:
+
+```python
+def to_json(self) -> str:
+    return json.dumps(self._records)
+
+@classmethod
+def from_json(cls, s: str) -> "RecordAggregator":
+    agg = cls()
+    for r in json.loads(s):
+        agg.add(r)
+    return agg
+```
+
+`json.dumps` умеет `int`, `float`, `str`, `list`, `dict` — как раз то, что внутри каждой записи.
+После `json.loads` / повторного `add()` все инварианты сохраняются автоматически.
+</details>
