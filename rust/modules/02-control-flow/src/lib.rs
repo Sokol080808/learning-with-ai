@@ -121,3 +121,50 @@ pub fn classify(n: i64) -> &'static str {
         Ordering::Greater => "positive",
     }
 }
+
+/// Кодирование серий (run-length encoding) строки символов.
+///
+/// Проходит по символам строки `s`, группирует подряд идущие одинаковые символы
+/// в «серии» и возвращает вектор пар `(символ, длина_серии)` в порядке следования.
+///
+/// Контракт:
+/// - Для пустой строки возвращается пустой вектор.
+/// - Каждая пара `(c, n)` означает: символ `c` встречается подряд `n` раз (n >= 1).
+/// - Если «развернуть» результат обратно (каждую пару -> n раз символ c),
+///   получится исходная строка `s`.
+///
+/// Примеры:
+/// - `run_length_encode("aabccc")` -> `[('a', 2), ('b', 1), ('c', 3)]`
+/// - `run_length_encode("")`       -> `[]`
+/// - `run_length_encode("abc")`    -> `[('a', 1), ('b', 1), ('c', 1)]`
+/// - `run_length_encode("aaaa")`   -> `[('a', 4)]`
+///
+/// Реализация демонстрирует:
+/// - `for c in s.chars()` — итерация по символам (char — тип Copy);
+/// - `match` по `Option<(char, usize)>` с обеими ветками (`Some` / `None`);
+/// - сброс текущей серии в вектор при смене символа.
+pub fn run_length_encode(s: &str) -> Vec<(char, usize)> {
+    let mut result: Vec<(char, usize)> = Vec::new();
+    let mut current: Option<(char, usize)> = None;
+
+    for c in s.chars() {
+        current = match current {
+            // Продолжаем текущую серию — символ совпадает
+            Some((prev, count)) if prev == c => Some((prev, count + 1)),
+            // Символ сменился — сбрасываем предыдущую серию и начинаем новую
+            Some((prev, count)) => {
+                result.push((prev, count));
+                Some((c, 1))
+            }
+            // Начало строки — первый символ
+            None => Some((c, 1)),
+        };
+    }
+
+    // Сбрасываем последнюю незавершённую серию, если строка непуста
+    if let Some((c, count)) = current {
+        result.push((c, count));
+    }
+
+    result
+}

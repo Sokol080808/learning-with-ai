@@ -126,3 +126,120 @@ impl Iterator for Counter {
 pub fn counter_sum() -> u32 {
     Counter::new().sum()
 }
+
+// ─────────────────── Задание 4. Плагинный логгер — Dispatcher ───────────────────
+
+use std::cell::RefCell;
+
+/// Объектно-безопасный интерфейс логгера.
+///
+/// Любой тип, реализующий этот трейт, можно передать в `Dispatcher`.
+/// Трейт объектно-безопасен: метод `log` не возвращает `Self` и не имеет обобщённых
+/// параметров — значит, `Box<dyn Logger>` компилируется без ошибок.
+pub trait Logger {
+    /// Записать одно сообщение. Принимает `&self`, а не `&mut self` — это позволяет
+    /// держать несколько `&dyn Logger` одновременно. Если логгеру нужна мутация
+    /// внутреннего состояния (например, накопление буфера), он использует
+    /// внутреннюю мутабельность (`RefCell` и т. д.).
+    fn log(&self, message: &str);
+}
+
+/// Логгер, форматирующий каждое сообщение с фиксированным префиксом.
+///
+/// При создании принимает строку-префикс; при каждом вызове `log` добавляет
+/// к сообщению `"[prefix] "` и сохраняет результат во внутреннем буфере.
+/// Метод `messages()` возвращает все накопленные строки.
+pub struct ConsoleLogger {
+    prefix: String,
+    buffer: RefCell<Vec<String>>,
+}
+
+impl ConsoleLogger {
+    /// Создаёт новый `ConsoleLogger` с заданным префиксом.
+    pub fn new(prefix: impl Into<String>) -> Self {
+        ConsoleLogger {
+            prefix: prefix.into(),
+            buffer: RefCell::new(Vec::new()),
+        }
+    }
+
+    /// Возвращает все сообщения, накопленные этим логгером (клон буфера).
+    pub fn messages(&self) -> Vec<String> {
+        self.buffer.borrow().clone()
+    }
+}
+
+impl Logger for ConsoleLogger {
+    /// Форматирует сообщение как `"[prefix] message"` и помещает в буфер.
+    fn log(&self, message: &str) {
+        let formatted = format!("[{}] {}", self.prefix, message);
+        self.buffer.borrow_mut().push(formatted);
+    }
+}
+
+/// Логгер, накапливающий сырые (неформатированные) сообщения в буфере.
+///
+/// Использует `RefCell<Vec<String>>` для внутренней мутабельности: метод `log`
+/// принимает `&self`, но при этом изменяет внутреннее состояние в рантайме.
+/// Это классический паттерн, когда контракт трейта запрещает `&mut self`, а
+/// реализации всё равно нужно накапливать данные.
+pub struct BufferedLogger {
+    messages: RefCell<Vec<String>>,
+}
+
+impl BufferedLogger {
+    /// Создаёт новый пустой `BufferedLogger`.
+    pub fn new() -> Self {
+        BufferedLogger {
+            messages: RefCell::new(Vec::new()),
+        }
+    }
+
+    /// Возвращает клон всех накопленных сообщений в порядке поступления.
+    pub fn messages(&self) -> Vec<String> {
+        self.messages.borrow().clone()
+    }
+}
+
+impl Logger for BufferedLogger {
+    /// Добавляет сообщение в буфер (без форматирования).
+    fn log(&self, message: &str) {
+        self.messages.borrow_mut().push(message.to_string());
+    }
+}
+
+/// Диспетчер, рассылающий каждое сообщение всем зарегистрированным логгерам.
+///
+/// Хранит разнородную коллекцию `Vec<Box<dyn Logger>>` — именно здесь
+/// динамическая диспетчеризация раскрывается в полную силу: `ConsoleLogger`,
+/// `BufferedLogger` и любой другой тип, реализующий `Logger`, живут бок о бок
+/// в одном `Vec`, а `dispatch` обходит их все через один и тот же вызов.
+pub struct Dispatcher {
+    loggers: Vec<Box<dyn Logger>>,
+}
+
+impl Dispatcher {
+    /// Создаёт новый пустой `Dispatcher` (без зарегистрированных логгеров).
+    pub fn new() -> Self {
+        Dispatcher {
+            loggers: Vec::new(),
+        }
+    }
+
+    /// Регистрирует нового логгера. Принимает владение через `Box<dyn Logger>`.
+    ///
+    /// После вызова `register` переданный логгер будет получать все последующие
+    /// сообщения через `dispatch`.
+    pub fn register(&mut self, logger: Box<dyn Logger>) {
+        self.loggers.push(logger);
+    }
+
+    /// Рассылает сообщение всем зарегистрированным логгерам по порядку.
+    ///
+    /// Если логгеров нет — молча ничего не делает (не паникует).
+    pub fn dispatch(&self, message: &str) {
+        for logger in &self.loggers {
+            logger.log(message);
+        }
+    }
+}

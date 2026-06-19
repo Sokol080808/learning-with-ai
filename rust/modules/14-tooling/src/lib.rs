@@ -113,3 +113,33 @@ pub fn repeat_str(s: &str, times: usize) -> String {
     }
     result
 }
+
+// ---------------------------------------------------------------------------
+// Задание: частотный анализ слов
+// ---------------------------------------------------------------------------
+
+use std::collections::HashMap;
+
+/// Подсчитывает частоту слов в тексте `text`.
+///
+/// Контракт:
+/// - Разбивка на токены по ASCII-пробельным символам (`split_whitespace`).
+/// - Каждый токен приводится к нижнему регистру перед подсчётом.
+/// - Возвращает вектор пар `(слово, количество)`, отсортированных:
+///   сначала по убыванию количества, при равном количестве — лексикографически
+///   по слову (по возрастанию).
+/// - Пустой текст → пустой вектор.
+///
+/// Пример: `word_frequency("Hello hello world")` →
+///   `[("hello".to_string(), 2), ("world".to_string(), 1)]`
+pub fn word_frequency(text: &str) -> Vec<(String, usize)> {
+    let mut counts: HashMap<String, usize> = HashMap::new();
+    for token in text.split_whitespace() {
+        *counts.entry(token.to_lowercase()).or_insert(0) += 1;
+    }
+    let mut pairs: Vec<(String, usize)> = counts.into_iter().collect();
+    pairs.sort_by(|(word_a, cnt_a), (word_b, cnt_b)| {
+        cnt_b.cmp(cnt_a).then_with(|| word_a.cmp(word_b))
+    });
+    pairs
+}

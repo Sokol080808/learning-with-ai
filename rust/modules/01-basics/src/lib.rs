@@ -65,3 +65,36 @@ pub fn min_of_three(a: i64, b: i64, c: i64) -> i64 {
 pub fn abs_diff(a: i64, b: i64) -> i64 {
     (a - b).abs()
 }
+
+/// Возвращает FizzBuzz-последовательность для чисел от 1 до `n` включительно.
+///
+/// Правила для каждого числа `i` в диапазоне `1..=n`:
+/// - делится на 3 и на 5 → `"FizzBuzz"`
+/// - делится только на 3  → `"Fizz"`
+/// - делится только на 5  → `"Buzz"`
+/// - иначе                → строковое представление числа (например, `"7"`)
+///
+/// При `n == 0` возвращает пустой вектор.
+///
+/// Контракт:
+/// - `fizzbuzz_vec(0)` == `[]`
+/// - `fizzbuzz_vec(1)` == `["1"]`
+/// - `fizzbuzz_vec(5)` == `["1","2","Fizz","4","Buzz"]`
+/// - `fizzbuzz_vec(15)[14]` == `"FizzBuzz"`
+/// - `fizzbuzz_vec(n).len()` == `n as usize` для любого `n`
+pub fn fizzbuzz_vec(n: u64) -> Vec<String> {
+    let mut result = Vec::new();
+    for i in 1..=n {
+        let s = if i % 15 == 0 {
+            "FizzBuzz".to_string()
+        } else if i % 3 == 0 {
+            "Fizz".to_string()
+        } else if i % 5 == 0 {
+            "Buzz".to_string()
+        } else {
+            i.to_string()
+        };
+        result.push(s);
+    }
+    result
+}
