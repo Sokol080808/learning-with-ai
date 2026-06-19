@@ -1,7 +1,10 @@
-# Чтобы тесты в tests/ могли делать `from tasks.store import TaskStore`, каталог
-# capstone (где лежит пакет tasks/) должен быть в sys.path. pytest сам кладёт в
-# sys.path каталог С КАЖДЫМ conftest.py — поэтому достаточно положить этот файл
-# здесь, но добавим путь явно, чтобы запуск работал и вне pytest.
+# conftest.py — служебный файл pytest. Трогать не нужно.
+#
+# Он добавляет каталог capstone/ в начало sys.path, чтобы из тестов работал импорт пакета:
+#     from db.database import Database, QueryError
+#     from db.tokenizer import tokenize
+#     from db.parser import parse, Select, Condition, ...
+# независимо от того, из какой директории запущен pytest.
 
 import os
 import sys
