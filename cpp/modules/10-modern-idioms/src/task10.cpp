@@ -1,4 +1,5 @@
 #include "task10.hpp"
+#include <stdexcept>
 // #include <ranges>
 // #include <algorithm>
 
@@ -24,4 +25,19 @@ int sum_values(const std::map<std::string, int>& m) {
     // TODO: for (const auto& [k, val] : m)
     (void)m;
     return 0;
+}
+
+std::vector<std::string_view> split_view(std::string_view s, char sep) {
+    // TODO: пройди по s, находя позиции sep (s.find(sep, pos)); каждый кусок —
+    // s.substr(start, len) (это снова string_view, без копии). Сохраняй пустые куски.
+    (void)s;
+    (void)sep;
+    return {};
+}
+
+std::pair<int, int> divmod(int a, int b) {
+    // TODO: при b == 0 -> throw std::invalid_argument("..."); иначе {a / b, a % b}.
+    (void)a;
+    (void)b;
+    return {0, 0};
 }

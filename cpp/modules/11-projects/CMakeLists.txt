@@ -1,10 +1,14 @@
 # Этот CMake написан ЯВНО (без нашего хелпера add_exercise), потому что модуль 11 —
 # как раз про то, как устроена сборка. Прочитай его построчно.
 
-# 1) Библиотека geometry из двух исходников. STATIC — статическая библиотека (.a).
+# 1) Библиотека geometry из исходников. STATIC — статическая библиотека (.a).
+#    Добавил третий .cpp — textstats: ещё одна мини-«библиотека» в своём namespace.
+#    Когда появляется новый src-файл, его НУЖНО дописать сюда — иначе линковщик
+#    не найдёт определений (см. Идею про линковку в README).
 add_library(m11_geometry STATIC
   src/shapes.cpp
   src/polygon.cpp
+  src/textstats.cpp
 )
 # PUBLIC: заголовки из include/ видны и самой библиотеке, и всем, кто с ней слинкуется.
 target_include_directories(m11_geometry PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
