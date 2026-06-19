@@ -1,0 +1,76 @@
+# Проверяет, что СКЕЛЕТЫ курсов остаются валидными (на Linux — там же ловятся проблемы
+# переносимости, которых не видно на macOS).
+#
+# Важно: задания НАМЕРЕННО красные (стабы не реализованы), поэтому CI проверяет НЕ «всё зелёное»,
+# а «компилируется / тесты собираются и обнаруживаются». Падение сборки или ошибка импорта/сбора
+# = регрессия скелета.
+name: Courses CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  cpp:
+    name: C++ (компиляция)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Инструменты
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - name: Сборка (компиляция; тесты намеренно красные — не запускаем)
+        run: |
+          cmake -S cpp -B cpp/build
+          cmake --build cpp/build -j"$(nproc)"
+
+  caos:
+    name: CAOS (компиляция, C + потоки)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Инструменты
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - name: Сборка
+        run: |
+          cmake -S caos -B caos/build
+          cmake --build caos/build -j"$(nproc)"
+
+  rust:
+    name: Rust (компиляция воркспейса)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - name: Компиляция тестов (без запуска — todo!() намеренно паникует)
+        run: cargo test --workspace --no-run --manifest-path rust/Cargo.toml
+
+  python:
+    name: Python (сбор тестов)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Импорт-проверка (collect-only; тесты намеренно красные)
+        run: |
+          python -m pip install -U pip pytest
+          python -m pytest python -p no:cacheprovider --collect-only -q
+
+  deep-learning:
+    name: Deep Learning (сбор тестов, numpy + torch CPU)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Установка (torch — CPU-сборка)
+        run: python -m pip install -U pip numpy pytest torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Импорт-проверка (collect-only)
+        run: python -m pytest deep-learning -p no:cacheprovider --collect-only -q

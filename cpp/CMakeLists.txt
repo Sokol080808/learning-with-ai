@@ -18,6 +18,10 @@ endif()
 # Экспорт compile_commands.json — пригодится для clang-tidy / редактора (модуль 12).
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Потоки (модуль 14 и др. используют std::thread; на Linux нужен -pthread, на macOS — нет).
+set(THREADS_PREFER_PTHREAD_FLAG ON)
+find_package(Threads REQUIRED)
+
 # --- GoogleTest через FetchContent (пин на конкретный релиз ради воспроизводимости) ---
 include(FetchContent)
 FetchContent_Declare(
