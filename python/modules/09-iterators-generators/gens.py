@@ -6,6 +6,7 @@
 # Две из четырёх функций (countdown, running_total, chunks) — генераторы: внутри них
 # должен быть yield, а не return со списком. take — обычная функция, возвращает список.
 
+from collections import deque
 from typing import Iterable, Iterator, Any
 
 
@@ -58,3 +59,54 @@ def chunks(xs: list, size: int) -> Iterator[list]:
     """
     for i in range(0, len(xs), size):
         yield xs[i:i + size]
+
+
+class Window:
+    """Скользящее окно (sliding window) над любым итерируемым.
+
+    Выдаёт последовательные списки фиксированной ширины size, каждый раз
+    сдвигаясь на один элемент вправо. Реализован через протокол итератора
+    (__iter__ / __next__) без единого yield.
+
+    Примеры:
+        list(Window([1, 2, 3, 4, 5], 3)) == [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+        list(Window("abcd", 2))          == [['a','b'], ['b','c'], ['c','d']]
+        list(Window([1, 2], 5))          == []
+    """
+
+    def __init__(self, iterable: Iterable[Any], size: int) -> None:
+        if size < 1:
+            raise ValueError(f"size должен быть >= 1, получено {size!r}")
+        self._size = size
+        self._src: Iterator[Any] = iter(iterable)
+        self._buf: deque[Any] = deque(maxlen=size)
+        self._exhausted = False
+
+        # Предварительно заполняем буфер первыми size элементами.
+        # Если источник исчерпается раньше — помечаем как пустой.
+        for _ in range(size):
+            try:
+                self._buf.append(next(self._src))
+            except StopIteration:
+                self._exhausted = True
+                break
+
+    def __iter__(self) -> "Window":
+        return self
+
+    def __next__(self) -> list:
+        # Если буфер не заполнен (источник кончился до первого полного окна)
+        # или итератор уже выгорел — сигнализируем конец.
+        if self._exhausted or len(self._buf) < self._size:
+            raise StopIteration
+
+        snapshot = list(self._buf)
+
+        # Подтягиваем следующий элемент для сдвига; если источник исчерпан —
+        # помечаем флаг, но текущий snapshot уже сформирован корректно.
+        try:
+            self._buf.append(next(self._src))
+        except StopIteration:
+            self._exhausted = True
+
+        return snapshot

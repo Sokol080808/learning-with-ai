@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import math
 from dataclasses import dataclass
+from typing import Protocol, runtime_checkable
 
 
 @dataclass
@@ -84,3 +85,89 @@ def is_iterable(obj: object) -> bool:
     Списки, строки, словари, множества, генераторы → True; числа, None, функции → False.
     """
     return hasattr(obj, "__iter__")
+
+
+# ---------------------------------------------------------------------------
+# Существенное задание: Protocol + dataclass-фигуры + агрегатор холста
+# ---------------------------------------------------------------------------
+
+@runtime_checkable
+class Drawable(Protocol):
+    """Структурный протокол для рисуемых фигур.
+
+    Любой класс, у которого есть методы area() и label() с совместимыми
+    сигнатурами, автоматически удовлетворяет этому протоколу — без явного
+    наследования. @runtime_checkable позволяет проверять протокол через
+    isinstance() в момент выполнения программы.
+    """
+
+    def area(self) -> float: ...
+    def label(self) -> str: ...
+
+
+@dataclass
+class Disk:
+    """Диск (заполненный круг) радиуса r.
+
+    Реализует протокол Drawable структурно — без явного наследования.
+    """
+
+    r: float
+
+    def area(self) -> float:
+        """Площадь диска: π * r²."""
+        return math.pi * self.r ** 2
+
+    def label(self) -> str:
+        """Метка вида 'Disk(r=<r>)'."""
+        return f"Disk(r={self.r})"
+
+
+@dataclass
+class Rect:
+    """Прямоугольник шириной w и высотой h.
+
+    Реализует протокол Drawable структурно — без явного наследования.
+    """
+
+    w: float
+    h: float
+
+    def area(self) -> float:
+        """Площадь прямоугольника: w * h."""
+        return self.w * self.h
+
+    def label(self) -> str:
+        """Метка вида 'Rect(<w>x<h>)'."""
+        return f"Rect({self.w}x{self.h})"
+
+
+@dataclass
+class Ring:
+    """Кольцо с внешним радиусом outer и внутренним радиусом inner.
+
+    Частный случай: inner == 0 — вырождается в диск; inner == outer — площадь нулевая.
+    Реализует протокол Drawable структурно — без явного наследования.
+    """
+
+    outer: float
+    inner: float
+
+    def area(self) -> float:
+        """Площадь кольца: π * (outer² - inner²)."""
+        return math.pi * (self.outer ** 2 - self.inner ** 2)
+
+    def label(self) -> str:
+        """Метка вида 'Ring(outer=<outer>, inner=<inner>)'."""
+        return f"Ring(outer={self.outer}, inner={self.inner})"
+
+
+def describe_canvas(shapes: list[Drawable]) -> list[str]:
+    """Описание холста: список строк для каждой фигуры, отсортированных по убыванию площади.
+
+    Каждая строка имеет вид '<label>: area=<площадь>', где площадь округлена до 4 знаков.
+    Принимает любые объекты, удовлетворяющие протоколу Drawable (не только Disk/Rect/Ring).
+    Для пустого списка возвращает [].
+    """
+    ordered = sorted(shapes, key=lambda s: s.area(), reverse=True)
+    return [f"{s.label()}: area={round(s.area(), 4)}" for s in ordered]

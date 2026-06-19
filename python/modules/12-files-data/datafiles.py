@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-from typing import Any, Union
+from typing import Any, Callable, Iterator, Union
 
 # Путь может прийти строкой или Path — обе формы понимает open().
 StrPath = Union[str, Path]
@@ -78,3 +78,46 @@ def parse_csv(text: str) -> list[dict]:
         values = line.split(",")
         rows.append(dict(zip(header, values)))
     return rows
+
+
+class TypedCSVReader:
+    """Контекстный менеджер для чтения CSV-файла с приведением типов колонок.
+
+    Открывает файл в __enter__, читает заголовок, проверяет схему.
+    Итерация выдаёт строки данных как словари с применёнными конвертерами.
+    После __exit__ итерация поднимает ValueError.
+    """
+
+    def __init__(self, path: StrPath, schema: dict[str, Callable[[str], Any]]) -> None:
+        self._path = path
+        self._schema = schema
+        self._file = None
+        self._header: list[str] = []
+
+    def __enter__(self) -> "TypedCSVReader":
+        self._file = open(self._path, "r", encoding="utf-8")
+        first = self._file.readline()
+        if first:
+            self._header = first.rstrip("\n").split(",")
+            for col in self._schema:
+                if col not in self._header:
+                    self._file.close()
+                    self._file = None
+                    raise KeyError(col)
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> bool:
+        if self._file is not None:
+            self._file.close()
+            self._file = None
+        return False
+
+    def __iter__(self) -> Iterator[dict[str, Any]]:
+        if self._file is None or self._file.closed:
+            raise ValueError("файл закрыт")
+        for raw in self._file:
+            values = raw.rstrip("\n").split(",")
+            row: dict[str, Any] = dict(zip(self._header, values))
+            for col, convert in self._schema.items():
+                row[col] = convert(row[col])
+            yield row

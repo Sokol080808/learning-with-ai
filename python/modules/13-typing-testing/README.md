@@ -145,6 +145,71 @@ junior опирается на обе.
 
 ---
 
+## Задание (существенное): Stack[T] — типизированный дженерик-контейнер
+
+Три задачи выше — функции с аннотациями. Теперь шаг крупнее: реализуй **целый класс**, у
+которого типизация устроена иначе — через `TypeVar` и `Generic`. Именно это позволяет
+`Stack[int]` и `Stack[str]` быть разными специализациями одного класса, и IDE понимает, что
+`pop()` вернёт `int` в первом случае и `str` во втором.
+
+Стек — структура данных LIFO (last-in, first-out): последний вошедший элемент выходит первым.
+Как стопка тарелок: кладёшь сверху, берёшь тоже сверху.
+
+### API класса `Stack(Generic[T])`
+
+```python
+from typing import Generic, TypeVar, Iterator
+T = TypeVar("T")
+
+class Stack(Generic[T]):
+    def push(self, item: T) -> None:   ...  # положить на вершину
+    def pop(self) -> T:                ...  # снять и вернуть вершину; IndexError если пуст
+    def peek(self) -> T:               ...  # посмотреть на вершину без удаления; IndexError если пуст
+    def __len__(self) -> int:          ...  # количество элементов
+    def is_empty(self) -> bool:        ...  # True ↔ len == 0
+    def __iter__(self) -> Iterator[T]: ...  # обход от вершины к основанию, стек не меняется
+    def __repr__(self) -> str:         ...  # читаемое представление
+```
+
+**Контракт и краевые случаи:**
+
+- `pop()` и `peek()` на пустом стеке обязаны бросать `IndexError`.
+- `push(x)` увеличивает `len` на 1, и после него `peek() == x`.
+- `pop()` уменьшает `len` на 1 и возвращает элемент, добавленный последним.
+- `__iter__` не меняет содержимое: `len` до и после одинаков; элементы идут от вершины к
+  основанию.
+- Два разных стека с одинаковым содержимым независимы: `push` в один не трогает другой.
+
+### Подсказки
+
+<details><summary>Подсказка 1 — с чего начать: хранилище</summary>
+Стеку нужен внутренний список. Добавь в <code>__init__</code> поле
+<code>self._data: list[T] = []</code>. Конструктор не нужно объявлять отдельно, если нет
+логики кроме инициализации хранилища — но объявить явно чище. Все методы работают с
+<code>self._data</code>.
+</details>
+
+<details><summary>Подсказка 2 — push и pop</summary>
+<code>push</code> — это <code>list.append</code>. <code>pop</code> — это <code>list.pop()</code>,
+но сначала проверь, что список непуст: <code>if not self._data: raise IndexError(...)</code>.
+<code>peek</code> похож на <code>pop</code>, но не удаляет: возвращает <code>self._data[-1]</code>.
+</details>
+
+<details><summary>Подсказка 3 — __len__ и is_empty</summary>
+<code>__len__</code> возвращает <code>len(self._data)</code>. <code>is_empty</code> может просто
+<code>return len(self) == 0</code> — делегировать к уже написанному <code>__len__</code>, а не
+дублировать логику.
+</details>
+
+<details><summary>Подсказка 4 — __iter__ без изменений</summary>
+Нужно обойти от вершины к основанию, не трогая сам список. Самый простой способ:
+<code>return iter(reversed(self._data))</code>. <code>reversed</code> создаёт итератор в обратном
+порядке, не меняя список. Альтернатива — <code>yield</code>-генератор:
+<code>for item in reversed(self._data): yield item</code>.
+</details>
+
+---
+
 ## Задания
 
 Файл `typingtest.py`. Реализуй функции так, чтобы тесты позеленели. Обрати внимание на
