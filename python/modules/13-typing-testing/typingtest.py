@@ -1,9 +1,10 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 13 стали зелёными.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 #
 # Модуль 13 — Аннотации типов и тестирование.
 # Обрати внимание на аннотации в сигнатурах: они часть контракта (хотя Python их в рантайме
-# и не проверяет — это лишь подсказки людям и инструментам вроде mypy).
-# Готовых решений тут нет — только сигнатуры и контракт. Реализуй сам, сверяясь с тестами.
+# не проверяет — это лишь подсказки людям и инструментам вроде mypy).
 
 from __future__ import annotations
 
@@ -15,7 +16,9 @@ def clamp(x: int, lo: int, hi: int) -> int:
     Если границы заданы неверно (lo > hi) — брось ValueError: зажимать в пустой
     диапазон бессмысленно. (Случай lo == hi допустим — диапазон из одной точки.)
     """
-    raise NotImplementedError("TODO: реализуй clamp — проверь границы и прижми x к [lo, hi]")
+    if lo > hi:
+        raise ValueError(f"пустой диапазон: lo={lo} > hi={hi}")
+    return max(lo, min(x, hi))
 
 
 def safe_get(d: dict[str, int], key: str) -> int | None:
@@ -24,7 +27,7 @@ def safe_get(d: dict[str, int], key: str) -> int | None:
     Не бросай KeyError на отсутствующем ключе — верни None. Возвращаемый тип
     int | None прямо говорит: ответа может и не быть.
     """
-    raise NotImplementedError("TODO: реализуй safe_get — верни значение или None, без KeyError")
+    return d.get(key)
 
 
 def merge_counts(a: dict[str, int], b: dict[str, int]) -> dict[str, int]:
@@ -34,4 +37,7 @@ def merge_counts(a: dict[str, int], b: dict[str, int]) -> dict[str, int]:
     словарей. Если ключ есть только в одном словаре — берётся его значение.
     Исходные словари a и b НЕ меняй — верни новый словарь.
     """
-    raise NotImplementedError("TODO: реализуй merge_counts — сумма значений по ключам, новый dict")
+    result = dict(a)
+    for key, value in b.items():
+        result[key] = result.get(key, 0) + value
+    return result

@@ -1,8 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 03 стали зелёными.
-#
-# Каждая функция сейчас кидает NotImplementedError — это «дырка», которую тебе нужно
-# закрыть. Не меняй сигнатуры (имена, параметры, типы) — на них опираются тесты.
-# Подсказки — в README.md этого модуля (раздел «### Подсказки»).
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 
 def unique_sorted(xs: list[int]) -> list[int]:
@@ -11,7 +9,7 @@ def unique_sorted(xs: list[int]) -> list[int]:
     Дубликаты убираются, порядок — строго по возрастанию.
     Пример: [3, 1, 2, 3, 1] -> [1, 2, 3]. Для [] -> [].
     """
-    raise NotImplementedError("TODO: убери дубликаты и верни отсортированный список")
+    return sorted(set(xs))
 
 
 def word_lengths(words: list[str]) -> dict[str, int]:
@@ -19,7 +17,7 @@ def word_lengths(words: list[str]) -> dict[str, int]:
 
     Пример: ["кот", "пёс"] -> {"кот": 3, "пёс": 3}. Для [] -> {}.
     """
-    raise NotImplementedError("TODO: собери словарь слово -> len(слово)")
+    return {word: len(word) for word in words}
 
 
 def flatten(matrix: list[list[int]]) -> list[int]:
@@ -27,7 +25,11 @@ def flatten(matrix: list[list[int]]) -> list[int]:
 
     Пример: [[1, 2], [3], [4, 5]] -> [1, 2, 3, 4, 5]. Для [] -> [].
     """
-    raise NotImplementedError("TODO: пройди по строкам, а внутри — по элементам")
+    result: list[int] = []
+    for row in matrix:
+        for item in row:
+            result.append(item)
+    return result
 
 
 def intersection(a: list[int], b: list[int]) -> set[int]:
@@ -36,7 +38,7 @@ def intersection(a: list[int], b: list[int]) -> set[int]:
     Результат — множество (без дубликатов, порядок не важен).
     Пример: a=[1, 2, 2, 3], b=[2, 3, 4] -> {2, 3}.
     """
-    raise NotImplementedError("TODO: пересеки множества, построенные из a и b")
+    return set(a) & set(b)
 
 
 def invert_dict(d: dict) -> dict:
@@ -45,4 +47,4 @@ def invert_dict(d: dict) -> dict:
     Считаем, что значения d уникальны и хешируемы.
     Пример: {"a": 1, "b": 2} -> {1: "a", 2: "b"}. Для {} -> {}.
     """
-    raise NotImplementedError("TODO: построй словарь, где значение становится ключом")
+    return {value: key for key, value in d.items()}

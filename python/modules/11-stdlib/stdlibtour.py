@@ -1,11 +1,15 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 11 стали зелёными.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 #
 # Модуль 11 — Полезная стандартная библиотека.
 # Тебе пригодятся: collections.Counter, collections.defaultdict, json, datetime.date.
-# Готовых решений тут нет — только сигнатуры и контракт. Реализуй сам, сверяясь с тестами.
 
 from __future__ import annotations
 
+import json
+from collections import Counter, defaultdict
+from datetime import date
 from typing import Any
 
 
@@ -17,7 +21,10 @@ def most_common_word(text: str) -> str:
     Если в тексте нет слов (пустая или пробельная строка) — верни пустую строку "".
     При нескольких одинаково частых словах достаточно вернуть любое из самых частых.
     """
-    raise NotImplementedError("TODO: реализуй most_common_word через collections.Counter")
+    words = text.split()
+    if not words:
+        return ""
+    return Counter(words).most_common(1)[0][0]
 
 
 def group_by_first_letter(words: list[str]) -> dict[str, list[str]]:
@@ -27,12 +34,17 @@ def group_by_first_letter(words: list[str]) -> dict[str, list[str]]:
     Пустые строки в списке игнорируй (у них нет первой буквы).
     Используй collections.defaultdict. Вернуть можно обычный dict.
     """
-    raise NotImplementedError("TODO: реализуй group_by_first_letter через collections.defaultdict")
+    groups: defaultdict[str, list[str]] = defaultdict(list)
+    for word in words:
+        if not word:
+            continue
+        groups[word[0]].append(word)
+    return dict(groups)
 
 
 def to_json_str(obj: Any) -> str:
     """Сериализовать объект Python в JSON-строку (через json.dumps)."""
-    raise NotImplementedError("TODO: реализуй to_json_str через json.dumps")
+    return json.dumps(obj)
 
 
 def from_json_str(s: str) -> Any:
@@ -40,7 +52,7 @@ def from_json_str(s: str) -> Any:
 
     Должно выполняться: from_json_str(to_json_str(x)) == x для JSON-совместимых x.
     """
-    raise NotImplementedError("TODO: реализуй from_json_str через json.loads")
+    return json.loads(s)
 
 
 def days_between(a: str, b: str) -> int:
@@ -49,4 +61,6 @@ def days_between(a: str, b: str) -> int:
     Разбери обе строки через datetime.date.fromisoformat и верни (b - a).days.
     Знак сохраняется: если a позже b, результат отрицательный.
     """
-    raise NotImplementedError("TODO: реализуй days_between через datetime.date.fromisoformat")
+    start = date.fromisoformat(a)
+    end = date.fromisoformat(b)
+    return (end - start).days

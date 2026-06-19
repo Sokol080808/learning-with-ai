@@ -1,12 +1,12 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 12 стали зелёными.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 #
 # Модуль 12 — Файлы и данные (текст, JSON, CSV).
-# Тебе пригодятся: open + with, json.dump/json.load, str.splitlines, str.split, zip.
-# Пути приходят и строкой, и pathlib.Path — open() и Path() принимают оба варианта.
-# Готовых решений тут нет — только сигнатуры и контракт. Реализуй сам, сверяясь с тестами.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Any, Union
 
@@ -20,7 +20,9 @@ def write_lines(path: StrPath, lines: list[str]) -> None:
     Открывай файл через with в режиме "w" (encoding="utf-8"). Сами элементы lines
     переводов строк не содержат — '\\n' добавляешь ты. Пустой список -> пустой файл.
     """
-    raise NotImplementedError("TODO: реализуй write_lines через with open(path, 'w')")
+    with open(path, "w", encoding="utf-8") as f:
+        for line in lines:
+            f.write(line + "\n")
 
 
 def read_lines(path: StrPath) -> list[str]:
@@ -29,7 +31,12 @@ def read_lines(path: StrPath) -> list[str]:
     Это обратная операция к write_lines: после write_lines(p, lines) должно быть
     read_lines(p) == lines. Пустой файл -> пустой список [] (а не [""]).
     """
-    raise NotImplementedError("TODO: реализуй read_lines через with open(path, 'r')")
+    with open(path, "r", encoding="utf-8") as f:
+        text = f.read()
+    if text == "":
+        return []
+    # splitlines режет по '\n'; хвостовой '\n' после write_lines не даёт лишней пустой строки.
+    return text.split("\n")[:-1] if text.endswith("\n") else text.split("\n")
 
 
 def save_json(path: StrPath, obj: Any) -> None:
@@ -38,7 +45,8 @@ def save_json(path: StrPath, obj: Any) -> None:
     Открывай файл через with в режиме "w" (encoding="utf-8"). Объект должен быть
     JSON-совместимым: dict/list/str/число/bool/None.
     """
-    raise NotImplementedError("TODO: реализуй save_json через json.dump")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(obj, f)
 
 
 def load_json(path: StrPath) -> Any:
@@ -47,7 +55,8 @@ def load_json(path: StrPath) -> Any:
     Обратная операция к save_json: после save_json(p, obj) должно быть
     load_json(p) == obj для JSON-совместимых obj.
     """
-    raise NotImplementedError("TODO: реализуй load_json через json.load")
+    with open(path, "r", encoding="utf-8") as f:
+        return json.load(f)
 
 
 def parse_csv(text: str) -> list[dict]:
@@ -58,4 +67,14 @@ def parse_csv(text: str) -> list[dict]:
     запятых внутри ячеек нет. Значения остаются СТРОКАМИ (CSV не знает типов).
     Если данных нет (пустой текст или только заголовок) — вернуть [].
     """
-    raise NotImplementedError("TODO: реализуй parse_csv через splitlines/split и zip")
+    if text == "":
+        return []
+    lines = text.splitlines()
+    if not lines:
+        return []
+    header = lines[0].split(",")
+    rows = []
+    for line in lines[1:]:
+        values = line.split(",")
+        rows.append(dict(zip(header, values)))
+    return rows

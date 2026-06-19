@@ -1,7 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 08 стали зелёными.
-#
-# Подсказки и теория — в README.md рядом. Запуск тестов: ./python/run.sh 08
-# Готовых решений тут нет: только сигнатуры, контракт в docstring и заглушка.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 from __future__ import annotations
 
@@ -18,7 +17,10 @@ def safe_divide(a: float, b: float) -> float | None:
     Идея модуля: вместо того чтобы ронять программу, мы аккуратно
     сообщаем «не получилось» через None.
     """
-    raise NotImplementedError("TODO: реализуй safe_divide")
+    try:
+        return a / b
+    except ZeroDivisionError:
+        return None
 
 
 def parse_int(s: str) -> int | None:
@@ -33,7 +35,10 @@ def parse_int(s: str) -> int | None:
     Делать это нужно через try/except (стиль EAFP), а НЕ проверять строку
     вручную символ за символом.
     """
-    raise NotImplementedError("TODO: реализуй parse_int")
+    try:
+        return int(s)
+    except (ValueError, TypeError):
+        return None
 
 
 def get_or(xs: list, i: int, default):
@@ -47,7 +52,10 @@ def get_or(xs: list, i: int, default):
     Тип результата зависит от содержимого списка и default, поэтому
     аннотацию возврата мы намеренно не фиксируем.
     """
-    raise NotImplementedError("TODO: реализуй get_or")
+    try:
+        return xs[i]
+    except IndexError:
+        return default
 
 
 class Suppress:
@@ -72,11 +80,11 @@ class Suppress:
 
     def __init__(self, *exc_types: type[BaseException]) -> None:
         """Запомнить типы исключений, которые надо подавлять."""
-        raise NotImplementedError("TODO: реализуй Suppress.__init__")
+        self.exc_types = exc_types
 
     def __enter__(self) -> "Suppress":
         """Вход в блок with. Обычно просто возвращает сам менеджер (self)."""
-        raise NotImplementedError("TODO: реализуй Suppress.__enter__")
+        return self
 
     def __exit__(
         self,
@@ -90,4 +98,6 @@ class Suppress:
         (иначе все три — None). Верни True, если исключение надо подавить,
         иначе False.
         """
-        raise NotImplementedError("TODO: реализуй Suppress.__exit__")
+        if exc_type is not None and issubclass(exc_type, self.exc_types):
+            return True
+        return False

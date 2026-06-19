@@ -1,10 +1,10 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 05 стали зелёными.
-#
-# Подсказки и теория — в README.md рядом. Запуск тестов: ./python/run.sh 05
-# Готовых решений тут нет: только сигнатуры, контракт в docstring и заглушка.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 from __future__ import annotations
 
+import functools
 from typing import Callable
 
 
@@ -18,7 +18,7 @@ def apply_twice(f: Callable, x):
 
     Пример: apply_twice(lambda n: n + 3, 1) == 7  (1 -> 4 -> 7).
     """
-    raise NotImplementedError("TODO: верни f(f(x))")
+    return f(f(x))
 
 
 def make_multiplier(n: int) -> Callable[[int], int]:
@@ -32,7 +32,10 @@ def make_multiplier(n: int) -> Callable[[int], int]:
 
     Пример: triple = make_multiplier(3); triple(4) == 12.
     """
-    raise NotImplementedError("TODO: верни внутреннюю функцию-замыкание")
+    def multiplier(x: int) -> int:
+        return x * n
+
+    return multiplier
 
 
 def compose(f: Callable, g: Callable) -> Callable:
@@ -46,7 +49,10 @@ def compose(f: Callable, g: Callable) -> Callable:
     Пример: inc = lambda n: n + 1; dbl = lambda n: n * 2;
             compose(inc, dbl)(5) == 11  (5 -> 10 -> 11).
     """
-    raise NotImplementedError("TODO: верни функцию x -> f(g(x))")
+    def composed(x):
+        return f(g(x))
+
+    return composed
 
 
 def sort_by_length(words: list[str]) -> list[str]:
@@ -59,7 +65,7 @@ def sort_by_length(words: list[str]) -> list[str]:
 
     Пример: sort_by_length(["bbb", "a", "cc"]) == ["a", "cc", "bbb"].
     """
-    raise NotImplementedError("TODO: верни sorted(...) по длине")
+    return sorted(words, key=len)
 
 
 def memoize(f: Callable) -> Callable:
@@ -75,4 +81,12 @@ def memoize(f: Callable) -> Callable:
 
     Тест проверяет это, считая число РЕАЛЬНЫХ вызовов f.
     """
-    raise NotImplementedError("TODO: реализуй кэширующую обёртку")
+    cache: dict = {}
+
+    @functools.wraps(f)
+    def wrapper(*args):
+        if args not in cache:
+            cache[args] = f(*args)
+        return cache[args]
+
+    return wrapper

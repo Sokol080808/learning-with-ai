@@ -1,10 +1,10 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 12 стали зелёными.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 #
 # Микро-проект модуля 12 — Анализатор логов.
 # На вход приходит список строк-логов вида "LEVEL: message" (как из read_lines).
 # Уровни: INFO, WARN, ERROR. Строки не по формату (нет ':' или чужой уровень) — игнорируй.
-# Тебе пригодятся: str.split(":", 1), str.strip, dict.get или collections.Counter.
-# Готовых решений тут нет — только сигнатуры и контракт. Реализуй сам, сверяясь с тестами.
 
 from __future__ import annotations
 
@@ -19,7 +19,14 @@ def count_levels(lines: list[str]) -> dict[str, int]:
     В ответе только реально встретившиеся уровни (пустой ввод -> {}).
     Строки не по формату (нет ':' или уровень вне LEVELS) — игнорируй.
     """
-    raise NotImplementedError("TODO: реализуй count_levels через split(':', 1) и подсчёт")
+    counts: dict[str, int] = {}
+    for line in lines:
+        if ":" not in line:
+            continue
+        level = line.split(":", 1)[0]
+        if level in LEVELS:
+            counts[level] = counts.get(level, 0) + 1
+    return counts
 
 
 def errors_only(lines: list[str]) -> list[str]:
@@ -28,4 +35,10 @@ def errors_only(lines: list[str]) -> list[str]:
     Уровень определяется частью строки до первого ':'. Возвращай строку ЦЕЛИКОМ
     (как пришла), а не только текст сообщения.
     """
-    raise NotImplementedError("TODO: реализуй errors_only фильтром по уровню")
+    result: list[str] = []
+    for line in lines:
+        if ":" not in line:
+            continue
+        if line.split(":", 1)[0] == "ERROR":
+            result.append(line)
+    return result

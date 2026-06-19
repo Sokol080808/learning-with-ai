@@ -1,7 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 00 стали зелёными.
-#
-# Сейчас каждая функция кидает NotImplementedError — поэтому тесты падают (red).
-# Замени тело на настоящую реализацию, запусти ./python/run.sh 00 и наблюдай green.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 
 def add(a: int, b: int) -> int:
@@ -12,7 +11,7 @@ def add(a: int, b: int) -> int:
       add(-1, 1) == 0
       add(0, 0) == 0
     """
-    raise NotImplementedError("TODO: верни сумму a и b")
+    return a + b
 
 
 def seconds_in(hours: int) -> int:
@@ -24,4 +23,4 @@ def seconds_in(hours: int) -> int:
       seconds_in(1) == 3600
       seconds_in(2) == 7200
     """
-    raise NotImplementedError("TODO: верни число секунд в hours часах")
+    return hours * 3600

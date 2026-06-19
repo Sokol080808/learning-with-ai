@@ -1,0 +1,33 @@
+# Этот workflow живёт ТОЛЬКО в ветке `reference`. На ней лежат ЭТАЛОННЫЕ РЕШЕНИЯ
+# (заполненные стабы), поэтому здесь тесты обязаны быть ПОЛНОСТЬЮ ЗЕЛЁНЫМИ. Это доказывает
+# две вещи сразу: курс решаем (на правильном коде всё проходит) и новые рандомизированные
+# property-тесты валидны (зелёные на эталоне, а не только «красные на стабе»).
+#
+# В ветке main этого файла НЕТ намеренно: там стабы не заполнены, и «всё зелёное» недостижимо
+# by design (courses-ci.yml проверяет main иначе — что скелет лишь компилируется/собирается).
+#
+# Пока в reference заполнен только курс Python (пилот). По мере появления эталонов других
+# курсов сюда добавляются их шаги.
+name: Reference green
+
+on:
+  push:
+    branches: [reference]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  python:
+    name: Python (эталон — все тесты зелёные)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Установка (pytest + hypothesis)
+        run: python -m pip install -U pip pytest hypothesis
+      - name: Все тесты должны пройти на эталонном решении
+        run: python -m pytest python -p no:cacheprovider -q

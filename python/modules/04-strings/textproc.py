@@ -1,9 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так,
-# чтобы тесты модуля 04 стали зелёными.
-#
-# Помни главную идею модуля: строки неизменяемы. Методы строк не «портят» исходную
-# строку, а ВОЗВРАЩАЮТ новую — поэтому результат всегда нужно вернуть (return) или
-# присвоить. Готовых решений тут нет: сигнатуры и контракт есть, тело — за тобой.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 
 def normalize_spaces(s: str) -> str:
@@ -12,7 +9,7 @@ def normalize_spaces(s: str) -> str:
     "  привет   мир  " -> "привет мир".
     Пустая строка или строка из одних пробелов -> "".
     """
-    raise NotImplementedError("TODO: реализуй normalize_spaces (см. Идею 1: split/join)")
+    return " ".join(s.split())
 
 
 def is_palindrome(s: str) -> bool:
@@ -20,7 +17,8 @@ def is_palindrome(s: str) -> bool:
 
     "А роза упала на лапу Азора" -> True. Пустая строка -> True.
     """
-    raise NotImplementedError("TODO: реализуй is_palindrome (см. Идею 2: разворот [::-1])")
+    cleaned = s.replace(" ", "").lower()
+    return cleaned == cleaned[::-1]
 
 
 def title_case(s: str) -> str:
@@ -28,9 +26,9 @@ def title_case(s: str) -> str:
 
     "привет МИР" -> "Привет Мир". Слова разделяются пробелами.
     """
-    raise NotImplementedError("TODO: реализуй title_case (см. Идею 1 и capitalize)")
+    return " ".join(word.capitalize() for word in s.split(" "))
 
 
 def count_char(s: str, ch: str) -> int:
     """Сколько раз символ ch встречается в строке s (с учётом регистра)."""
-    raise NotImplementedError("TODO: реализуй count_char (см. Идею 4)")
+    return s.count(ch)

@@ -1,9 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 06 стали зелёными.
-#
-# Модуль 06 — ООП: классы, dunder-методы, свойства.
-# Тебе нужно реализовать ОДИН класс — Fraction (рациональная дробь).
-# Готовых решений тут нет: только сигнатуры и контракт в docstring'ах.
-# Подсказки (ступенчатые) — в README.md этого модуля.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 from __future__ import annotations
 
@@ -32,34 +29,46 @@ class Fraction:
           - сократить num и den на их наибольший общий делитель (НОД);
           - сохранить результат в self.num и self.den.
         """
-        raise NotImplementedError("TODO: нормализуй дробь в __init__ (см. идею 4 и подсказки 1–2)")
+        if den == 0:
+            raise ValueError("знаменатель не может быть нулём")
+        # знак всегда переносим в числитель
+        if den < 0:
+            num, den = -num, -den
+        # сокращаем на НОД; для num == 0 берём gcd(0, den) == den, что нормализует ноль в 0/1
+        g = gcd(abs(num), den)
+        self.num = num // g
+        self.den = den // g
 
     def add(self, other: "Fraction") -> "Fraction":
         """Сумма self и other как НОВАЯ нормализованная Fraction.
 
         a/b + c/d = (a*d + c*b) / (b*d). Не изменяй self и other.
         """
-        raise NotImplementedError("TODO: сложи две дроби и верни новый Fraction (подсказка 3)")
+        new_num = self.num * other.den + other.num * self.den
+        new_den = self.den * other.den
+        return Fraction(new_num, new_den)
 
     def mul(self, other: "Fraction") -> "Fraction":
         """Произведение self и other как НОВАЯ нормализованная Fraction.
 
         a/b * c/d = (a*c) / (b*d). Не изменяй self и other.
         """
-        raise NotImplementedError("TODO: перемножь две дроби и верни новый Fraction (подсказка 3)")
+        return Fraction(self.num * other.num, self.den * other.den)
 
     def __eq__(self, other: object) -> bool:
         """Равенство по содержимому.
 
         Для не-Fraction вернуть NotImplemented (не False и не исключение).
         """
-        raise NotImplementedError("TODO: сравни по содержимому, с чужим типом верни NotImplemented (подсказка 4)")
+        if not isinstance(other, Fraction):
+            return NotImplemented
+        return self.num == other.num and self.den == other.den
 
     def __repr__(self) -> str:
         """Строковое представление вида 'a/b' (например, '-1/2', '3/1')."""
-        raise NotImplementedError("TODO: верни f-строку вида 'num/den' (подсказка 5)")
+        return f"{self.num}/{self.den}"
 
     @property
     def value(self) -> float:
         """Значение дроби как float (num / den)."""
-        raise NotImplementedError("TODO: верни num/den как float (подсказка 5)")
+        return self.num / self.den

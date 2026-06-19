@@ -1,7 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 02 стали зелёными.
-#
-# Подсказки и теория — в README.md этого модуля. Готовых решений тут нет: каждая функция
-# пока кидает NotImplementedError. Убери raise и напиши тело сам.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 
 
 def fizzbuzz(n: int) -> list[str]:
@@ -15,7 +14,17 @@ def fizzbuzz(n: int) -> list[str]:
     Длина результата равна n. Для n <= 0 результат — пустой список.
     Пример: fizzbuzz(5) == ["1", "2", "Fizz", "4", "Buzz"].
     """
-    raise NotImplementedError("TODO: реализуй fizzbuzz по контракту из docstring")
+    result: list[str] = []
+    for i in range(1, n + 1):
+        if i % 15 == 0:
+            result.append("FizzBuzz")
+        elif i % 3 == 0:
+            result.append("Fizz")
+        elif i % 5 == 0:
+            result.append("Buzz")
+        else:
+            result.append(str(i))
+    return result
 
 
 def factorial(n: int) -> int:
@@ -24,7 +33,10 @@ def factorial(n: int) -> int:
     Контракт: factorial(0) == 1, factorial(1) == 1,
     factorial(n) == 1 * 2 * ... * n для n >= 2. n считается неотрицательным.
     """
-    raise NotImplementedError("TODO: реализуй factorial по контракту из docstring")
+    result = 1
+    for k in range(2, n + 1):
+        result *= k
+    return result
 
 
 def fib(n: int) -> int:
@@ -33,7 +45,10 @@ def fib(n: int) -> int:
     Контракт: fib(0) == 0, fib(1) == 1, далее fib(n) == fib(n-1) + fib(n-2).
     n считается неотрицательным.
     """
-    raise NotImplementedError("TODO: реализуй fib по контракту из docstring")
+    prev, curr = 0, 1
+    for _ in range(n):
+        prev, curr = curr, prev + curr
+    return prev
 
 
 def count_vowels(s: str) -> int:
@@ -42,7 +57,8 @@ def count_vowels(s: str) -> int:
     Контракт: для пустой строки результат 0; регистр не важен ("A" считается).
     Прочие символы (согласные, цифры, пробелы) не считаются.
     """
-    raise NotImplementedError("TODO: реализуй count_vowels по контракту из docstring")
+    vowels = set("aeiou")
+    return sum(1 for ch in s.lower() if ch in vowels)
 
 
 def gcd(a: int, b: int) -> int:
@@ -50,4 +66,6 @@ def gcd(a: int, b: int) -> int:
 
     Контракт: gcd(a, 0) == a, gcd(0, b) == b; для положительных a, b — их НОД.
     """
-    raise NotImplementedError("TODO: реализуй gcd по контракту из docstring")
+    while b:
+        a, b = b, a % b
+    return a

@@ -1,5 +1,6 @@
-# ВНИМАНИЕ: здесь пишешь ТЫ. Это СТАБ — реализуй Database.execute и помощники так, чтобы
-# тесты стали зелёными.
+# ЭТАЛОННОЕ РЕШЕНИЕ (ветка reference). На ветке main здесь лежит стаб с NotImplementedError —
+# его заполняет ученик. Этот файл существует только чтобы доказать, что задачи решаемы и что
+# тесты (включая рандомизированные) зелёные на правильном коде. В main он НЕ попадает.
 #
 # Капстоун, слой 3 из 3 — ДВИЖОК (исполнитель запросов).
 # Здесь живут ДАННЫЕ (таблицы в памяти) и СЕМАНТИКА (что значит «выполнить» каждый запрос).
@@ -36,8 +37,10 @@ from __future__ import annotations
 
 from typing import Any
 
+import operator
+
 from .tokenizer import tokenize
-from .parser import parse
+from .parser import parse, Create, Insert, Select, Delete, Condition
 
 
 class QueryError(Exception):
@@ -59,10 +62,10 @@ def coerce(token: str) -> Any:
               coerce("-7") == -7   (int);  coerce("12abc") == "12abc"   (str, не число).
     Подсказка: «целое» здесь — то, что распознаёт int(token) (с учётом ведущего '-').
     """
-    raise NotImplementedError(
-        "TODO: верни int(token), если токен — целое число (в т.ч. отрицательное), иначе сам token (str). "
-        "См. тесты на coerce/типы значений в test_database.py"
-    )
+    try:
+        return int(token)
+    except (ValueError, TypeError):
+        return token
 
 
 class Database:
@@ -78,9 +81,8 @@ class Database:
         Заведи внутреннее хранилище таблиц (например, self._tables: dict[str, ...]).
         Имя поля — на твой вкус, тесты лезут только через execute(), а не в потроха.
         """
-        raise NotImplementedError(
-            "TODO: инициализируй пустое хранилище таблиц (например self._tables = {}). См. test_database.py"
-        )
+        # Имя таблицы -> (список колонок, список строк). Строка — dict col -> типизированное значение.
+        self._tables: dict[str, _Table] = {}
 
     def execute(self, sql: str) -> Any:
         """Выполнить один SQL-запрос и вернуть результат согласно контракту (см. шапку файла).
@@ -105,7 +107,123 @@ class Database:
               # -> [{"id":1,"name":"Alice","age":30}, {"id":2,"name":"Bob","age":20}]
           db.execute("DELETE FROM users WHERE id = 1")              # -> 1
         """
-        raise NotImplementedError(
-            "TODO: проведи sql через tokenize -> parse и выполни CREATE/INSERT/SELECT/DELETE; "
-            "семантические ошибки -> raise QueryError. Разнеси ветки по приватным методам. См. test_database.py"
-        )
+        query = parse(tokenize(sql))
+
+        if isinstance(query, Create):
+            return self._exec_create(query)
+        if isinstance(query, Insert):
+            return self._exec_insert(query)
+        if isinstance(query, Select):
+            return self._exec_select(query)
+        if isinstance(query, Delete):
+            return self._exec_delete(query)
+        # Сюда не дойдём: parse возвращает только эти четыре типа.
+        raise QueryError(f"неизвестный тип запроса: {type(query).__name__}")
+
+    # --- семантические помощники ---------------------------------------------
+
+    def _require_table(self, name: str) -> "_Table":
+        table = self._tables.get(name)
+        if table is None:
+            raise QueryError(f"таблица '{name}' не существует")
+        return table
+
+    def _exec_create(self, q: Create) -> None:
+        if q.table in self._tables:
+            raise QueryError(f"таблица '{q.table}' уже существует")
+        self._tables[q.table] = _Table(columns=list(q.columns), rows=[])
+        return None
+
+    def _exec_insert(self, q: Insert) -> None:
+        table = self._require_table(q.table)
+        if len(q.values) != len(table.columns):
+            raise QueryError(
+                f"число значений ({len(q.values)}) не совпадает с числом колонок "
+                f"({len(table.columns)}) таблицы '{q.table}'"
+            )
+        row = {col: coerce(val) for col, val in zip(table.columns, q.values)}
+        table.rows.append(row)
+        return None
+
+    def _exec_select(self, q: Select) -> list[dict]:
+        table = self._require_table(q.table)
+
+        # какие колонки оставить в результате (с проверкой существования)
+        if q.columns == ["*"]:
+            projection = list(table.columns)
+        else:
+            for col in q.columns:
+                if col not in table.columns:
+                    raise QueryError(f"неизвестная колонка '{col}' в таблице '{q.table}'")
+            projection = list(q.columns)
+
+        # WHERE-фильтр (ленивым генератором), затем материализуем
+        selected = [row for row in table.rows if _row_matches(row, q.where, table)]
+
+        # ORDER BY
+        if q.order_by is not None:
+            if q.order_by not in table.columns:
+                raise QueryError(f"неизвестная колонка '{q.order_by}' в ORDER BY")
+            selected = sorted(
+                selected,
+                key=operator.itemgetter(q.order_by),
+                reverse=q.descending,
+            )
+
+        # проекция: оставляем только нужные ключи в указанном порядке
+        return [{col: row[col] for col in projection} for row in selected]
+
+    def _exec_delete(self, q: Delete) -> int:
+        table = self._require_table(q.table)
+        keep: list[dict] = []
+        removed = 0
+        for row in table.rows:
+            if _row_matches(row, q.where, table):
+                removed += 1
+            else:
+                keep.append(row)
+        table.rows = keep
+        return removed
+
+
+# --- внутренние структуры данных и сравнение ---------------------------------
+
+class _Table:
+    """Таблица в памяти: упорядоченный список колонок и список строк-словарей."""
+
+    __slots__ = ("columns", "rows")
+
+    def __init__(self, columns: list[str], rows: list[dict]) -> None:
+        self.columns = columns
+        self.rows = rows
+
+
+_COMPARATORS = {
+    "=":  operator.eq,
+    "!=": operator.ne,
+    "<":  operator.lt,
+    ">":  operator.gt,
+    "<=": operator.le,
+    ">=": operator.ge,
+}
+
+
+def _eval_condition(row: dict, cond: Condition, table: "_Table") -> bool:
+    """Проверить одно условие WHERE против строки. Колонку проверяем на существование."""
+    if cond.column not in table.columns:
+        raise QueryError(f"неизвестная колонка '{cond.column}' в WHERE")
+    left = row[cond.column]
+    right = coerce(cond.value)
+    compare = _COMPARATORS[cond.op]
+    # Сравнение число-vs-строка для < > <= >= в Python кидает TypeError; для нашего контракта
+    # такие данные не возникают (колонка типизирована единообразно). На = / != работает всегда.
+    try:
+        return compare(left, right)
+    except TypeError:
+        # Разнотипное сравнение порядка: считаем «не подходит» вместо падения.
+        return False
+
+
+def _row_matches(row: dict, conditions: list[Condition], table: "_Table") -> bool:
+    """Логическое И всех условий (пустой список -> True: проходят все строки)."""
+    return all(_eval_condition(row, cond, table) for cond in conditions)
