@@ -1,6 +1,11 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <stdexcept>
+#include <random>
+#include <vector>
+#include <numeric>
+#include <algorithm>
+#include <cstring>
 #include "task22.hpp"
 
 // =============================================================================
@@ -300,4 +305,436 @@ TEST(Constexpr, ReversedSingleElement) {
     constexpr Array<int, 1> expected{{42}};
     constexpr Array<int, 1> got = reversed(in);
     EXPECT_TRUE(got == expected);
+}
+
+// ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
+//
+// Каждый блок гоняет много сгенерированных входов и проверяет ИНВАРИАНТ, а не
+// заранее посчитанный пример. Сид фиксирован (std::mt19937 rng(...)), поэтому
+// прогон детерминирован и CI не «мигает». Все свойства верны на эталонном решении.
+
+// -----------------------------------------------------------------------------
+// Задание 1. Stack<T> — инварианты против std::vector как оракула.
+// -----------------------------------------------------------------------------
+
+// Свойство: Stack ведёт себя как LIFO-обёртка над тем же набором push'ей.
+// Сравниваем размер, top и порядок выталкивания со std::vector-оракулом.
+TEST(StackProps, BehavesLikeVectorOracle) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    std::uniform_int_distribution<int> len(0, 80);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = len(rng);
+        Stack<int> s;
+        std::vector<int> oracle;
+
+        for (int i = 0; i < n; ++i) {
+            const int v = val(rng);
+            s.push(v);
+            oracle.push_back(v);
+            // После каждого push: размеры совпадают, вершина == последний пуш.
+            ASSERT_EQ(s.size(), oracle.size());
+            ASSERT_FALSE(s.empty());
+            ASSERT_EQ(s.top(), oracle.back());
+        }
+        ASSERT_EQ(s.empty(), oracle.empty());
+
+        // Выталкиваем всё: порядок ровно обратный порядку добавления (LIFO).
+        while (!oracle.empty()) {
+            ASSERT_EQ(s.top(), oracle.back());
+            s.pop();
+            oracle.pop_back();
+            ASSERT_EQ(s.size(), oracle.size());
+        }
+        EXPECT_TRUE(s.empty());
+    }
+}
+
+// Свойство: capacity() всегда покрывает size() и не убывает по ходу push'ей;
+// первый push на пустом стеке резервирует запас (capacity > size) — иначе
+// строгая гарантия была бы невозможна без реаллокации на изменённом состоянии.
+TEST(StackProps, CapacityNeverShrinksAndCoversSize) {
+    std::mt19937 rng(0x5EEDu);
+    std::uniform_int_distribution<int> val(-50, 50);
+    std::uniform_int_distribution<int> len(1, 100);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = len(rng);
+        Stack<int> s;
+        std::size_t prev_cap = 0;
+        for (int i = 0; i < n; ++i) {
+            s.push(val(rng));
+            ASSERT_GE(s.capacity(), s.size());   // вектор-инвариант: ёмкость >= размер
+            ASSERT_GE(s.capacity(), prev_cap);   // ёмкость монотонно не убывает
+            if (i == 0) {
+                ASSERT_GT(s.capacity(), s.size());  // запас после первого push
+            }
+            prev_cap = s.capacity();
+        }
+        EXPECT_EQ(s.size(), static_cast<std::size_t>(n));
+    }
+}
+
+// Свойство (строгая гарантия): если копия value бросает прямо на push,
+// size() и top() остаются ровно такими, какими были до вызова.
+TEST(StackProps, StrongGuaranteeKeepsStateOnRandomThrow) {
+    std::mt19937 rng(0xBADF00Du);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    std::uniform_int_distribution<int> len(1, 40);
+
+    for (int iter = 0; iter < 200; ++iter) {
+        const int n = len(rng);
+        Stack<Bomb> s;
+        Bomb::copies_until_throw = 1000000;
+
+        int last = 0;
+        for (int i = 0; i < n; ++i) {
+            last = val(rng);
+            s.push(Bomb{last});
+        }
+        const std::size_t before = s.size();
+        ASSERT_EQ(before, static_cast<std::size_t>(n));
+
+        // Взводим «мину»: следующая копия бросит.
+        Bomb::copies_until_throw = 0;
+        EXPECT_THROW(s.push(Bomb{12345}), std::runtime_error);
+
+        // Снимаем мину и читаем: состояние не изменилось.
+        Bomb::copies_until_throw = 1000000;
+        EXPECT_EQ(s.size(), before);
+        EXPECT_EQ(s.top().value, last);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Задание 2. ScopeGuard — инварианты срабатывания.
+// -----------------------------------------------------------------------------
+
+// Свойство: при выходе из области action выполняется РОВНО один раз тогда и
+// только тогда, когда dismiss() не вызывался; при dismiss — ноль раз.
+TEST(ScopeGuardProps, FiresExactlyWhenNotDismissed) {
+    std::mt19937 rng(0x12345u);
+    std::bernoulli_distribution dismiss_it(0.5);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int counter = 0;
+        const bool will_dismiss = dismiss_it(rng);
+        {
+            ScopeGuard g([&] { ++counter; });
+            if (will_dismiss) {
+                g.dismiss();
+            }
+        }
+        EXPECT_EQ(counter, will_dismiss ? 0 : 1);
+    }
+}
+
+// Свойство: даже если выход из области происходит по исключению, незаотменённый
+// guard выполняет действие ровно один раз (RAII-откат).
+TEST(ScopeGuardProps, FiresOnExceptionPathExactlyOnce) {
+    std::mt19937 rng(0xABCDEu);
+    std::bernoulli_distribution dismiss_it(0.5);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int counter = 0;
+        const bool will_dismiss = dismiss_it(rng);
+        try {
+            ScopeGuard g([&] { ++counter; });
+            if (will_dismiss) {
+                g.dismiss();
+            }
+            throw std::runtime_error("unwind");
+        } catch (const std::runtime_error&) {
+            // перехватили — guard уже отработал при раскрутке
+        }
+        EXPECT_EQ(counter, will_dismiss ? 0 : 1);
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Задание 3. Buffer — copy-and-swap: глубокая копия, перемещение, swap.
+// -----------------------------------------------------------------------------
+
+namespace {
+// Сгенерировать Buffer случайной длины, заполнить случайными значениями,
+// и вернуть и буфер, и эталонный std::vector с тем же содержимым.
+std::vector<int> fill_random(Buffer& b, std::mt19937& rng) {
+    std::uniform_int_distribution<int> val(-10000, 10000);
+    std::vector<int> mirror(b.size());
+    for (std::size_t i = 0; i < b.size(); ++i) {
+        const int v = val(rng);
+        b.set(i, v);
+        mirror[i] = v;
+    }
+    return mirror;
+}
+}  // namespace
+
+// Свойство: копия равна оригиналу поэлементно (round-trip), и изменение копии
+// не задевает оригинал (независимость = настоящая глубокая копия).
+TEST(BufferProps, CopyIsEqualAndIndependent) {
+    std::mt19937 rng(0xDEADBEEFu);
+    std::uniform_int_distribution<int> len(0, 60);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer a(n);
+        std::vector<int> mirror = fill_random(a, rng);
+
+        Buffer b = a;  // copy ctor
+        ASSERT_EQ(b.size(), a.size());
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(b.at(i), mirror[i]);
+            ASSERT_EQ(b.at(i), a.at(i));
+        }
+
+        // Мутируем копию — оригинал обязан остаться прежним.
+        for (std::size_t i = 0; i < n; ++i) {
+            b.set(i, mirror[i] + 1);
+        }
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(a.at(i), mirror[i]);
+        }
+    }
+}
+
+// Свойство: operator= (copy-and-swap) даёт глубокую копию любого размера-цели,
+// безопасен при самоприсваивании и оставляет содержимое цели независимым.
+TEST(BufferProps, AssignmentDeepCopiesAndSelfAssignSafe) {
+    std::mt19937 rng(0x0B1EC7u);
+    std::uniform_int_distribution<int> len(0, 50);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer a(n);
+        std::vector<int> mirror = fill_random(a, rng);
+
+        Buffer c(static_cast<std::size_t>(len(rng)));  // произвольный исходный размер цели
+        c = a;
+        ASSERT_EQ(c.size(), a.size());
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(c.at(i), mirror[i]);
+        }
+        // Независимость после присваивания.
+        for (std::size_t i = 0; i < n; ++i) {
+            c.set(i, mirror[i] - 7);
+        }
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(a.at(i), mirror[i]);
+        }
+
+        // Самоприсваивание не разрушает содержимое.
+        a = a;
+        ASSERT_EQ(a.size(), n);
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(a.at(i), mirror[i]);
+        }
+    }
+}
+
+// Свойство: move забирает содержимое (b == старое a) и опустошает источник.
+TEST(BufferProps, MoveTransfersAndEmptiesSource) {
+    std::mt19937 rng(0xF00Du);
+    std::uniform_int_distribution<int> len(0, 60);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer a(n);
+        std::vector<int> mirror = fill_random(a, rng);
+
+        Buffer b = std::move(a);
+        ASSERT_EQ(b.size(), n);
+        for (std::size_t i = 0; i < n; ++i) {
+            ASSERT_EQ(b.at(i), mirror[i]);
+        }
+        EXPECT_EQ(a.size(), 0u);  // источник опустошён
+    }
+}
+
+// Свойство: swap обменивает содержимое (a<->b) целиком и обратим — swap дважды
+// возвращает к исходному (инволюция).
+TEST(BufferProps, SwapExchangesAndIsInvolution) {
+    std::mt19937 rng(0x57AB1Eu);
+    std::uniform_int_distribution<int> len(0, 40);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t na = static_cast<std::size_t>(len(rng));
+        const std::size_t nb = static_cast<std::size_t>(len(rng));
+        Buffer a(na);
+        Buffer b(nb);
+        std::vector<int> ma = fill_random(a, rng);
+        std::vector<int> mb = fill_random(b, rng);
+
+        swap(a, b);
+        ASSERT_EQ(a.size(), nb);
+        ASSERT_EQ(b.size(), na);
+        for (std::size_t i = 0; i < nb; ++i) ASSERT_EQ(a.at(i), mb[i]);
+        for (std::size_t i = 0; i < na; ++i) ASSERT_EQ(b.at(i), ma[i]);
+
+        // Второй swap возвращает к исходному.
+        swap(a, b);
+        ASSERT_EQ(a.size(), na);
+        ASSERT_EQ(b.size(), nb);
+        for (std::size_t i = 0; i < na; ++i) ASSERT_EQ(a.at(i), ma[i]);
+        for (std::size_t i = 0; i < nb; ++i) ASSERT_EQ(b.at(i), mb[i]);
+    }
+}
+
+// Свойство: at/set вне границ бросают именно std::out_of_range (любой i >= size).
+TEST(BufferProps, OutOfRangeThrowsSpecificType) {
+    std::mt19937 rng(0x0FF5E7u);
+    std::uniform_int_distribution<int> len(0, 30);
+    std::uniform_int_distribution<int> beyond(0, 50);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(len(rng));
+        Buffer b(n);
+        const std::size_t bad = n + static_cast<std::size_t>(beyond(rng));  // всегда >= n
+        EXPECT_THROW(b.at(bad), std::out_of_range);
+        EXPECT_THROW(b.set(bad, 1), std::out_of_range);
+        // А вот внутри границ — без броска, и round-trip set/at работает.
+        if (n > 0) {
+            std::uniform_int_distribution<std::size_t> idx(0, n - 1);
+            const std::size_t i = idx(rng);
+            EXPECT_NO_THROW(b.set(i, 99));
+            EXPECT_EQ(b.at(i), 99);
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Задание 4. constexpr-математика — против std::-оракулов и определений.
+// -----------------------------------------------------------------------------
+
+// Свойство: gcd делит оба аргумента и совпадает со std::gcd; gcd(0,x)==x;
+// коммутативность gcd(a,b)==gcd(b,a).
+TEST(ConstexprMathProps, GcdMatchesStdAndDividesBoth) {
+    std::mt19937 rng(0x6CD00u);
+    std::uniform_int_distribution<unsigned> dist(0, 100000u);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        const unsigned a = dist(rng);
+        const unsigned b = dist(rng);
+        const unsigned g = gcd(a, b);
+
+        ASSERT_EQ(g, std::gcd(a, b));
+        ASSERT_EQ(gcd(a, b), gcd(b, a));  // коммутативность
+        if (g != 0) {
+            ASSERT_EQ(a % g, 0u);
+            ASSERT_EQ(b % g, 0u);
+        }
+    }
+    // Явные краевые случаи.
+    EXPECT_EQ(gcd(0u, 0u), 0u);
+    EXPECT_EQ(gcd(0u, 9u), 9u);
+    EXPECT_EQ(gcd(9u, 0u), 9u);
+    EXPECT_EQ(gcd(7u, 7u), 7u);
+}
+
+// Свойство: is_prime совпадает с наивным пробным делением (независимый оракул)
+// на всём диапазоне; явно проверяем 0,1,2 и квадрат простого.
+TEST(ConstexprMathProps, IsPrimeMatchesTrialDivisionOracle) {
+    auto naive = [](unsigned n) -> bool {
+        if (n < 2) return false;
+        for (unsigned d = 2; d <= n / d; ++d) {
+            if (n % d == 0) return false;
+        }
+        return true;
+    };
+
+    std::mt19937 rng(0x97A1u);
+    std::uniform_int_distribution<unsigned> dist(0, 50000u);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        const unsigned n = dist(rng);
+        ASSERT_EQ(is_prime(n), naive(n)) << "n=" << n;
+    }
+    // Краевые случаи: 0,1 не простые; 2 простое; квадрат простого составной.
+    EXPECT_FALSE(is_prime(0u));
+    EXPECT_FALSE(is_prime(1u));
+    EXPECT_TRUE(is_prime(2u));
+    EXPECT_FALSE(is_prime(49u));   // 7*7
+    EXPECT_TRUE(is_prime(7919u));  // известное простое
+}
+
+// Свойство: factorial(n) == factorial(n-1)*n (рекуррентность) на безопасном
+// для unsigned long long диапазоне (n<=20: 20! ещё помещается).
+TEST(ConstexprMathProps, FactorialRecurrenceHolds) {
+    EXPECT_EQ(factorial(0u), 1ULL);
+    unsigned long long prev = 1ULL;
+    for (unsigned n = 1; n <= 20; ++n) {
+        const unsigned long long cur = factorial(n);
+        EXPECT_EQ(cur, prev * n) << "n=" << n;
+        prev = cur;
+    }
+}
+
+// -----------------------------------------------------------------------------
+// Задание 5. cstr_len + reversed — round-trip и оракулы.
+// -----------------------------------------------------------------------------
+
+// Свойство: cstr_len совпадает со std::strlen на случайных строках без '\0'.
+TEST(ConstexprStrProps, CstrLenMatchesStrlen) {
+    std::mt19937 rng(0x57311u);
+    std::uniform_int_distribution<int> lendist(0, 64);
+    std::uniform_int_distribution<int> chardist(1, 126);  // печатаемые, без '\0'
+
+    for (int iter = 0; iter < 400; ++iter) {
+        const int n = lendist(rng);
+        std::string str;
+        str.reserve(n);
+        for (int i = 0; i < n; ++i) {
+            str.push_back(static_cast<char>(chardist(rng)));
+        }
+        ASSERT_EQ(cstr_len(str.c_str()), std::strlen(str.c_str()));
+        ASSERT_EQ(cstr_len(str.c_str()), str.size());
+    }
+    EXPECT_EQ(cstr_len(""), 0u);  // явный край
+}
+
+// Свойство: reversed — инволюция (reversed(reversed(x))==x) и реально
+// разворачивает (reversed(x)[i] == x[N-1-i]) для фиксированной длины N=8.
+TEST(ConstexprStrProps, ReversedIsInvolutionAndReverses) {
+    constexpr std::size_t N = 8;
+    std::mt19937 rng(0x5EE5u);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        Array<int, N> in{};
+        for (std::size_t i = 0; i < N; ++i) {
+            in[i] = val(rng);
+        }
+        Array<int, N> rev = reversed(in);
+        // Разворот совпадает с поэлементной зеркалкой.
+        for (std::size_t i = 0; i < N; ++i) {
+            ASSERT_EQ(rev[i], in[N - 1 - i]);
+        }
+        // Инволюция: дважды развернули — вернулись к исходному.
+        Array<int, N> back = reversed(rev);
+        ASSERT_TRUE(back == in);
+    }
+}
+
+// Свойство: reversed одноэлементного и (вырожденно) согласован с std::reverse
+// как оракулом на копии-векторе.
+TEST(ConstexprStrProps, ReversedMatchesStdReverseOracle) {
+    constexpr std::size_t N = 5;
+    std::mt19937 rng(0xC0DEu);
+    std::uniform_int_distribution<int> val(-500, 500);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        Array<int, N> in{};
+        std::vector<int> oracle(N);
+        for (std::size_t i = 0; i < N; ++i) {
+            const int v = val(rng);
+            in[i] = v;
+            oracle[i] = v;
+        }
+        std::reverse(oracle.begin(), oracle.end());
+        Array<int, N> got = reversed(in);
+        for (std::size_t i = 0; i < N; ++i) {
+            ASSERT_EQ(got[i], oracle[i]);
+        }
+    }
 }
