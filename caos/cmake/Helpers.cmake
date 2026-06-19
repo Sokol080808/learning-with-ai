@@ -36,8 +36,13 @@ function(add_exercise)
     target_compile_options(${EX_NAME} PRIVATE -Wall -Wextra)
   endif()
 
+  # POST_BUILD: список тестов формируется ОДИН раз при сборке (атомарно, по одному файлу на
+  # таргет), а не заново при каждом запуске ctest. PRE_TEST перегенерирует файл *_tests.cmake на
+  # каждый прогон, и под нагрузкой запись успевает «перехлестнуться» — генерируется битый CMake
+  # (обрывок строки вроде `dRobin]==]`), и ctest падает на разборе. POST_BUILD этого не допускает.
+  # Стабы курса компилируются, поэтому POST_BUILD безопасен (бинарь к моменту дискавери уже собран).
   gtest_discover_tests(${EX_NAME}
-    DISCOVERY_MODE PRE_TEST
+    DISCOVERY_MODE POST_BUILD
     PROPERTIES LABELS "${EX_LABEL}"
   )
 endfunction()
