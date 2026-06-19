@@ -1,0 +1,18 @@
+[package]
+name = "kvstore"
+version = "0.1.0"
+edition = "2021"
+
+# Этот крейт собирает И библиотеку (src/lib.rs), И бинарь (src/main.rs).
+# Библиотека (KvStore, execute) тестируется приёмочными тестами; бинарь — это REPL,
+# который просто крутит ввод/вывод вокруг execute. Ничего здесь менять не нужно.
+
+[lib]
+name = "kvstore"
+path = "src/lib.rs"
+
+[[bin]]
+name = "kvstore"
+path = "src/main.rs"
+
+[dependencies]

@@ -1,0 +1,22 @@
+# Воркспейс курса Rust: каждый модуль — отдельный крейт-член.
+# Тебе НЕ нужно редактировать этот файл во время прохождения курса.
+[workspace]
+resolver = "2"
+members = [
+  "modules/00-setup",
+  "modules/01-basics",
+  "modules/02-control-flow",
+  "modules/03-ownership",
+  "modules/04-borrowing",
+  "modules/05-structs",
+  "modules/06-enums-match",
+  "modules/07-error-handling",
+  "modules/08-collections",
+  "modules/09-generics-traits",
+  "modules/10-trait-objects",
+  "modules/11-closures-iterators",
+  "modules/12-lifetimes-slices",
+  "modules/13-smart-pointers",
+  "modules/14-tooling",
+  "capstone",
+]

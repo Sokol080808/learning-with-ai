@@ -4,9 +4,18 @@
 .idea/
 .vscode/
 
-# --- Python-кэш (от инструментов в окружении) ---
+# --- Python: кэши, виртуальные окружения ---
 .pytest_cache/
 __pycache__/
+*.pyc
+.venv/
+**/.venv/
+.mypy_cache/
+.ruff_cache/
+
+# --- Rust: артефакты сборки cargo ---
+target/
+**/target/
 
 # --- Артефакты сборки C++ ---
 cpp/build/
