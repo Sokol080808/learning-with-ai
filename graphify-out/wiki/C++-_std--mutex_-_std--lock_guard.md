@@ -1,6 +1,6 @@
 # C++: std::mutex / std::lock_guard
 
-> 1 nodes · cohesion 1.00
+> 1 nodes
 
 ## Key Concepts
 

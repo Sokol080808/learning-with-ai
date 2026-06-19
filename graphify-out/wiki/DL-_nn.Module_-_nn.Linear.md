@@ -1,6 +1,6 @@
 # DL: nn.Module / nn.Linear
 
-> 8 nodes · cohesion 0.29
+> 8 nodes
 
 ## Key Concepts
 
@@ -8,8 +8,8 @@
 - **Module 12: MLP on PyTorch (nn.Module)** (4 connections) — `deep-learning/modules/12-pytorch-mlp/README.md`
 - **Module 17: Reproducibility and engineering** (3 connections) — `deep-learning/modules/17-tooling-repro/README.md`
 - **train/eval modes** (2 connections) — `deep-learning/modules/12-pytorch-mlp/README.md`
-- **Counting trainable parameters** (2 connections) — `deep-learning/modules/17-tooling-repro/README.md`
 - **Seeding (random/numpy/torch)** (2 connections) — `deep-learning/modules/17-tooling-repro/README.md`
+- **Counting trainable parameters** (2 connections) — `deep-learning/modules/17-tooling-repro/README.md`
 - **Save/load via state_dict** (2 connections) — `deep-learning/modules/17-tooling-repro/README.md`
 - **Idea: reproducibility is discipline, not luck** (1 connections) — `deep-learning/modules/17-tooling-repro/README.md`
 

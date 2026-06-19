@@ -1,6 +1,6 @@
 # Rust: Rectangle
 
-> 10 nodes · cohesion 0.20
+> 10 nodes
 
 ## Key Concepts
 
@@ -8,12 +8,12 @@
 - **lib.rs** (3 connections) — `rust/modules/05-structs/src/lib.rs`
 - **Point** (3 connections) — `rust/modules/05-structs/src/lib.rs`
 - **Color** (2 connections) — `rust/modules/05-structs/src/lib.rs`
-- **.brightness()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
+- **.new()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
 - **.distance_to()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
 - **.new()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
 - **.area()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
 - **.is_square()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
-- **.new()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
+- **.brightness()** (1 connections) — `rust/modules/05-structs/src/lib.rs`
 
 ## Relationships
 

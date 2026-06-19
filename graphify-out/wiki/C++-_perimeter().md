@@ -1,13 +1,13 @@
 # C++: perimeter()
 
-> 4 nodes · cohesion 0.50
+> 4 nodes
 
 ## Key Concepts
 
 - **perimeter()** (3 connections) — `cpp/modules/11-projects/src/polygon.cpp`
-- **Point** (1 connections) — `cpp/modules/11-projects/src/polygon.cpp`
-- **vector** (1 connections) — `cpp/modules/11-projects/src/polygon.cpp`
 - **polygon.cpp** (1 connections) — `cpp/modules/11-projects/src/polygon.cpp`
+- **vector** (1 connections) — `cpp/modules/11-projects/src/polygon.cpp`
+- **Point** (1 connections) — `cpp/modules/11-projects/src/polygon.cpp`
 
 ## Relationships
 

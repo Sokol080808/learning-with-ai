@@ -17,17 +17,25 @@ __pycache__/
 target/
 **/target/
 
-# --- Артефакты сборки C++ ---
+# --- Артефакты сборки C/C++ (CMake) ---
 cpp/build/
+caos/build/
 *.o
 *.obj
 *.exe
 compile_commands.json
 
-# --- graphify: коммитим только граф + читаемые доки, остальное локально ---
-# (graph.html, cache/, manifest.json, cost.json и служебные .graphify_* — машинно-
-#  зависимые/перестраиваемые, в git не идут)
-graphify-out/*
-!graphify-out/graph.json
-!graphify-out/GRAPH_REPORT.md
-!graphify-out/wiki/
+# --- graphify ---
+# Вложенные graphify-out (случайно создаются агентами в подкаталогах) игнорим целиком.
+# Корневой коммитим выборочно: graph.json + GRAPH_REPORT.md + wiki/ (остальное — graph.html,
+# cache/, manifest.json, cost.json, служебные .graphify_* — машинно-зависимое, в git не идёт).
+**/graphify-out/**
+!/graphify-out/graph.json
+!/graphify-out/GRAPH_REPORT.md
+!/graphify-out/wiki/
+!/graphify-out/wiki/**
+
+# --- learning-logs: данные диалогов локальные, в git не идут (README отслеживается) ---
+learning-logs/journal.jsonl
+learning-logs/journal-*.md
+learning-logs/.last_captured

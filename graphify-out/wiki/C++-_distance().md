@@ -1,12 +1,12 @@
 # C++: distance()
 
-> 3 nodes · cohesion 0.67
+> 3 nodes
 
 ## Key Concepts
 
 - **distance()** (2 connections) — `cpp/modules/11-projects/src/shapes.cpp`
-- **Point** (1 connections) — `cpp/modules/11-projects/src/shapes.cpp`
 - **shapes.cpp** (1 connections) — `cpp/modules/11-projects/src/shapes.cpp`
+- **Point** (1 connections) — `cpp/modules/11-projects/src/shapes.cpp`
 
 ## Relationships
 

@@ -1,17 +1,17 @@
 # Rust: lib.rs
 
-> 8 nodes · cohesion 0.36
+> 8 nodes
 
 ## Key Concepts
 
-- **lib.rs** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **Article** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **String** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **T** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **.summarize()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **largest()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **my_max()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
-- **Summary** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **lib.rs** (5 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **fizzbuzz()** (3 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **Vec** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **String** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **factorial()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **fib()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **gcd()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **classify()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
 
 ## Relationships
 
@@ -19,11 +19,11 @@
 
 ## Source Files
 
-- `rust/modules/09-generics-traits/src/lib.rs`
+- `rust/modules/02-control-flow/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (100%)
+- EXTRACTED: 14 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

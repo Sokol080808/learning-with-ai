@@ -1,0 +1,59 @@
+// ВНИМАНИЕ: здесь пишешь ТЫ. Реализуй функции так, чтобы тесты модуля 13
+// стали зелёными.
+//
+// Это потокобезопасный кольцевой буфер (задача производитель-потребитель).
+// Тебе понадобятся мьютекс и условные переменные из pthread. Линковка с
+// потоками в курсе уже настроена — просто пользуйся заголовками:
+//
+//   #include <pthread.h>   // уже подтянут через syncbuf.h
+//   #include <stdlib.h>    // malloc/free под массив data
+//
+// Кирпичики (детали — в README модуля и в `man pthread_cond_wait`):
+//   pthread_mutex_lock(&b->mutex);   ... pthread_mutex_unlock(&b->mutex);
+//   pthread_cond_wait(&cond, &b->mutex);   // отпустить замок и уснуть; проснувшись
+//                                          //   — снова взять замок (атомарно)
+//   pthread_cond_signal(&cond);            // разбудить ОДНОГО ждущего
+//
+// ГЛАВНОЕ ПРАВИЛО условных переменных: проверяй условие в ЦИКЛЕ while, а не в
+// if. Поток может проснуться «просто так» (ложное пробуждение) или его условие
+// мог перехватить другой поток — поэтому после пробуждения условие надо
+// перепроверить. Шаблон ожидания:
+//
+//   while (/* нельзя продолжать */) {
+//       pthread_cond_wait(&cond, &b->mutex);
+//   }
+//
+// Заглушки ниже КОМПИЛИРУЮТСЯ, но НИЧЕГО не делают — поэтому тесты красные.
+// Важно: они специально НЕ блокируются, чтобы тест не завис на стабе.
+
+#include "syncbuf.h"
+
+// Инициализировать буфер ёмкостью capacity. Выдели массив data на capacity
+// элементов, обнули head/tail/count, инициализируй мьютекс и обе cond.
+void bb_init(BoundedBuffer *b, int capacity) {
+    (void)b;
+    (void)capacity;
+    // TODO: malloc(data), обнули индексы/счётчик, pthread_mutex_init +
+    //       pthread_cond_init для not_full и not_empty.
+}
+
+// Положить item. Под мьютексом: пока count == capacity — ждать not_full;
+// записать в tail, сдвинуть tail по кругу, count++, signal not_empty.
+void bb_put(BoundedBuffer *b, int item) {
+    (void)b;
+    (void)item;
+    // TODO: lock -> (while полон: wait not_full) -> положить -> signal not_empty -> unlock
+}
+
+// Забрать элемент (FIFO). Под мьютексом: пока count == 0 — ждать not_empty;
+// прочитать из head, сдвинуть head по кругу, count--, signal not_full, вернуть.
+int bb_get(BoundedBuffer *b) {
+    (void)b;
+    return 0; // TODO: lock -> (while пуст: wait not_empty) -> взять -> signal not_full -> unlock
+}
+
+// Освободить ресурсы: free(data), pthread_mutex_destroy, pthread_cond_destroy x2.
+void bb_destroy(BoundedBuffer *b) {
+    (void)b;
+    // TODO: освободи память и уничтожь мьютекс и обе условные переменные.
+}

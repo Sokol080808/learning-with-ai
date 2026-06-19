@@ -1,17 +1,12 @@
 # Rust: lib.rs
 
-> 8 nodes · cohesion 0.25
+> 3 nodes
 
 ## Key Concepts
 
-- **lib.rs** (5 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **fizzbuzz()** (3 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **String** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **Vec** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **classify()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **factorial()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **fib()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
-- **gcd()** (1 connections) — `rust/modules/02-control-flow/src/lib.rs`
+- **lib.rs** (2 connections) — `rust/modules/00-setup/src/lib.rs`
+- **add()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
+- **seconds_in()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
 
 ## Relationships
 
@@ -19,11 +14,11 @@
 
 ## Source Files
 
-- `rust/modules/02-control-flow/src/lib.rs`
+- `rust/modules/00-setup/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 14 (100%)
+- EXTRACTED: 4 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

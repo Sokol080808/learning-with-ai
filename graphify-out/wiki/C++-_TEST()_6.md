@@ -1,26 +1,14 @@
 # C++: TEST()
 
-> 17 nodes · cohesion 0.15
+> 5 nodes
 
 ## Key Concepts
 
-- **TEST()** (10 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **task08.cpp** (5 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **vector** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **char_frequency()** (4 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **count_greater()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **sorted_desc()** (3 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **evens()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **squared()** (2 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **CharFrequency** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **CountGreater** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **map** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **string** (1 connections) — `cpp/modules/08-stl/src/task08.cpp`
-- **Evens** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **SortedDesc** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Squared** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **Stl** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
-- **test_task08.cpp** (1 connections) — `cpp/modules/08-stl/tests/test_task08.cpp`
+- **TEST()** (4 connections) — `cpp/modules/00-setup/tests/test_warmup.cpp`
+- **test_warmup.cpp** (2 connections) — `cpp/modules/00-setup/tests/test_warmup.cpp`
+- **Warmup** (2 connections) — `cpp/modules/00-setup/tests/test_warmup.cpp`
+- **AddSumsNumbers** (1 connections) — `cpp/modules/00-setup/tests/test_warmup.cpp`
+- **SecondsInHours** (1 connections) — `cpp/modules/00-setup/tests/test_warmup.cpp`
 
 ## Relationships
 
@@ -28,13 +16,12 @@
 
 ## Source Files
 
-- `cpp/modules/08-stl/src/task08.cpp`
-- `cpp/modules/08-stl/tests/test_task08.cpp`
+- `cpp/modules/00-setup/tests/test_warmup.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 36 (86%)
-- INFERRED: 6 (14%)
+- EXTRACTED: 10 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

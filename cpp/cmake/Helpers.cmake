@@ -37,10 +37,12 @@ function(add_exercise)
     target_compile_options(${EX_NAME} PRIVATE -Wall -Wextra)
   endif()
 
-  # Обнаружение тестов откладываем до момента запуска (PRE_TEST), чтобы недописанные
-  # стабы не мешали самой сборке проекта.
+  # POST_BUILD: список тестов формируется ОДИН раз при сборке (атомарно, по файлу на таргет).
+  # PRE_TEST перегенерирует *_tests.cmake на каждый запуск ctest, и под нагрузкой запись успевает
+  # «перехлестнуться» — получается битый CMake, и ctest падает на разборе. Стабы курса компилируются,
+  # поэтому POST_BUILD безопасен (бинарь к моменту обнаружения тестов уже собран).
   gtest_discover_tests(${EX_NAME}
-    DISCOVERY_MODE PRE_TEST
+    DISCOVERY_MODE POST_BUILD
     PROPERTIES LABELS "${EX_LABEL}"
   )
 endfunction()

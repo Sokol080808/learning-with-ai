@@ -1,39 +1,39 @@
 # Rust: acceptance.rs
 
-> 27 nodes · cohesion 0.09
+> 39 nodes
 
 ## Key Concepts
 
-- **acceptance.rs** (27 connections) — `rust/capstone/tests/acceptance.rs`
-- **temp_path()** (7 connections) — `rust/capstone/tests/acceptance.rs`
-- **PathBuf** (2 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_save_and_load_via_commands()** (2 connections) — `rust/capstone/tests/acceptance.rs`
-- **load_missing_file_is_err()** (2 connections) — `rust/capstone/tests/acceptance.rs`
+- **acceptance.rs** (37 connections) — `rust/capstone/tests/acceptance.rs`
+- **temp_path()** (5 connections) — `rust/capstone/tests/acceptance.rs`
+- **save_then_load_roundtrips_all_types()** (2 connections) — `rust/capstone/tests/acceptance.rs`
 - **load_replaces_existing_contents()** (2 connections) — `rust/capstone/tests/acceptance.rs`
-- **save_load_empty_store()** (2 connections) — `rust/capstone/tests/acceptance.rs`
-- **save_then_load_roundtrips_all_pairs()** (2 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_count_reports_size_as_number()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_del_existing_returns_ok_missing_returns_nil()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_empty_line_is_err()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_get_existing_and_missing()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_get_without_key_is_err()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_keys_empty_store_is_empty_string()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_keys_space_separated_sorted()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_set_returns_ok_and_stores()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_set_value_keeps_internal_spaces()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_set_without_value_is_err()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **execute_unknown_command_is_err()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **execute_save_and_load_via_protocol()** (2 connections) — `rust/capstone/tests/acceptance.rs`
+- **set_then_get_returns_value()** (1 connections) — `rust/capstone/tests/acceptance.rs`
 - **get_missing_key_is_none()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **keys_are_sorted_ascending()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **new_store_is_empty()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **remove_existing_returns_true_and_shrinks()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **remove_missing_returns_false()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- **set_overwrites_existing_key()** (1 connections) — `rust/capstone/tests/acceptance.rs`
-- *... and 2 more nodes in this community*
+- **set_overwrites_previous_value()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **value_variants_are_distinct()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **lpush_pushes_to_front_and_reports_length()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **llen_counts_list_elements()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **llen_of_missing_key_is_zero()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **lrange_handles_negative_indices()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **lrange_empty_when_out_of_bounds_or_missing()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **hset_new_field_returns_true_then_false_on_update()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **hget_missing_is_none()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **hkeys_are_sorted()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **lpush_on_string_is_wrongtype_error()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **hset_on_list_is_wrongtype_error()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **get_on_list_is_none_not_panic()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **del_removes_and_reports()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **keys_are_sorted_and_cover_all_types()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **type_of_reports_value_kind()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **execute_set_get_del()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- **execute_is_case_insensitive_for_command_name()** (1 connections) — `rust/capstone/tests/acceptance.rs`
+- *... and 14 more nodes in this community*
 
 ## Relationships
 
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -41,7 +41,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 65 (100%)
+- EXTRACTED: 82 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

@@ -1,12 +1,17 @@
 # Rust: lib.rs
 
-> 3 nodes · cohesion 0.67
+> 8 nodes
 
 ## Key Concepts
 
-- **lib.rs** (2 connections) — `rust/modules/00-setup/src/lib.rs`
-- **add()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
-- **seconds_in()** (1 connections) — `rust/modules/00-setup/src/lib.rs`
+- **lib.rs** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **Article** (4 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **my_max()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **T** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **largest()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **Summary** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **String** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
+- **.summarize()** (2 connections) — `rust/modules/09-generics-traits/src/lib.rs`
 
 ## Relationships
 
@@ -14,11 +19,11 @@
 
 ## Source Files
 
-- `rust/modules/00-setup/src/lib.rs`
+- `rust/modules/09-generics-traits/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 4 (100%)
+- EXTRACTED: 20 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

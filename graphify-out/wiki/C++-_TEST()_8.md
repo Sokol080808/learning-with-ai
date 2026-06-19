@@ -1,25 +1,23 @@
 # C++: TEST()
 
-> 16 nodes · cohesion 0.16
+> 14 nodes
 
 ## Key Concepts
 
-- **TEST()** (11 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **two_sum()** (5 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **vector** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **task13.cpp** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **binary_search_idx()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **insertion_sort()** (3 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **Algo** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **BinarySearch** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **optional** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **pair** (1 connections) — `cpp/modules/13-data-structures/src/task13.cpp`
-- **InsertionSort** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **PushTopPopSize** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **Stack** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **test_task13.cpp** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **TwoSum** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
-- **WorksForStrings** (1 connections) — `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- **TEST()** (12 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **task03.cpp** (5 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **sum_array()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **swap_ints()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **count_value()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **max_element_ptr()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **reverse_in_place()** (2 connections) — `cpp/modules/03-pointers-memory/src/task03.cpp`
+- **test_task03.cpp** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **Pointers** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SumArray** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **SwapInts** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **CountValue** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **MaxElementPtr** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
+- **ReverseInPlace** (1 connections) — `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Relationships
 
@@ -27,13 +25,13 @@
 
 ## Source Files
 
-- `cpp/modules/13-data-structures/src/task13.cpp`
-- `cpp/modules/13-data-structures/tests/test_task13.cpp`
+- `cpp/modules/03-pointers-memory/src/task03.cpp`
+- `cpp/modules/03-pointers-memory/tests/test_task03.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 32 (84%)
-- INFERRED: 6 (16%)
+- EXTRACTED: 24 (71%)
+- INFERRED: 10 (29%)
 - AMBIGUOUS: 0 (0%)
 
 ---

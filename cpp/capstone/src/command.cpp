@@ -1,12 +1,21 @@
-#include "command.hpp"
-// #include <sstream>
+// command.cpp — РЕАЛИЗАЦИЯ разбора команд. Сейчас СТАБ: компилируется, но всегда отвечает "ERR",
+// поэтому tests/test_command.cpp стартует КРАСНЫМ.
+//
+// Подсказки по реализации (детали — спрашивай меня):
+//   - Разбей line на токены по пробелам (std::istringstream + оператор >> — модуль 08).
+//   - Имя команды приведи к верхнему регистру, затем switch/if по нему.
+//   - Аргументы-числа парси аккуратно: std::stol в try/catch (модуль 09) → при ошибке "ERR ...".
+//   - Список/хеш-ответы склеивай через '\n'; пустые — "(empty)".
+//   - НИКОГДА не давай исключению вылететь наружу: оберни тело в try/catch и верни "ERR ...".
 
-std::string execute(KvStore& store, const std::string& line) {
-    // TODO (майлстоун 2 и 3): разобрать команду и выполнить её.
-    //
-    // Идея разбора: возьми первый токен — это команда (SET/GET/DEL/COUNT/KEYS/SAVE/LOAD).
-    // Дальше — аргументы. Для SET значение — это ВЕСЬ остаток строки после ключа
-    // (может содержать пробелы), поэтому не дроби его на токены.
-    (void)store; (void)line;
-    return "ERR unknown command";
+#include "command.hpp"
+
+namespace minidb {
+
+std::string execute(Database& /*db*/, const std::string& /*line*/) {
+    // TODO: распарсить line, выполнить команду над db, вернуть Redis-подобный ответ.
+    // Стаб всегда отвечает заглушкой — ни одна реальная команда не обрабатывается.
+    return "ERR not implemented";
 }
+
+}  // namespace minidb

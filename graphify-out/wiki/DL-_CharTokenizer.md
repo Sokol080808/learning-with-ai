@@ -1,6 +1,6 @@
 # DL: CharTokenizer
 
-> 61 nodes · cohesion 0.06
+> 61 nodes
 
 ## Key Concepts
 
@@ -15,20 +15,20 @@
 - **data.py** (5 connections) — `deep-learning/capstone/nanolm/data.py`
 - **model.py** (5 connections) — `deep-learning/capstone/nanolm/model.py`
 - **tokenizer.py** (5 connections) — `deep-learning/capstone/nanolm/tokenizer.py`
-- **test_gradients_flow_to_all_params()** (5 connections) — `deep-learning/capstone/tests/test_train.py`
-- **test_initial_loss_is_reasonable()** (5 connections) — `deep-learning/capstone/tests/test_train.py`
 - **test_training_reduces_loss()** (5 connections) — `deep-learning/capstone/tests/test_train.py`
+- **test_initial_loss_is_reasonable()** (5 connections) — `deep-learning/capstone/tests/test_train.py`
+- **test_gradients_flow_to_all_params()** (5 connections) — `deep-learning/capstone/tests/test_train.py`
+- **_cross_entropy_loss()** (4 connections) — `deep-learning/capstone/tests/test_train.py`
 - **train.py** (4 connections) — `deep-learning/capstone/train.py`
 - **main()** (4 connections) — `deep-learning/capstone/train.py`
-- **_cross_entropy_loss()** (4 connections) — `deep-learning/capstone/tests/test_train.py`
 - **__init__.py** (3 connections) — `deep-learning/capstone/nanolm/__init__.py`
-- **test_get_batch_different_seed_differs()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
-- **test_get_batch_dtype_is_long()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
-- **test_get_batch_indices_within_bounds()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
-- **test_get_batch_is_deterministic_with_seed()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
 - **test_get_batch_shapes()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
+- **test_get_batch_dtype_is_long()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
 - **test_get_batch_targets_are_shifted_by_one()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
-- **Tensor** (2 connections) — `deep-learning/capstone/nanolm/model.py`
+- **test_get_batch_is_deterministic_with_seed()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
+- **test_get_batch_different_seed_differs()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
+- **test_get_batch_indices_within_bounds()** (3 connections) — `deep-learning/capstone/tests/test_tokenizer.py`
+- **.forward()** (2 connections) — `deep-learning/capstone/nanolm/model.py`
 - *... and 36 more nodes in this community*
 
 ## Relationships
@@ -48,8 +48,8 @@
 
 ## Audit Trail
 
-- EXTRACTED: 228 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 198 (87%)
+- INFERRED: 30 (13%)
 - AMBIGUOUS: 0 (0%)
 
 ---

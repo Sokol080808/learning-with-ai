@@ -1,31 +1,45 @@
 # C++: TEST()
 
-> 9 nodes · cohesion 0.22
+> 22 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **Erase** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **KvStoreCore** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **KvStorePersistence** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **LoadMissingFileReturnsFalse** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **OverwriteValue** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SaveThenLoad** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SetAndGet** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
-- **SizeAndKeysSorted** (1 connections) — `cpp/capstone/tests/test_kvstore.cpp`
+- **TEST()** (9 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Pair** (7 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **task07.hpp** (6 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **T** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **sum_vector()** (4 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **clamp_value()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **First** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **Second** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.Pair()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **.swapped()** (3 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **my_max()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **vector** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **is_power_of_two()** (2 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **first** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **second** (1 connections) — `cpp/modules/07-templates/include/task07.hpp`
+- **test_task07.cpp** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **Templates** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **MyMax** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **ClampValue** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **SumVector** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **PairSwapped** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
+- **IsPowerOfTwo** (1 connections) — `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Relationships
 
-- [[C++: TEST()]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
-- `cpp/capstone/tests/test_kvstore.cpp`
+- `cpp/modules/07-templates/include/task07.hpp`
+- `cpp/modules/07-templates/tests/test_task07.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 17 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 56 (93%)
+- INFERRED: 4 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

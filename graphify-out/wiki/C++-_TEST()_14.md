@@ -1,29 +1,30 @@
 # C++: TEST()
 
-> 7 nodes · cohesion 0.29
+> 8 nodes
 
 ## Key Concepts
 
-- **TEST()** (6 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **Distance** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **Geometry** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **PerimeterDegenerate** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **PerimeterSquare** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **PerimeterTriangle** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
-- **test_geometry.cpp** (1 connections) — `cpp/modules/11-projects/tests/test_geometry.cpp`
+- **TEST()** (8 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **test_task09.cpp** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **ErrorHandling** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **SafeDivide** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **ElementAt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **ToInt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **FirstEven** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **Describe** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
 
 ## Relationships
 
-- No strong cross-community connections detected
+- [[C++: task09.cpp]] (1 shared connections)
 
 ## Source Files
 
-- `cpp/modules/11-projects/tests/test_geometry.cpp`
+- `cpp/modules/09-error-handling/tests/test_task09.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 12 (100%)
-- INFERRED: 0 (0%)
+- EXTRACTED: 14 (93%)
+- INFERRED: 1 (7%)
 - AMBIGUOUS: 0 (0%)
 
 ---

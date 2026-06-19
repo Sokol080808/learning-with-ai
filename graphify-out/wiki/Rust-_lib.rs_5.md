@@ -1,14 +1,17 @@
 # Rust: lib.rs
 
-> 5 nodes · cohesion 0.40
+> 8 nodes
 
 ## Key Concepts
 
-- **lib.rs** (4 connections) — `rust/modules/01-basics/src/lib.rs`
-- **abs_diff()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **is_even()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **min_of_three()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
-- **to_fahrenheit()** (1 connections) — `rust/modules/01-basics/src/lib.rs`
+- **lib.rs** (4 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **Option** (3 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **describe()** (3 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **Shape** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **safe_div()** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **first_even()** (2 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **.area()** (1 connections) — `rust/modules/06-enums-match/src/lib.rs`
+- **String** (1 connections) — `rust/modules/06-enums-match/src/lib.rs`
 
 ## Relationships
 
@@ -16,11 +19,11 @@
 
 ## Source Files
 
-- `rust/modules/01-basics/src/lib.rs`
+- `rust/modules/06-enums-match/src/lib.rs`
 
 ## Audit Trail
 
-- EXTRACTED: 8 (100%)
+- EXTRACTED: 18 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

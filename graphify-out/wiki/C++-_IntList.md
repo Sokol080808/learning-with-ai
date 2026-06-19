@@ -1,18 +1,18 @@
 # C++: IntList
 
-> 9 nodes · cohesion 0.22
+> 9 nodes
 
 ## Key Concepts
 
 - **IntList** (8 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
-- **unique_ptr** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 - **task06.hpp** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
-- **contains** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
-- **head_** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 - **push_front** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 - **size** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
+- **contains** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 - **to_vector** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
+- **unique_ptr** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 - **Node** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
+- **head_** (1 connections) — `cpp/modules/06-smart-pointers/include/task06.hpp`
 
 ## Relationships
 

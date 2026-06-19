@@ -1,28 +1,15 @@
 # C++: TEST()
 
-> 19 nodes · cohesion 0.13
+> 6 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **fraction.cpp** (8 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **Fraction()** (4 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **Fraction** (3 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **add()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **multiply()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **operator==()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **to_string()** (2 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **test_fraction.cpp** (2 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **string** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **Add** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Multiply** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Equality** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **MovesSignToNumerator** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **NormalizesOnConstruction** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **denominator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **numerator()** (1 connections) — `cpp/modules/04-classes/src/fraction.cpp`
-- **ToString** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
-- **Zero** (1 connections) — `cpp/modules/04-classes/tests/test_fraction.cpp`
+- **TEST()** (5 connections) — `cpp/capstone/tests/test_concurrency.cpp`
+- **test_concurrency.cpp** (1 connections) — `cpp/capstone/tests/test_concurrency.cpp`
+- **Concurrency** (1 connections) — `cpp/capstone/tests/test_concurrency.cpp`
+- **ConcurrentLpushKeepsAllElements** (1 connections) — `cpp/capstone/tests/test_concurrency.cpp`
+- **ConcurrentSetDistinctKeys** (1 connections) — `cpp/capstone/tests/test_concurrency.cpp`
+- **MixedWritersAreConsistent** (1 connections) — `cpp/capstone/tests/test_concurrency.cpp`
 
 ## Relationships
 
@@ -30,12 +17,11 @@
 
 ## Source Files
 
-- `cpp/modules/04-classes/src/fraction.cpp`
-- `cpp/modules/04-classes/tests/test_fraction.cpp`
+- `cpp/capstone/tests/test_concurrency.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 44 (100%)
+- EXTRACTED: 10 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

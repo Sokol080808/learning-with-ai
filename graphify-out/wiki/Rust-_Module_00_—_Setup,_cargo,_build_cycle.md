@@ -1,18 +1,18 @@
 # Rust: Module 00 — Setup, cargo, build cycle
 
-> 5 nodes · cohesion 0.40
+> 5 nodes
 
 ## Key Concepts
 
-- **Module 00 — Setup, cargo, build cycle** (5 connections) — `rust/modules/00-setup/README.md`
-- **build → test → fix cycle** (1 connections) — `rust/modules/00-setup/README.md`
-- **cargo (build/test/deps)** (1 connections) — `rust/modules/00-setup/README.md`
+- **Module 00 — Setup, cargo, build cycle** (4 connections) — `rust/modules/00-setup/README.md`
 - **Crate & workspace** (1 connections) — `rust/modules/00-setup/README.md`
+- **cargo (build/test/deps)** (1 connections) — `rust/modules/00-setup/README.md`
+- **build → test → fix cycle** (1 connections) — `rust/modules/00-setup/README.md`
 - **todo!() stub macro** (1 connections) — `rust/modules/00-setup/README.md`
 
 ## Relationships
 
-- [[Rust: Rust Course (root README)]] (1 shared connections)
+- No strong cross-community connections detected
 
 ## Source Files
 
@@ -20,7 +20,7 @@
 
 ## Audit Trail
 
-- EXTRACTED: 9 (100%)
+- EXTRACTED: 8 (100%)
 - INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 

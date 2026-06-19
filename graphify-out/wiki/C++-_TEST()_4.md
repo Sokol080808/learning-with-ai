@@ -1,28 +1,23 @@
 # C++: TEST()
 
-> 19 nodes · cohesion 0.12
+> 14 nodes
 
 ## Key Concepts
 
-- **TEST()** (8 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **task09.cpp** (5 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **to_int()** (4 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **describe()** (3 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **first_even()** (3 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **optional** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **string** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **vector** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **element_at()** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **variant** (2 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **Describe** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ElementAt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ErrorHandling** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **FirstEven** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **task09.hpp** (1 connections) — `cpp/modules/09-error-handling/include/task09.hpp`
-- **SafeDivide** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **safe_divide()** (1 connections) — `cpp/modules/09-error-handling/src/task09.cpp`
-- **test_task09.cpp** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
-- **ToInt** (1 connections) — `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- **TEST()** (12 connections) — `cpp/capstone/tests/test_database.cpp`
+- **test_database.cpp** (4 connections) — `cpp/capstone/tests/test_database.cpp`
+- **temp_db_path()** (3 connections) — `cpp/capstone/tests/test_database.cpp`
+- **string** (2 connections) — `cpp/capstone/tests/test_database.cpp`
+- **Database** (2 connections) — `cpp/capstone/tests/test_database.cpp`
+- **SetGet** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **ListPushRangeLen** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **HashSetGetKeys** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **TypeDelKeysSize** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **TtlWithInjectedClock** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **PersistRemovesTtl** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **SetClearsTtl** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **SaveLoadRoundtrip** (1 connections) — `cpp/capstone/tests/test_database.cpp`
+- **LoadMissingFileFails** (1 connections) — `cpp/capstone/tests/test_database.cpp`
 
 ## Relationships
 
@@ -30,14 +25,12 @@
 
 ## Source Files
 
-- `cpp/modules/09-error-handling/include/task09.hpp`
-- `cpp/modules/09-error-handling/src/task09.cpp`
-- `cpp/modules/09-error-handling/tests/test_task09.cpp`
+- `cpp/capstone/tests/test_database.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 40 (95%)
-- INFERRED: 2 (5%)
+- EXTRACTED: 32 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

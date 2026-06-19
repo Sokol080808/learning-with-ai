@@ -1,21 +1,21 @@
 # C++: TEST()
 
-> 12 nodes · cohesion 0.20
+> 12 nodes
 
 ## Key Concepts
 
-- **TEST()** (9 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **task14.cpp** (3 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **parallel_sum()** (3 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **atomic_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **concurrent_increment()** (2 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **AtomicCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **Concurrency** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **vector** (1 connections) — `cpp/modules/14-concurrency/src/task14.cpp`
-- **MutexCounter** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSum** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **ParallelSumUneven** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
-- **test_task14.cpp** (1 connections) — `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- **TEST()** (11 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **test_int_vector.cpp** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IntVector** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **EmptyByDefault** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **FillConstructor** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **PushBackGrows** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **IndexIsWritable** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **DeepCopyIndependent** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **CopyAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **SelfAssignmentSafe** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveConstructorStealsBuffer** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
+- **MoveAssignment** (1 connections) — `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Relationships
 
@@ -23,13 +23,12 @@
 
 ## Source Files
 
-- `cpp/modules/14-concurrency/src/task14.cpp`
-- `cpp/modules/14-concurrency/tests/test_task14.cpp`
+- `cpp/modules/05-copy-move/tests/test_int_vector.cpp`
 
 ## Audit Trail
 
-- EXTRACTED: 20 (77%)
-- INFERRED: 6 (23%)
+- EXTRACTED: 22 (100%)
+- INFERRED: 0 (0%)
 - AMBIGUOUS: 0 (0%)
 
 ---

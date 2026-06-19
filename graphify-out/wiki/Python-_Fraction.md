@@ -1,14 +1,14 @@
 # Python: Fraction
 
-> 15 nodes · cohesion 0.13
+> 15 nodes
 
 ## Key Concepts
 
 - **Fraction** (8 connections) — `python/modules/06-oop/oop.py`
-- **.add()** (2 connections) — `python/modules/06-oop/oop.py`
-- **.__eq__()** (2 connections) — `python/modules/06-oop/oop.py`
 - **.__init__()** (2 connections) — `python/modules/06-oop/oop.py`
+- **.add()** (2 connections) — `python/modules/06-oop/oop.py`
 - **.mul()** (2 connections) — `python/modules/06-oop/oop.py`
+- **.__eq__()** (2 connections) — `python/modules/06-oop/oop.py`
 - **.__repr__()** (2 connections) — `python/modules/06-oop/oop.py`
 - **.value()** (2 connections) — `python/modules/06-oop/oop.py`
 - **oop.py** (1 connections) — `python/modules/06-oop/oop.py`

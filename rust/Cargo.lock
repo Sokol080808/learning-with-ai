@@ -3,10 +3,6 @@
 version = 4
 
 [[package]]
-name = "kvstore"
-version = "0.1.0"
-
-[[package]]
 name = "m00_setup"
 version = "0.1.0"
 
@@ -64,4 +60,8 @@ version = "0.1.0"
 
 [[package]]
 name = "m14_tooling"
+version = "0.1.0"
+
+[[package]]
+name = "minidb"
 version = "0.1.0"
