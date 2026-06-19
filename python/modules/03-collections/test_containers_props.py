@@ -16,6 +16,7 @@ from containers import (
     flatten,
     intersection,
     invert_dict,
+    Multiset,
 )
 
 ints = st.integers(min_value=-10**9, max_value=10**9)
@@ -187,3 +188,154 @@ def test_invert_dict_returns_dict(d):
 def test_invert_dict_empty_and_mixed_types():
     assert invert_dict({}) == {}
     assert invert_dict({1: "one", 2: "two"}) == {"one": 1, "two": 2}
+
+
+# ---------------------------------------------------------------------------
+# Multiset: property tests
+# ---------------------------------------------------------------------------
+
+# Стратегия: список небольших целых (удобно для подсчёта через Counter-оракул)
+small_ints = st.integers(min_value=-50, max_value=50)
+small_int_lists = st.lists(small_ints, max_size=60)
+
+
+# --- Инвариант: Multiset([xs]).count(x) == xs.count(x) для всех x -----------
+
+@given(xs=small_int_lists)
+def test_multiset_count_matches_list_count(xs):
+    ms = Multiset(xs)
+    for x in set(xs):
+        assert ms.count(x) == xs.count(x)
+
+
+# --- len == сумма счётчиков / сумма вхождений исходного списка ---------------
+
+@given(xs=small_int_lists)
+def test_multiset_len_equals_input_length(xs):
+    assert len(Multiset(xs)) == len(xs)
+
+
+# --- add увеличивает count ровно на переданное количество --------------------
+
+@given(xs=small_int_lists, x=small_ints, k=st.integers(min_value=1, max_value=20))
+def test_multiset_add_increases_by_k(xs, x, k):
+    ms = Multiset(xs)
+    before = ms.count(x)
+    ms.add(x, count=k)
+    assert ms.count(x) == before + k
+
+
+# --- discard уменьшает count, не ниже нуля ----------------------------------
+
+@given(xs=small_int_lists, x=small_ints, k=st.integers(min_value=1, max_value=20))
+def test_multiset_discard_reduces_clamped(xs, x, k):
+    ms = Multiset(xs)
+    before = ms.count(x)
+    ms.discard(x, count=k)
+    expected = max(0, before - k)
+    assert ms.count(x) == expected
+
+
+# --- __contains__ согласован с count ----------------------------------------
+
+@given(xs=small_int_lists, x=small_ints)
+def test_multiset_contains_iff_count_positive(xs, x):
+    ms = Multiset(xs)
+    assert (x in ms) == (ms.count(x) > 0)
+
+
+# --- most_common: счётчики убывают, множество элементов совпадает -----------
+
+@given(xs=small_int_lists)
+def test_multiset_most_common_sorted_descending(xs):
+    ms = Multiset(xs)
+    result = ms.most_common()
+    counts = [cnt for _, cnt in result]
+    assert counts == sorted(counts, reverse=True)
+
+
+@given(xs=small_int_lists)
+def test_multiset_most_common_all_elements_present(xs):
+    ms = Multiset(xs)
+    result = ms.most_common()
+    # все уникальные элементы с count > 0 должны появиться
+    expected_elements = {x for x in set(xs)}  # xs.count(x) > 0 всегда для элементов из xs
+    result_elements = {elem for elem, _ in result}
+    assert result_elements == expected_elements
+
+
+@given(xs=small_int_lists, n=st.integers(min_value=0, max_value=30))
+def test_multiset_most_common_n_length(xs, n):
+    ms = Multiset(xs)
+    unique_count = len(set(xs))
+    result = ms.most_common(n)
+    assert len(result) == min(n, unique_count)
+
+
+# --- union: count(x) = max(a.count(x), b.count(x)) -------------------------
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_union_is_max(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    u = a | b
+    all_elements = set(xs) | set(ys)
+    for x in all_elements:
+        assert u.count(x) == max(a.count(x), b.count(x))
+
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_union_len_from_max(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    u = a | b
+    all_elements = set(xs) | set(ys)
+    expected_len = sum(max(a.count(x), b.count(x)) for x in all_elements)
+    assert len(u) == expected_len
+
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_union_commutative(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    u1 = a | b
+    u2 = b | a
+    all_elements = set(xs) | set(ys)
+    for x in all_elements:
+        assert u1.count(x) == u2.count(x)
+
+
+# --- intersection: count(x) = min(a.count(x), b.count(x)) ------------------
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_intersection_is_min(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    i = a & b
+    all_elements = set(xs) | set(ys)
+    for x in all_elements:
+        assert i.count(x) == min(a.count(x), b.count(x))
+
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_intersection_commutative(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    i1 = a & b
+    i2 = b & a
+    all_elements = set(xs) | set(ys)
+    for x in all_elements:
+        assert i1.count(x) == i2.count(x)
+
+
+# --- intersection <= union (поэлементно) ------------------------------------
+
+@given(xs=small_int_lists, ys=small_int_lists)
+def test_multiset_intersection_leq_union(xs, ys):
+    a = Multiset(xs)
+    b = Multiset(ys)
+    u = a | b
+    i = a & b
+    all_elements = set(xs) | set(ys)
+    for x in all_elements:
+        assert i.count(x) <= u.count(x)

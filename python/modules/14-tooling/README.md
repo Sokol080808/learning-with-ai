@@ -180,3 +180,105 @@ git branch fix-bugs   # создать ветку (отдельную линию
 
 Починил функцию — покажи код и сообщение коммита, которое ты бы написал. Скажу, в верном ли
 направлении ты идёшь и достаточно ли внятно описано изменение.
+
+---
+
+## Задание (существенное): Декораторы — retry, memoize, timed
+
+Декоратор — это функция, которая **оборачивает** другую функцию и добавляет ей новое поведение,
+не меняя её исходный код. Именно из декораторов состоят реальные инструменты: логирование,
+кэши, повторные попытки при ошибках, замер времени — всё это работает одной строкой `@decorator`
+над любой функцией. В этом задании ты реализуешь три таких инструмента сам.
+
+Код — в файле `decorators.py`. Стабы уже там, сигнатуры и docstring'и описывают контракт.
+Тесты — в `test_decorators.py` и `test_decorators_props.py` — сейчас красные.
+
+### API и контракт
+
+**`retry(times: int) -> Callable`** — декоратор-фабрика.
+
+```python
+@retry(3)
+def flaky():
+    ...
+```
+
+- Вызывает оригинальную функцию до `times` раз, пока она бросает исключение.
+- Если на какой-то попытке функция вернула значение — сразу вернуть его, больше не пытаться.
+- Если все `times` попыток завершились исключением — пробросить исключение **последней** попытки.
+- `times >= 1`. При `times == 1` — ровно одна попытка, как без декоратора.
+- `functools.wraps` обязателен: `__name__`, `__doc__`, `__wrapped__` сохраняются.
+
+**`memoize(func: Callable) -> Callable`** — декоратор напрямую.
+
+```python
+@memoize
+def expensive(x, y):
+    ...
+```
+
+- Кэширует результаты по ключу `(args, frozenset(kwargs.items()))`.
+- Повторный вызов с теми же аргументами возвращает значение из кэша, функция не вызывается.
+- Кэш доступен как `func.cache` (обычный `dict`). Очистка: `func.cache.clear()`.
+- `functools.wraps` обязателен.
+
+**`timed(func: Callable) -> Callable`** — декоратор напрямую.
+
+```python
+@timed
+def slow():
+    ...
+```
+
+- После каждого вызова сохраняет время выполнения в `func.last_elapsed` (секунды, `float`).
+- До первого вызова `last_elapsed == None`.
+- Если функция бросает исключение — время всё равно фиксируется, исключение пробрасывается.
+- `functools.wraps` обязателен.
+
+### Подсказки
+
+<details><summary>Шаг 0 — как вообще устроен декоратор</summary>
+
+Декоратор — это функция, которая принимает функцию и возвращает функцию.
+<code>@retry(3)</code> — сначала вызывается <code>retry(3)</code> (возвращает обёртку),
+затем эта обёртка применяется к исходной функции.
+
+```python
+def retry(times):
+    def decorator(func):
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):
+            ...  # логика повторов
+        return wrapper
+    return decorator
+```
+
+Обязательно вызывай <code>functools.wraps(func)</code> внутри: без него <code>wrapper.__name__</code>
+будет <code>"wrapper"</code>, а не именем исходной функции.
+</details>
+
+<details><summary>Подсказка 1 — retry: как считать попытки</summary>
+
+Заведи счётчик и крути цикл <code>for attempt in range(times)</code>.
+Внутри — <code>try/except</code>: при успехе сразу <code>return</code>,
+при исключении — запомни его в переменную (<code>exc = e</code>).
+После цикла — <code>raise exc</code>, чтобы пробросить исключение последней попытки.
+</details>
+
+<details><summary>Подсказка 2 — memoize: что использовать как ключ кэша</summary>
+
+Ключ должен быть хешируемым. Позиционные аргументы — <code>args</code> (уже кортеж, хешируем).
+Именованные — <code>kwargs</code>, это <code>dict</code>, он не хешируем.
+Преврати его в <code>frozenset(kwargs.items())</code> и объедини: <code>key = (args, frozenset(kwargs.items()))</code>.
+Кэш — обычный <code>dict</code>: <code>if key in cache: return cache[key]</code>,
+иначе — вычисли, положи в <code>cache[key]</code>, верни.
+</details>
+
+<details><summary>Подсказка 3 — timed: как измерить время</summary>
+
+В стандартной библиотеке есть <code>time.perf_counter()</code> — монотонные часы высокого разрешения.
+До вызова функции: <code>start = time.perf_counter()</code>.
+После: <code>wrapper.last_elapsed = time.perf_counter() - start</code>.
+Чтобы время фиксировалось даже при исключении, оберни вызов в <code>try/finally</code>:
+в блоке <code>finally</code> вычисли elapsed, в блоке <code>try</code> — вызов и <code>return</code>.
+</details>

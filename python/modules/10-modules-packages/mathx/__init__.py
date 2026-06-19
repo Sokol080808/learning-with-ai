@@ -11,7 +11,8 @@
 
 from .arithmetic import add, mul
 from .sequences import factorial, fib
+from .statistics import mean, median, mode, variance
 
 # __all__ — список того, что считается публичным API пакета.
 # Он же управляет тем, что попадёт при `from mathx import *`.
-__all__ = ["add", "mul", "factorial", "fib"]
+__all__ = ["add", "mul", "factorial", "fib", "mean", "median", "mode", "variance"]

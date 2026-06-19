@@ -7,6 +7,7 @@
 # Готовых решений здесь нет: тело каждой функции пока кидает NotImplementedError.
 # Сотри raise и напиши свою реализацию. Подсказки — в README.md.
 
+from collections import deque
 from typing import Iterable, Iterator, Any
 
 
@@ -45,3 +46,55 @@ def chunks(xs: list, size: int) -> Iterator[list]:
     Пример: list(chunks([1, 2, 3, 4, 5], 2)) == [[1, 2], [3, 4], [5]]
     """
     raise NotImplementedError("TODO: шагай по индексам с шагом size и yield срезы xs[i:i+size]")
+
+
+class Window:
+    """Класс-итератор скользящего окна над произвольным итерируемым объектом.
+
+    Реализует протокол итератора через ``__iter__`` и ``__next__`` (НЕ генератор).
+    Каждый вызов ``__next__`` возвращает очередной срез-окно в виде списка длиной
+    ``size``, сдвигаясь на один элемент вправо. Если оставшихся элементов меньше
+    ``size`` — итерация завершается (``StopIteration``).
+
+    Примеры::
+
+        list(Window([1, 2, 3, 4, 5], 3))
+        # [[1, 2, 3], [2, 3, 4], [3, 4, 5]]
+
+        list(Window("abcd", 2))
+        # [['a', 'b'], ['b', 'c'], ['c', 'd']]
+
+        list(Window([1, 2], 3))
+        # []  — ни одного полного окна
+
+        list(Window([], 1))
+        # []
+
+    Args:
+        iterable: Любой итерируемый объект (список, строка, генератор, …).
+        size: Размер окна, целое число >= 1.
+
+    Raises:
+        ValueError: Если ``size < 1``.
+        StopIteration: Когда полных окон больше нет.
+
+    Контракт (инварианты):
+        - Каждый выданный элемент — список ровно из ``size`` значений.
+        - Соседние окна перекрываются на ``size - 1`` элементов (скользящий сдвиг).
+        - Результат ``list(Window(xs, 1))`` == ``[[x] for x in xs]``.
+        - Результат ``list(Window(xs, size))`` для ``size > len(xs)`` — пустой список.
+        - Количество окон: ``max(0, len(xs) - size + 1)`` (когда ``xs`` — список).
+    """
+
+    def __init__(self, iterable: Iterable[Any], size: int) -> None:
+        raise NotImplementedError("TODO: сохрани size, создай deque(maxlen=size), получи iter(iterable)")
+
+    def __iter__(self) -> "Window":
+        raise NotImplementedError("TODO: итератор возвращает самого себя")
+
+    def __next__(self) -> list:
+        raise NotImplementedError(
+            "TODO: advance iterator by one step — pop from source into deque, "
+            "raise StopIteration when source is empty before deque is full, "
+            "return list(self._buf) when deque reaches size"
+        )
