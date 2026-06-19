@@ -35,3 +35,21 @@ int area(int w, int h) {
     (void)w; (void)h;
     return 0;
 }
+
+int lcm(int a, int b) {
+    // TODO: выразить lcm через gcd, не забыв про случай a==0 или b==0.
+    (void)a; (void)b;
+    return 0;
+}
+
+std::vector<int> sieve(int n) {
+    // TODO: завести bool-массив "простое ли i" и вычеркнуть составные.
+    (void)n;
+    return {};
+}
+
+int binary_search(const std::vector<int>& v, int target) {
+    // TODO: держать инвариант — искомое (если есть) в полуинтервале [lo, hi).
+    (void)v; (void)target;
+    return 0;
+}

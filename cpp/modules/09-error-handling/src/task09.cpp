@@ -31,3 +31,16 @@ std::string describe(const std::variant<int, std::string>& v) {
     (void)v;
     return "";
 }
+
+std::optional<int> parse_int(const std::string& s) {
+    // TODO: разобрать ВСЮ строку как целое со знаком; иначе std::nullopt.
+    // Никаких пробелов и «хвостов»; переполнение int — тоже ошибка.
+    (void)s;
+    return std::nullopt;
+}
+
+int safe_div(int a, int b) {
+    // TODO: при b == 0 бросить DivideByZero (НЕ std::invalid_argument).
+    (void)a; (void)b;
+    return 0;
+}
