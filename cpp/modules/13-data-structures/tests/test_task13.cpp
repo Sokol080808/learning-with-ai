@@ -2,6 +2,11 @@
 #include <string>
 #include <vector>
 #include <stdexcept>
+#include <random>
+#include <algorithm>
+#include <set>
+#include <unordered_set>
+#include <limits>
 #include "task13.hpp"
 
 TEST(Stack, PushTopPopSize) {
@@ -226,4 +231,303 @@ TEST(BST, NegativesAndSingleNode) {
     EXPECT_TRUE(t.contains(-5));
     EXPECT_FALSE(t.contains(-7));
     EXPECT_EQ(t.inorder(), (std::vector<int>{-10, -5, 0, 10}));
+}
+
+// ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
+//
+// Идея: вместо точечных примеров проверяем ИНВАРИАНТЫ на сотнях случайных
+// входов с фиксированным сидом mt19937 — чтобы CI никогда не флакал.
+// Везде, где возможно, сверяемся с оракулом из <algorithm>/std::set.
+
+// ── Algo: insertion_sort ───────────────────────────────────────────────────
+// Инварианты: результат отсортирован, является перестановкой входа,
+// совпадает с std::sort и сортировка идемпотентна.
+TEST(SortProps, MatchesStdSortIsPermutationAndOrdered) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 60);
+    std::uniform_int_distribution<int> val(-100, 100);  // намеренно узкий → дубликаты
+    for (int iter = 0; iter < 400; ++iter) {
+        std::vector<int> in(len(rng));
+        for (int& x : in) x = val(rng);
+
+        std::vector<int> got = insertion_sort(in);
+
+        // 1) длина сохранена
+        ASSERT_EQ(got.size(), in.size());
+        // 2) отсортировано по возрастанию
+        EXPECT_TRUE(std::is_sorted(got.begin(), got.end()));
+        // 3) перестановка входа (мультимножество совпадает)
+        EXPECT_TRUE(std::is_permutation(got.begin(), got.end(), in.begin()));
+        // 4) совпадает с оракулом std::sort
+        std::vector<int> oracle = in;
+        std::sort(oracle.begin(), oracle.end());
+        EXPECT_EQ(got, oracle);
+        // 5) идемпотентность: сортировка отсортированного ничего не меняет
+        EXPECT_EQ(insertion_sort(got), got);
+    }
+}
+
+TEST(SortProps, ExtremeValuesAndConstantRuns) {
+    const int lo = std::numeric_limits<int>::min();
+    const int hi = std::numeric_limits<int>::max();
+    EXPECT_EQ(insertion_sort({hi, lo, 0}), (std::vector<int>{lo, 0, hi}));
+    EXPECT_EQ(insertion_sort({7, 7, 7, 7}), (std::vector<int>{7, 7, 7, 7}));
+    EXPECT_EQ(insertion_sort({lo, lo}), (std::vector<int>{lo, lo}));
+    // одиночный элемент и пустой
+    EXPECT_EQ(insertion_sort({hi}), (std::vector<int>{hi}));
+    EXPECT_EQ(insertion_sort({}), (std::vector<int>{}));
+}
+
+// ── Algo: binary_search_idx ────────────────────────────────────────────────
+// Инварианты: найденный индекс указывает ровно на target; для отсутствующего
+// возвращается -1; согласованность с std::binary_search как оракулом.
+TEST(BinarySearchProps, FoundPointsToTargetAbsentIsMinusOne) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 50);
+    std::uniform_int_distribution<int> val(-40, 40);
+    for (int iter = 0; iter < 400; ++iter) {
+        // строим отсортированный массив (с возможными дубликатами)
+        std::vector<int> v(len(rng));
+        for (int& x : v) x = val(rng);
+        std::sort(v.begin(), v.end());
+
+        // пробуем искать значения из диапазона (часть присутствует, часть — нет)
+        for (int t = -45; t <= 45; ++t) {
+            int idx = binary_search_idx(v, t);
+            bool present = std::binary_search(v.begin(), v.end(), t);
+            if (present) {
+                ASSERT_GE(idx, 0);
+                ASSERT_LT(idx, static_cast<int>(v.size()));
+                EXPECT_EQ(v[idx], t);  // указывает именно на target
+            } else {
+                EXPECT_EQ(idx, -1);
+            }
+        }
+    }
+}
+
+TEST(BinarySearchProps, EveryElementIsFindable) {
+    std::mt19937 rng(0x13371337u);
+    std::uniform_int_distribution<int> len(1, 60);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> v(len(rng));
+        for (int& x : v) x = val(rng);
+        std::sort(v.begin(), v.end());
+        // каждый реально присутствующий элемент находится, и индекс корректен
+        for (std::size_t k = 0; k < v.size(); ++k) {
+            int idx = binary_search_idx(v, v[k]);
+            ASSERT_GE(idx, 0);
+            EXPECT_EQ(v[idx], v[k]);
+        }
+    }
+    // граничные случаи
+    EXPECT_EQ(binary_search_idx({}, 0), -1);
+    EXPECT_EQ(binary_search_idx({5}, 5), 0);
+    EXPECT_EQ(binary_search_idx({5}, 4), -1);
+}
+
+// ── Algo: two_sum ──────────────────────────────────────────────────────────
+// Инварианты: при наличии ответа индексы валидны, i<j и сумма == target;
+// при nullopt — никакой пары с такой суммой не существует (брутфорс-оракул).
+TEST(TwoSumProps, ReturnedPairIsValidAndNulloptMeansNoPair) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 40);
+    std::uniform_int_distribution<int> val(-30, 30);
+    std::uniform_int_distribution<int> tgt(-60, 60);
+    for (int iter = 0; iter < 500; ++iter) {
+        std::vector<int> v(len(rng));
+        for (int& x : v) x = val(rng);
+        int target = tgt(rng);
+
+        auto r = two_sum(v, target);
+
+        // брутфорс-оракул: существует ли вообще валидная пара i<j
+        bool oracle_exists = false;
+        for (std::size_t i = 0; i < v.size() && !oracle_exists; ++i)
+            for (std::size_t j = i + 1; j < v.size(); ++j)
+                if (v[i] + v[j] == target) { oracle_exists = true; break; }
+
+        EXPECT_EQ(r.has_value(), oracle_exists);
+        if (r.has_value()) {
+            int i = r->first, j = r->second;
+            ASSERT_GE(i, 0);
+            ASSERT_LT(j, static_cast<int>(v.size()));
+            EXPECT_LT(i, j);                       // i < j по контракту
+            EXPECT_EQ(v[i] + v[j], target);        // сумма действительно равна target
+        }
+    }
+}
+
+// ── Stack<T> (vector-based LIFO) ───────────────────────────────────────────
+// Инвариант: серия push, затем серия pop возвращает элементы в обратном
+// порядке (LIFO round-trip), а size трекается точно.
+TEST(StackProps, LifoRoundTrip) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 100);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> pushed(len(rng));
+        for (int& x : pushed) x = val(rng);
+
+        Stack<int> s;
+        for (int x : pushed) s.push(x);
+        ASSERT_EQ(s.size(), pushed.size());
+        EXPECT_EQ(s.empty(), pushed.empty());
+
+        // снимаем — должны получить обратный порядок
+        std::vector<int> popped;
+        while (!s.empty()) {
+            popped.push_back(s.top());
+            s.pop();
+        }
+        EXPECT_TRUE(s.empty());
+        EXPECT_EQ(s.size(), 0u);
+        std::reverse(popped.begin(), popped.end());
+        EXPECT_EQ(popped, pushed);  // LIFO: pop-порядок развёрнут == push-порядок
+    }
+}
+
+// ── ArrayStack<T> (бросает std::out_of_range на пустом) ────────────────────
+// Инвариант: LIFO round-trip как у Stack, плюс после полного слива
+// top()/pop() кидают именно std::out_of_range.
+TEST(ArrayStackProps, LifoRoundTripAndThrowsWhenDrained) {
+    std::mt19937 rng(0xBADC0DEu);
+    std::uniform_int_distribution<int> len(0, 80);
+    std::uniform_int_distribution<int> val(-500, 500);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> pushed(len(rng));
+        for (int& x : pushed) x = val(rng);
+
+        ArrayStack<int> s;
+        for (int x : pushed) s.push(x);
+        ASSERT_EQ(s.size(), pushed.size());
+
+        std::vector<int> popped;
+        while (!s.empty()) {
+            popped.push_back(s.top());
+            s.pop();
+        }
+        std::reverse(popped.begin(), popped.end());
+        EXPECT_EQ(popped, pushed);
+
+        // полностью слитый — оба метода бросают конкретный тип
+        EXPECT_THROW(s.top(), std::out_of_range);
+        EXPECT_THROW(s.pop(), std::out_of_range);
+    }
+}
+
+// ── SinglyLinkedList<T> ─────────────────────────────────────────────────────
+// Инварианты: to_vector совпадает с порядком push_back; reverse эквивалентен
+// std::reverse; двойной reverse — тождество; size трекается.
+TEST(SinglyLinkedListProps, PushBackRoundTripAndReverseInvolution) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 100);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> seq(len(rng));
+        for (int& x : seq) x = val(rng);
+
+        SinglyLinkedList<int> l;
+        for (int x : seq) l.push_back(x);
+
+        // round-trip: построили push_back → читаем тот же порядок
+        ASSERT_EQ(l.size(), seq.size());
+        EXPECT_EQ(l.empty(), seq.empty());
+        EXPECT_EQ(l.to_vector(), seq);
+
+        // reverse эквивалентен std::reverse оракула
+        l.reverse();
+        std::vector<int> rev = seq;
+        std::reverse(rev.begin(), rev.end());
+        EXPECT_EQ(l.to_vector(), rev);
+        EXPECT_EQ(l.size(), seq.size());  // размер не меняется
+
+        // двойной reverse — инволюция (тождество)
+        l.reverse();
+        EXPECT_EQ(l.to_vector(), seq);
+    }
+}
+
+TEST(SinglyLinkedListProps, PushFrontMirrorsReverseOfBack) {
+    std::mt19937 rng(0xFEEDFACEu);
+    std::uniform_int_distribution<int> len(0, 80);
+    std::uniform_int_distribution<int> val(-200, 200);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> seq(len(rng));
+        for (int& x : seq) x = val(rng);
+
+        // push_front по очереди → порядок обратный последовательности вставки
+        SinglyLinkedList<int> lf;
+        for (int x : seq) lf.push_front(x);
+        std::vector<int> expected = seq;
+        std::reverse(expected.begin(), expected.end());
+        EXPECT_EQ(lf.to_vector(), expected);
+        EXPECT_EQ(lf.size(), seq.size());
+    }
+}
+
+// ── BST (по int, дубликаты игнорируются) ────────────────────────────────────
+// Инварианты: inorder == отсортированному множеству уникальных значений;
+// size == числу уникальных; contains согласован с членством; вставка
+// идемпотентна (повтор не меняет ни size, ни inorder).
+TEST(BSTProps, InorderEqualsSortedUniqueAndContainsMatchesSet) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> len(0, 80);
+    std::uniform_int_distribution<int> val(-50, 50);  // узко → много дубликатов
+    for (int iter = 0; iter < 400; ++iter) {
+        std::vector<int> ins(len(rng));
+        for (int& x : ins) x = val(rng);
+
+        BST t;
+        for (int x : ins) t.insert(x);
+
+        // оракул: std::set даёт отсортированное множество уникальных
+        std::set<int> oracle(ins.begin(), ins.end());
+        std::vector<int> expected(oracle.begin(), oracle.end());
+
+        std::vector<int> walk = t.inorder();          // материализуем один раз
+        EXPECT_EQ(t.size(), oracle.size());           // size == число уникальных
+        EXPECT_EQ(walk, expected);                    // inorder отсортирован и уникален
+        EXPECT_TRUE(std::is_sorted(walk.begin(), walk.end()));
+
+        // contains согласован с членством по всему диапазону
+        for (int q = -55; q <= 55; ++q)
+            EXPECT_EQ(t.contains(q), oracle.count(q) != 0);
+    }
+}
+
+TEST(BSTProps, InsertIsIdempotent) {
+    std::mt19937 rng(0xABCDEF01u);
+    std::uniform_int_distribution<int> len(1, 60);
+    std::uniform_int_distribution<int> val(-30, 30);
+    for (int iter = 0; iter < 300; ++iter) {
+        std::vector<int> ins(len(rng));
+        for (int& x : ins) x = val(rng);
+
+        BST t;
+        for (int x : ins) t.insert(x);
+        std::size_t sz = t.size();
+        std::vector<int> snapshot = t.inorder();
+
+        // повторная вставка уже присутствующих значений ничего не меняет
+        for (int x : ins) t.insert(x);
+        EXPECT_EQ(t.size(), sz);
+        EXPECT_EQ(t.inorder(), snapshot);
+    }
+}
+
+TEST(BSTProps, ExtremeValues) {
+    const int lo = std::numeric_limits<int>::min();
+    const int hi = std::numeric_limits<int>::max();
+    BST t;
+    t.insert(hi);
+    t.insert(lo);
+    t.insert(0);
+    t.insert(hi);  // дубликат экстремума
+    EXPECT_EQ(t.size(), 3u);
+    EXPECT_EQ(t.inorder(), (std::vector<int>{lo, 0, hi}));
+    EXPECT_TRUE(t.contains(lo));
+    EXPECT_TRUE(t.contains(hi));
+    EXPECT_FALSE(t.contains(1));
 }
