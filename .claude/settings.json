@@ -25,9 +25,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "DIR=\"${CLAUDE_PROJECT_DIR:-.}\"; [ -f \"$DIR/graphify-out/graph.json\" ] && [ \"$(git -C \"$DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" = \"main\" ] && { cd \"$DIR\" && graphify update cpp >/dev/null 2>&1; } || true",
+            "command": "DIR=\"${CLAUDE_PROJECT_DIR:-.}\"; [ -f \"$DIR/graphify-out/graph.json\" ] && [ \"$(git -C \"$DIR\" rev-parse --abbrev-ref HEAD 2>/dev/null)\" = \"main\" ] && { cd \"$DIR\" && graphify update . >/dev/null 2>&1; } || true",
             "async": true,
-            "statusMessage": "graphify: updating knowledge graph (main only)"
+            "statusMessage": "graphify: updating knowledge graph (whole project, main only)"
           }
         ]
       }
