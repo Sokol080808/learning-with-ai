@@ -429,3 +429,213 @@ TEST(CrossFunction, ParseBinaryMatchesParseHex) {
             << "x=" << x;
     }
 }
+
+// ============================================================
+// Задание 5: Endianness serializer tests
+// ============================================================
+
+// ---- pack_u32_be: exact byte check ----
+TEST(Endianness, PackBEExactBytes) {
+    uint8_t out[4];
+    pack_u32_be(0x12345678u, out);
+    EXPECT_EQ(out[0], 0x12u);
+    EXPECT_EQ(out[1], 0x34u);
+    EXPECT_EQ(out[2], 0x56u);
+    EXPECT_EQ(out[3], 0x78u);
+}
+
+TEST(Endianness, PackBEZero) {
+    uint8_t out[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    pack_u32_be(0u, out);
+    EXPECT_EQ(out[0], 0u);
+    EXPECT_EQ(out[1], 0u);
+    EXPECT_EQ(out[2], 0u);
+    EXPECT_EQ(out[3], 0u);
+}
+
+TEST(Endianness, PackBEMaxValue) {
+    uint8_t out[4];
+    pack_u32_be(0xFFFFFFFFu, out);
+    EXPECT_EQ(out[0], 0xFFu);
+    EXPECT_EQ(out[1], 0xFFu);
+    EXPECT_EQ(out[2], 0xFFu);
+    EXPECT_EQ(out[3], 0xFFu);
+}
+
+TEST(Endianness, PackBEHighByteOnly) {
+    uint8_t out[4];
+    pack_u32_be(0xAB000000u, out);
+    EXPECT_EQ(out[0], 0xABu);
+    EXPECT_EQ(out[1], 0x00u);
+    EXPECT_EQ(out[2], 0x00u);
+    EXPECT_EQ(out[3], 0x00u);
+}
+
+// ---- pack_u32_le: exact byte check ----
+TEST(Endianness, PackLEExactBytes) {
+    uint8_t out[4];
+    pack_u32_le(0x12345678u, out);
+    EXPECT_EQ(out[0], 0x78u);
+    EXPECT_EQ(out[1], 0x56u);
+    EXPECT_EQ(out[2], 0x34u);
+    EXPECT_EQ(out[3], 0x12u);
+}
+
+TEST(Endianness, PackLEZero) {
+    uint8_t out[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    pack_u32_le(0u, out);
+    EXPECT_EQ(out[0], 0u);
+    EXPECT_EQ(out[1], 0u);
+    EXPECT_EQ(out[2], 0u);
+    EXPECT_EQ(out[3], 0u);
+}
+
+TEST(Endianness, PackLELowByteOnly) {
+    uint8_t out[4];
+    pack_u32_le(0x000000CDu, out);
+    EXPECT_EQ(out[0], 0xCDu);
+    EXPECT_EQ(out[1], 0x00u);
+    EXPECT_EQ(out[2], 0x00u);
+    EXPECT_EQ(out[3], 0x00u);
+}
+
+// ---- BE and LE produce mirror byte arrays ----
+TEST(Endianness, BEandLEAreMirrors) {
+    uint8_t be[4], le[4];
+    pack_u32_be(0xDEADBEEFu, be);
+    pack_u32_le(0xDEADBEEFu, le);
+    // BE[i] == LE[3-i]
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_EQ(be[i], le[3 - i])
+            << "i=" << i;
+    }
+}
+
+TEST(Endianness, BEandLEAreMirrorsRandom) {
+    std::mt19937 rng(0xE4D1A2C3u);
+    std::uniform_int_distribution<uint32_t> dist(0, 0xFFFFFFFFu);
+    uint8_t be[4], le[4];
+
+    for (int i = 0; i < 1000; ++i) {
+        uint32_t v = dist(rng);
+        pack_u32_be(v, be);
+        pack_u32_le(v, le);
+        for (int k = 0; k < 4; ++k) {
+            EXPECT_EQ(be[k], le[3 - k])
+                << "v=" << v << " k=" << k;
+        }
+    }
+}
+
+// ---- unpack_u32_be: exact values ----
+TEST(Endianness, UnpackBEExact) {
+    const uint8_t in[4] = {0x12, 0x34, 0x56, 0x78};
+    EXPECT_EQ(unpack_u32_be(in), 0x12345678u);
+}
+
+TEST(Endianness, UnpackBEAllOnes) {
+    const uint8_t in[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    EXPECT_EQ(unpack_u32_be(in), 0xFFFFFFFFu);
+}
+
+TEST(Endianness, UnpackBEZero) {
+    const uint8_t in[4] = {0x00, 0x00, 0x00, 0x00};
+    EXPECT_EQ(unpack_u32_be(in), 0u);
+}
+
+// ---- unpack_u32_le: exact values ----
+TEST(Endianness, UnpackLEExact) {
+    const uint8_t in[4] = {0x78, 0x56, 0x34, 0x12};
+    EXPECT_EQ(unpack_u32_le(in), 0x12345678u);
+}
+
+TEST(Endianness, UnpackLEAllOnes) {
+    const uint8_t in[4] = {0xFF, 0xFF, 0xFF, 0xFF};
+    EXPECT_EQ(unpack_u32_le(in), 0xFFFFFFFFu);
+}
+
+// ---- Round-trip: pack then unpack ----
+TEST(Endianness, RoundTripBE) {
+    std::mt19937 rng(0xB00B1234u);
+    std::uniform_int_distribution<uint32_t> dist(0, 0xFFFFFFFFu);
+    uint8_t buf[4];
+
+    for (int i = 0; i < 1000; ++i) {
+        uint32_t v = dist(rng);
+        pack_u32_be(v, buf);
+        EXPECT_EQ(unpack_u32_be(buf), v) << "v=" << v;
+    }
+}
+
+TEST(Endianness, RoundTripLE) {
+    std::mt19937 rng(0xF1E2D3C4u);
+    std::uniform_int_distribution<uint32_t> dist(0, 0xFFFFFFFFu);
+    uint8_t buf[4];
+
+    for (int i = 0; i < 1000; ++i) {
+        uint32_t v = dist(rng);
+        pack_u32_le(v, buf);
+        EXPECT_EQ(unpack_u32_le(buf), v) << "v=" << v;
+    }
+}
+
+// ---- BE bytes same value as LE bytes are swapped ----
+TEST(Endianness, UnpackBEFromLEIsSwapped) {
+    // If we pack with LE and unpack with BE the result should be byte-reversed.
+    // Equivalently: unpack_be(pack_le(v)) == bswap32(v).
+    // We verify the relationship without calling a bswap function:
+    //   unpack_be(pack_le(v)) == unpack_le(pack_be(v))? NO —
+    //   we verify directly: for v = 0x11223344,
+    //   pack_le -> [0x44,0x33,0x22,0x11], unpack_be -> 0x44332211
+    const uint32_t v = 0x11223344u;
+    uint8_t buf[4];
+    pack_u32_le(v, buf);
+    EXPECT_EQ(unpack_u32_be(buf), 0x44332211u);
+}
+
+// ---- host_is_little_endian: return is 0 or 1 ----
+TEST(Endianness, HostEndianReturnBool) {
+    int r = host_is_little_endian();
+    EXPECT_TRUE(r == 0 || r == 1)
+        << "host_is_little_endian() must return 0 or 1, got " << r;
+}
+
+// ---- host_is_little_endian: consistent with runtime probe ----
+TEST(Endianness, HostEndianConsistentWithPack) {
+    // On a little-endian host, pack_u32_le(1,...) should produce [1,0,0,0].
+    // On a big-endian host, pack_u32_be(1,...) should produce [0,0,0,1].
+    // Either way, the first byte of the relevant pack is 0 or 1.
+    uint8_t buf[4];
+    if (host_is_little_endian()) {
+        pack_u32_le(1u, buf);
+        EXPECT_EQ(buf[0], 1u) << "LE host: LE-packed 1 must start with 0x01";
+        EXPECT_EQ(buf[1], 0u);
+        EXPECT_EQ(buf[2], 0u);
+        EXPECT_EQ(buf[3], 0u);
+    } else {
+        pack_u32_be(1u, buf);
+        EXPECT_EQ(buf[3], 1u) << "BE host: BE-packed 1 must end with 0x01";
+        EXPECT_EQ(buf[0], 0u);
+        EXPECT_EQ(buf[1], 0u);
+        EXPECT_EQ(buf[2], 0u);
+    }
+}
+
+// ---- DEADBEEF canonical test ----
+TEST(Endianness, DeadBeefCanonical) {
+    uint8_t be[4], le[4];
+    pack_u32_be(0xDEADBEEFu, be);
+    pack_u32_le(0xDEADBEEFu, le);
+
+    // BE must be exactly: DE AD BE EF
+    EXPECT_EQ(be[0], 0xDEu);
+    EXPECT_EQ(be[1], 0xADu);
+    EXPECT_EQ(be[2], 0xBEu);
+    EXPECT_EQ(be[3], 0xEFu);
+
+    // LE must be exactly: EF BE AD DE
+    EXPECT_EQ(le[0], 0xEFu);
+    EXPECT_EQ(le[1], 0xBEu);
+    EXPECT_EQ(le[2], 0xADu);
+    EXPECT_EQ(le[3], 0xDEu);
+}

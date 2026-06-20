@@ -61,3 +61,58 @@ int my_strcmp(const char* a, const char* b) {
     }
     return (int)(unsigned char)a[i] - (int)(unsigned char)b[i];
 }
+
+/* ------------------------------------------------------------------ *
+ *  StrBuf — ограниченный строковый буфер фиксированной ёмкости.      *
+ * ------------------------------------------------------------------ */
+
+void strbuf_init(StrBuf* sb, size_t cap) {
+    if (cap == 0) {
+        sb->buf = NULL;
+        sb->len = 0;
+        sb->cap = 0;
+        return;
+    }
+    sb->buf = (char*)malloc(cap);
+    if (sb->buf == NULL) {
+        sb->len = 0;
+        sb->cap = 0;
+        return;
+    }
+    sb->buf[0] = '\0';
+    sb->len = 0;
+    sb->cap = cap;
+}
+
+size_t strbuf_append(StrBuf* sb, const char* s) {
+    if (sb->buf == NULL || sb->cap == 0) {
+        return 0;
+    }
+    /* Сколько байт ещё влезает (не считая завершающий '\0'). */
+    size_t free_space = (sb->cap - 1 > sb->len) ? (sb->cap - 1 - sb->len) : 0;
+    if (free_space == 0) {
+        return 0;
+    }
+    size_t copied = 0;
+    while (s[copied] != '\0' && copied < free_space) {
+        sb->buf[sb->len + copied] = s[copied];
+        copied++;
+    }
+    sb->len += copied;
+    sb->buf[sb->len] = '\0';
+    return copied;
+}
+
+void strbuf_clear(StrBuf* sb) {
+    if (sb->buf != NULL) {
+        sb->buf[0] = '\0';
+    }
+    sb->len = 0;
+}
+
+void strbuf_free(StrBuf* sb) {
+    free(sb->buf);
+    sb->buf = NULL;
+    sb->len = 0;
+    sb->cap = 0;
+}

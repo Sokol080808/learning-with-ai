@@ -53,3 +53,45 @@ uint32_t parse_hex(const char* s) {
     }
     return acc;
 }
+
+/* ---- Задание 5: Endianness-сериализатор ---- */
+
+// Записать v в out[4] в big-endian порядке (out[0] = старший байт).
+void pack_u32_be(uint32_t v, uint8_t out[4]) {
+    out[0] = (uint8_t)(v >> 24);
+    out[1] = (uint8_t)(v >> 16);
+    out[2] = (uint8_t)(v >>  8);
+    out[3] = (uint8_t)(v      );
+}
+
+// Прочитать uint32_t из in[4] в big-endian порядке (in[0] = старший байт).
+uint32_t unpack_u32_be(const uint8_t in[4]) {
+    return ((uint32_t)in[0] << 24)
+         | ((uint32_t)in[1] << 16)
+         | ((uint32_t)in[2] <<  8)
+         |  (uint32_t)in[3];
+}
+
+// Записать v в out[4] в little-endian порядке (out[0] = младший байт).
+void pack_u32_le(uint32_t v, uint8_t out[4]) {
+    out[0] = (uint8_t)(v      );
+    out[1] = (uint8_t)(v >>  8);
+    out[2] = (uint8_t)(v >> 16);
+    out[3] = (uint8_t)(v >> 24);
+}
+
+// Прочитать uint32_t из in[4] в little-endian порядке (in[0] = младший байт).
+uint32_t unpack_u32_le(const uint8_t in[4]) {
+    return  (uint32_t)in[0]
+         | ((uint32_t)in[1] <<  8)
+         | ((uint32_t)in[2] << 16)
+         | ((uint32_t)in[3] << 24);
+}
+
+// Вернуть 1 если хост использует little-endian, 0 если big-endian.
+// Используем union — законно в C11 (type-punning через union определено).
+int host_is_little_endian(void) {
+    union { uint32_t u32; uint8_t b[4]; } probe;
+    probe.u32 = 1u;
+    return (int)(probe.b[0] == 1u);
+}

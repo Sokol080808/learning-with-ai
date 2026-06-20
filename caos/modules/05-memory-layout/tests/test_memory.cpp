@@ -398,3 +398,228 @@ TEST(PtrDistanceRandom, MaxDistanceEdge) {
     EXPECT_EQ(d_fwd, static_cast<long>(MAXN - 1));
     EXPECT_EQ(d_rev, -static_cast<long>(MAXN - 1));
 }
+
+// ============================================================
+// layout_compute — инспектор раскладки структур (задание 5)
+// ============================================================
+
+// Вспомогательная функция: поле-дескриптор.
+static Field make_field(const char* name, size_t size, size_t align) {
+    Field f;
+    f.name  = name;
+    f.size  = size;
+    f.align = align;
+    return f;
+}
+
+// --- Известные раскладки против компилятора ----------------------------
+
+// struct { char c; int n; }  -> {0, 4}, sizeof=8
+TEST(LayoutCompute, CharThenInt) {
+    Field fields[2] = {
+        make_field("c", 1, 1),
+        make_field("n", 4, 4),
+    };
+    size_t offsets[2];
+    size_t sz = layout_compute(fields, 2, offsets);
+
+    EXPECT_EQ(offsets[0], 0u);   // char at 0
+    EXPECT_EQ(offsets[1], 4u);   // int at 4 (3 bytes padding)
+    EXPECT_EQ(sz,         8u);   // sizeof == 8
+}
+
+// struct { int n; char c; }  -> {0, 4}, sizeof=8
+TEST(LayoutCompute, IntThenChar) {
+    Field fields[2] = {
+        make_field("n", 4, 4),
+        make_field("c", 1, 1),
+    };
+    size_t offsets[2];
+    size_t sz = layout_compute(fields, 2, offsets);
+
+    EXPECT_EQ(offsets[0], 0u);   // int at 0
+    EXPECT_EQ(offsets[1], 4u);   // char at 4
+    EXPECT_EQ(sz,         8u);   // tail-padding to align 4
+}
+
+// struct { double b; char a; char c; }  -> {0, 8, 9}, sizeof=16
+TEST(LayoutCompute, DoubleTwoChars) {
+    Field fields[3] = {
+        make_field("b", 8, 8),
+        make_field("a", 1, 1),
+        make_field("c", 1, 1),
+    };
+    size_t offsets[3];
+    size_t sz = layout_compute(fields, 3, offsets);
+
+    EXPECT_EQ(offsets[0],  0u);  // double at 0
+    EXPECT_EQ(offsets[1],  8u);  // char at 8
+    EXPECT_EQ(offsets[2],  9u);  // char at 9
+    EXPECT_EQ(sz,         16u);  // tail-padding to align 8
+}
+
+// struct { char a; double b; char c; }  -> {0, 8, 16}, sizeof=24  (BAD layout)
+TEST(LayoutCompute, BadLayout_CharDoublChar) {
+    Field fields[3] = {
+        make_field("a", 1, 1),
+        make_field("b", 8, 8),
+        make_field("c", 1, 1),
+    };
+    size_t offsets[3];
+    size_t sz = layout_compute(fields, 3, offsets);
+
+    EXPECT_EQ(offsets[0],  0u);  // char at 0
+    EXPECT_EQ(offsets[1],  8u);  // double at 8  (7 bytes padding)
+    EXPECT_EQ(offsets[2], 16u);  // char at 16
+    EXPECT_EQ(sz,         24u);  // tail-padding to align 8
+}
+
+// Single field, no padding anywhere.
+TEST(LayoutCompute, SingleField) {
+    Field f = make_field("x", 4, 4);
+    size_t offset;
+    size_t sz = layout_compute(&f, 1, &offset);
+    EXPECT_EQ(offset, 0u);
+    EXPECT_EQ(sz, 4u);
+}
+
+// struct { short s; short t; int n; }  -> {0, 2, 4}, sizeof=8
+TEST(LayoutCompute, TwoShortsThenInt) {
+    Field fields[3] = {
+        make_field("s", 2, 2),
+        make_field("t", 2, 2),
+        make_field("n", 4, 4),
+    };
+    size_t offsets[3];
+    size_t sz = layout_compute(fields, 3, offsets);
+
+    EXPECT_EQ(offsets[0], 0u);
+    EXPECT_EQ(offsets[1], 2u);
+    EXPECT_EQ(offsets[2], 4u);
+    EXPECT_EQ(sz,         8u);
+}
+
+// struct { char a; char b; char c; char d; }  -> all at 0..3, sizeof=4
+TEST(LayoutCompute, FourChars) {
+    Field fields[4] = {
+        make_field("a", 1, 1), make_field("b", 1, 1),
+        make_field("c", 1, 1), make_field("d", 1, 1),
+    };
+    size_t offsets[4];
+    size_t sz = layout_compute(fields, 4, offsets);
+
+    for (int i = 0; i < 4; ++i) EXPECT_EQ(offsets[i], static_cast<size_t>(i));
+    EXPECT_EQ(sz, 4u);
+}
+
+// --- Свойство: sizeof кратен строжайшему align -------------------------
+
+TEST(LayoutComputeProps, SizeofMultipleOfMaxAlign) {
+    // For all layouts, sizeof must be a multiple of max(align).
+    // Use a fixed deterministic set (seed is implicit in static data).
+    struct TestCase {
+        Field   fields[4];
+        int     n;
+    };
+    // Build test cases statically (no random, fully deterministic).
+    Field tc0[3] = { make_field("a",1,1), make_field("b",4,4), make_field("c",1,1) };
+    Field tc1[2] = { make_field("a",8,8), make_field("b",1,1) };
+    Field tc2[4] = { make_field("a",1,1), make_field("b",2,2), make_field("c",4,4), make_field("d",8,8) };
+    Field tc3[1] = { make_field("x",3,1) };
+
+    auto check = [](const Field* f, int n) {
+        std::vector<size_t> off(static_cast<size_t>(n));
+        size_t sz = layout_compute(f, n, off.data());
+        size_t max_align = 1;
+        for (int i = 0; i < n; ++i) if (f[i].align > max_align) max_align = f[i].align;
+        EXPECT_EQ(sz % max_align, 0u) << "sizeof not multiple of max_align=" << max_align;
+    };
+
+    check(tc0, 3);
+    check(tc1, 2);
+    check(tc2, 4);
+    check(tc3, 1);
+}
+
+// --- Свойство: каждое смещение кратно своему align ---------------------
+
+TEST(LayoutComputeProps, EachOffsetIsAligned) {
+    Field fields[4] = {
+        make_field("a", 1, 1), make_field("b", 4, 4),
+        make_field("c", 2, 2), make_field("d", 8, 8),
+    };
+    size_t offsets[4];
+    layout_compute(fields, 4, offsets);
+
+    for (int i = 0; i < 4; ++i) {
+        EXPECT_EQ(offsets[i] % fields[i].align, 0u)
+            << "field " << i << " offset=" << offsets[i]
+            << " not aligned to " << fields[i].align;
+    }
+}
+
+// --- Свойство: смещения строго не убывают, нет перекрытий --------------
+
+TEST(LayoutComputeProps, OffsetsNonDecreasingNoOverlap) {
+    Field fields[5] = {
+        make_field("a", 1, 1), make_field("b", 8, 8),
+        make_field("c", 4, 4), make_field("d", 2, 2),
+        make_field("e", 1, 1),
+    };
+    size_t offsets[5];
+    size_t sz = layout_compute(fields, 5, offsets);
+
+    for (int i = 1; i < 5; ++i) {
+        // offset[i] >= offset[i-1] + size[i-1]  (no overlap)
+        EXPECT_GE(offsets[i], offsets[i-1] + fields[i-1].size)
+            << "overlap between fields " << i-1 << " and " << i;
+    }
+    // last field end <= sizeof
+    EXPECT_LE(offsets[4] + fields[4].size, sz);
+}
+
+// --- Рандомизированный тест против оракула (deterministic seed) --------
+
+TEST(LayoutComputeRandom, MatchesOracleOnRandomLayouts) {
+    // Oracle: same algorithm, independently coded using modulo arithmetic.
+    auto oracle_layout = [](const Field* f, int n, size_t* off_out) -> size_t {
+        size_t cursor = 0, max_a = 1;
+        for (int i = 0; i < n; i++) {
+            size_t a = f[i].align;
+            if (a > max_a) max_a = a;
+            // align up using division (deliberately different bit arithmetic)
+            if (cursor % a != 0) cursor += a - (cursor % a);
+            off_out[i] = cursor;
+            cursor += f[i].size;
+        }
+        if (cursor % max_a != 0) cursor += max_a - (cursor % max_a);
+        return cursor;
+    };
+
+    std::mt19937 rng(0xC0FFEE + 42);
+    // Allowed alignments: 1, 2, 4, 8
+    size_t aligns[] = {1, 2, 4, 8};
+    std::uniform_int_distribution<int>    dist_n(1, 6);
+    std::uniform_int_distribution<size_t> dist_a(0, 3);
+    std::uniform_int_distribution<size_t> dist_s(1, 8);
+
+    for (int trial = 0; trial < 500; ++trial) {
+        int n = dist_n(rng);
+        std::vector<Field> fields(static_cast<size_t>(n));
+        for (int i = 0; i < n; i++) {
+            size_t a = aligns[dist_a(rng)];
+            fields[static_cast<size_t>(i)] = make_field("x", dist_s(rng), a);
+        }
+        std::vector<size_t> got(static_cast<size_t>(n));
+        std::vector<size_t> exp(static_cast<size_t>(n));
+
+        size_t sz_got = layout_compute(fields.data(), n, got.data());
+        size_t sz_exp = oracle_layout(fields.data(), n, exp.data());
+
+        EXPECT_EQ(sz_got, sz_exp) << "trial=" << trial << " sizeof mismatch";
+        for (int i = 0; i < n; i++) {
+            EXPECT_EQ(got[static_cast<size_t>(i)], exp[static_cast<size_t>(i)])
+                << "trial=" << trial << " field " << i << " offset mismatch";
+        }
+    }
+}

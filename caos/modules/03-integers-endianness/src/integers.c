@@ -49,3 +49,39 @@ int is_little_endian(void) {
     memcpy(&first_byte, &probe, 1);
     return (first_byte == 1) ? 1 : 0;
 }
+
+// Кодирует *pkt в big-endian байты buf[0..11] (12 байт: 2+2+4+4).
+// Возвращает 12 при успехе; -1, если buf == NULL или buf_size < 12.
+int packet_encode(const PacketHeader *pkt, uint8_t *buf, size_t buf_size) {
+    if (buf == NULL || buf_size < 12) return -1;
+    /* version (2 bytes, big-endian): bytes 0-1 */
+    buf[0] = (uint8_t)((pkt->version >> 8) & 0xFFu);
+    buf[1] = (uint8_t)(pkt->version        & 0xFFu);
+    /* port (2 bytes, big-endian): bytes 2-3 */
+    buf[2] = (uint8_t)((pkt->port >> 8) & 0xFFu);
+    buf[3] = (uint8_t)(pkt->port        & 0xFFu);
+    /* length (4 bytes, big-endian): bytes 4-7 */
+    buf[4] = (uint8_t)((pkt->length >> 24) & 0xFFu);
+    buf[5] = (uint8_t)((pkt->length >> 16) & 0xFFu);
+    buf[6] = (uint8_t)((pkt->length >>  8) & 0xFFu);
+    buf[7] = (uint8_t)(pkt->length         & 0xFFu);
+    /* checksum (4 bytes, big-endian): bytes 8-11 */
+    buf[8]  = (uint8_t)((pkt->checksum >> 24) & 0xFFu);
+    buf[9]  = (uint8_t)((pkt->checksum >> 16) & 0xFFu);
+    buf[10] = (uint8_t)((pkt->checksum >>  8) & 0xFFu);
+    buf[11] = (uint8_t)(pkt->checksum         & 0xFFu);
+    return 12;
+}
+
+// Декодирует big-endian байты из buf в *out.
+// Возвращает 12 при успехе; -1, если buf == NULL, out == NULL или buf_size < 12.
+int packet_decode(const uint8_t *buf, size_t buf_size, PacketHeader *out) {
+    if (buf == NULL || out == NULL || buf_size < 12) return -1;
+    out->version  = ((uint16_t)buf[0] << 8) | (uint16_t)buf[1];
+    out->port     = ((uint16_t)buf[2] << 8) | (uint16_t)buf[3];
+    out->length   = ((uint32_t)buf[4] << 24) | ((uint32_t)buf[5] << 16)
+                  | ((uint32_t)buf[6] <<  8) |  (uint32_t)buf[7];
+    out->checksum = ((uint32_t)buf[8] << 24) | ((uint32_t)buf[9] << 16)
+                  | ((uint32_t)buf[10] <<  8) | (uint32_t)buf[11];
+    return 12;
+}

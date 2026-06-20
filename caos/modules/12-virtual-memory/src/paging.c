@@ -3,6 +3,7 @@
 // Подключаем СВОЙ заголовок — так компилятор сверит, что твои реализации
 // совпадают по сигнатуре с объявлениями в include/paging.h.
 #include "paging.h"
+#include <stdlib.h>   // calloc/malloc/free для ленивых L2-таблиц
 
 // Контракт: номер страницы для адреса addr при размере страницы page_size.
 // page_size — степень двойки. Номер страницы = addr / page_size.
@@ -114,4 +115,117 @@ int lru_page_faults(const int *refs, int n, int frames) {
     }
 
     return faults;
+}
+
+// ============================================================
+//  Двухуровневая таблица страниц (симулятор трансляции)
+// ============================================================
+//
+// Раскладка vaddr (32 бита):  [ L1: 10 | L2: 10 | offset: 12 ].
+// L1 — директория из PT_ENTRIES указателей на L2-таблицы.
+// L2 — таблица из PT_ENTRIES записей; запись хранит номер кадра + present.
+// L2-таблицы создаются лениво (только под используемые куски памяти).
+
+// Одна запись L2: present == 0 -> страница не отображена.
+typedef struct {
+    uint32_t frame;    // номер физического кадра
+    int      present;  // 1, если страница отображена
+} L2Entry;
+
+// Вложенная таблица второго уровня: PT_ENTRIES записей.
+typedef struct {
+    L2Entry entries[PT_ENTRIES];
+} L2Table;
+
+// Сама таблица страниц: директория L1 + счётчик розданных кадров.
+struct PageTable {
+    L2Table *l1[PT_ENTRIES];  // l1[i] == NULL, пока кусок не использован
+    uint32_t next_frame;      // следующий свободный кадр для ленивой раздачи
+};
+
+// --- разбор виртуального адреса на три поля ---
+static inline uint32_t pt_l1_index(uint32_t vaddr) {
+    return (vaddr >> (PT_INDEX_BITS + PT_PAGE_BITS)) & (PT_ENTRIES - 1);
+}
+static inline uint32_t pt_l2_index(uint32_t vaddr) {
+    return (vaddr >> PT_PAGE_BITS) & (PT_ENTRIES - 1);
+}
+static inline uint32_t pt_offset(uint32_t vaddr) {
+    return vaddr & (PT_PAGE_SIZE - 1);
+}
+
+PageTable *pt_create(void) {
+    // calloc обнуляет: все l1[] == NULL, next_frame == 0.
+    return (PageTable *)calloc(1, sizeof(PageTable));
+}
+
+void pt_destroy(PageTable *pt) {
+    if (pt == NULL) {
+        return;
+    }
+    for (uint32_t i = 0; i < PT_ENTRIES; ++i) {
+        free(pt->l1[i]);  // free(NULL) безопасен
+    }
+    free(pt);
+}
+
+// Возвращает L2-таблицу для l1-индекса, создавая её при create != 0.
+// При create == 0 и отсутствии таблицы возвращает NULL.
+static L2Table *pt_get_l2(PageTable *pt, uint32_t l1, int create) {
+    if (pt->l1[l1] != NULL) {
+        return pt->l1[l1];
+    }
+    if (!create) {
+        return NULL;
+    }
+    // calloc -> все записи present == 0 (страницы не отображены).
+    L2Table *t = (L2Table *)calloc(1, sizeof(L2Table));
+    pt->l1[l1] = t;  // при неудаче останется NULL — вызывающий проверит
+    return t;
+}
+
+int64_t pt_walk(PageTable *pt, uint32_t vaddr, int alloc) {
+    if (pt == NULL) {
+        return -1;
+    }
+    uint32_t l1  = pt_l1_index(vaddr);
+    uint32_t l2  = pt_l2_index(vaddr);
+    uint32_t off = pt_offset(vaddr);
+
+    L2Table *table = pt_get_l2(pt, l1, alloc);
+    if (table == NULL) {
+        return -1;  // нет L2-таблицы и не просили аллоцировать -> page fault
+    }
+
+    L2Entry *e = &table->entries[l2];
+    if (!e->present) {
+        if (!alloc) {
+            return -1;  // страница не отображена -> page fault
+        }
+        // ОС «обработала промах»: раздаём очередной свежий кадр.
+        e->frame   = pt->next_frame++;
+        e->present = 1;
+    }
+
+    // Физический адрес: кадр в старших битах, смещение — как есть.
+    return ((int64_t)e->frame << PT_PAGE_BITS) | off;
+}
+
+int pt_map(PageTable *pt, uint32_t vaddr, uint32_t paddr) {
+    if (pt == NULL) {
+        return -1;
+    }
+    uint32_t l1 = pt_l1_index(vaddr);
+    uint32_t l2 = pt_l2_index(vaddr);
+
+    L2Table *table = pt_get_l2(pt, l1, 1);
+    if (table == NULL) {
+        return -1;  // не удалось выделить L2-таблицу
+    }
+
+    // Отображаем СТРАНИЦУ: берём только номер кадра paddr, смещение игнорим.
+    L2Entry *e = &table->entries[l2];
+    e->frame   = paddr >> PT_PAGE_BITS;
+    e->present = 1;
+    return 0;
 }

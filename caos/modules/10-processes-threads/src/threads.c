@@ -119,3 +119,148 @@ long mutex_counter(int num_threads, int per_thread) {
     free(threads);
     return counter;
 }
+
+/* -------------------------------------------------------------------------
+ * producer_consumer: ограниченный кольцевой буфер
+ * ---------------------------------------------------------------------- */
+
+/* Общее «рабочее место» всех потоков: сам кольцевой буфер, его геометрия
+ * (head/tail/count/cap) и средства синхронизации (один замок + два условия).
+ * Всё это — разделяемое состояние, поэтому трогать его можно только под mutex. */
+typedef struct {
+    long           *buf;       /* кольцевой буфер на cap элементов            */
+    int             cap;       /* ёмкость (buf_cap), задана в рантайме        */
+    int             head;      /* откуда читает consumer                      */
+    int             tail;      /* куда пишет producer                         */
+    int             count;     /* сколько элементов сейчас в буфере           */
+
+    pthread_mutex_t mutex;
+    pthread_cond_t  not_full;  /* «появилось свободное место»                 */
+    pthread_cond_t  not_empty; /* «появился элемент»                          */
+
+    /* Сколько ещё элементов всего будет произведено. Когда дойдёт до 0 и
+     * буфер опустеет — работать больше не над чем, consumer'ы выходят. */
+    long            remaining;
+
+    long            sum;       /* общий аккумулятор результата                */
+} PCQueue;
+
+typedef struct {
+    PCQueue *q;
+    int      id;               /* номер производителя p (0..n_producers-1)    */
+    int      items;            /* items_per_producer                          */
+} ProducerArg;
+
+static void *pc_producer(void *arg) {
+    ProducerArg *pa = (ProducerArg *)arg;
+    PCQueue *q = pa->q;
+
+    for (int i = 0; i < pa->items; ++i) {
+        long value = (long)pa->id * pa->items + i + 1;
+
+        pthread_mutex_lock(&q->mutex);
+        /* Буфер полон — ждём, пока consumer освободит место. while, а не if:
+         * после пробуждения условие надо перепроверить (ложные побудки и
+         * гонка за замок с другими producer'ами). */
+        while (q->count == q->cap) {
+            pthread_cond_wait(&q->not_full, &q->mutex);
+        }
+        q->buf[q->tail] = value;
+        q->tail = (q->tail + 1) % q->cap;
+        q->count++;
+        /* Разбудить одного ждущего consumer'а: появился элемент. */
+        pthread_cond_signal(&q->not_empty);
+        pthread_mutex_unlock(&q->mutex);
+    }
+    return NULL;
+}
+
+static void *pc_consumer(void *arg) {
+    PCQueue *q = (PCQueue *)arg;
+
+    for (;;) {
+        pthread_mutex_lock(&q->mutex);
+        /* Ждём, пока в буфере что-то появится. Но если работы больше не
+         * осталось (remaining == 0) и буфер пуст — выходим: иначе зависнем
+         * на not_empty навсегда. */
+        while (q->count == 0 && q->remaining > 0) {
+            pthread_cond_wait(&q->not_empty, &q->mutex);
+        }
+        if (q->count == 0 && q->remaining == 0) {
+            pthread_mutex_unlock(&q->mutex);
+            break;
+        }
+        long value = q->buf[q->head];
+        q->head = (q->head + 1) % q->cap;
+        q->count--;
+        q->remaining--;
+        q->sum += value;
+
+        /* Освободилось место — будим producer'а. Если работа кончилась
+         * (remaining дошёл до 0), будим ВСЕХ consumer'ов broadcast'ом, чтобы
+         * спящие на not_empty проснулись и увидели условие выхода. */
+        pthread_cond_signal(&q->not_full);
+        if (q->remaining == 0) {
+            pthread_cond_broadcast(&q->not_empty);
+        }
+        pthread_mutex_unlock(&q->mutex);
+    }
+    return NULL;
+}
+
+/* Ограниченный producer-consumer на кольцевом буфере. */
+long producer_consumer(int n_producers, int n_consumers,
+                       int buf_cap, int items_per_producer) {
+    PCQueue q;
+    q.buf       = (long *)malloc((size_t)buf_cap * sizeof(long));
+    q.cap       = buf_cap;
+    q.head      = 0;
+    q.tail      = 0;
+    q.count     = 0;
+    q.remaining = (long)n_producers * items_per_producer;
+    q.sum       = 0;
+    pthread_mutex_init(&q.mutex, NULL);
+    pthread_cond_init(&q.not_full, NULL);
+    pthread_cond_init(&q.not_empty, NULL);
+
+    pthread_t  *prod_t = (pthread_t *)malloc((size_t)n_producers * sizeof(pthread_t));
+    pthread_t  *cons_t = (pthread_t *)malloc((size_t)n_consumers * sizeof(pthread_t));
+    ProducerArg *pargs = (ProducerArg *)malloc((size_t)n_producers * sizeof(ProducerArg));
+
+    for (int p = 0; p < n_producers; ++p) {
+        pargs[p].q     = &q;
+        pargs[p].id    = p;
+        pargs[p].items = items_per_producer;
+        pthread_create(&prod_t[p], NULL, pc_producer, &pargs[p]);
+    }
+    for (int c = 0; c < n_consumers; ++c) {
+        pthread_create(&cons_t[c], NULL, pc_consumer, &q);
+    }
+
+    for (int p = 0; p < n_producers; ++p) {
+        pthread_join(prod_t[p], NULL);
+    }
+    /* Все producer'ы закончили. На случай, если consumer'ы уже спят на
+     * not_empty (буфер пуст, но они ещё не видели remaining): когда
+     * remaining дойдёт до 0 внутри consumer'а, он сам сделает broadcast.
+     * Здесь дополнительный broadcast не повредит — если remaining уже 0,
+     * он гарантированно разбудит всех спящих. */
+    pthread_mutex_lock(&q.mutex);
+    pthread_cond_broadcast(&q.not_empty);
+    pthread_mutex_unlock(&q.mutex);
+
+    for (int c = 0; c < n_consumers; ++c) {
+        pthread_join(cons_t[c], NULL);
+    }
+
+    long result = q.sum;
+
+    pthread_mutex_destroy(&q.mutex);
+    pthread_cond_destroy(&q.not_full);
+    pthread_cond_destroy(&q.not_empty);
+    free(q.buf);
+    free(prod_t);
+    free(cons_t);
+    free(pargs);
+    return result;
+}

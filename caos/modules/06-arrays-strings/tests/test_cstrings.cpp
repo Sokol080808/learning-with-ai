@@ -483,3 +483,288 @@ TEST(MyStrcmpRand, PrefixOrdering) {
             << "\"" << b << "\" should compare greater than prefix \"" << a << "\"";
     }
 }
+
+// ============================================================
+//  StrBuf tests
+// ============================================================
+
+// ---------- strbuf_init ----------
+
+TEST(StrBuf, InitBasic) {
+    StrBuf sb;
+    strbuf_init(&sb, 32);
+    ASSERT_NE(sb.buf, nullptr);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_EQ(sb.cap, 32u);
+    EXPECT_STREQ(sb.buf, "");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, InitCapZero) {
+    StrBuf sb;
+    strbuf_init(&sb, 0);
+    EXPECT_EQ(sb.buf, nullptr);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_EQ(sb.cap, 0u);
+    // strbuf_free on a zero-cap buf must be safe
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, InitCapOne) {
+    // cap=1: room for '\0' only — no actual characters can be stored.
+    StrBuf sb;
+    strbuf_init(&sb, 1);
+    ASSERT_NE(sb.buf, nullptr);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_EQ(sb.cap, 1u);
+    EXPECT_STREQ(sb.buf, "");
+    strbuf_free(&sb);
+}
+
+// ---------- strbuf_append ----------
+
+TEST(StrBuf, AppendFits) {
+    StrBuf sb;
+    strbuf_init(&sb, 16);
+    size_t written = strbuf_append(&sb, "hello");
+    EXPECT_EQ(written, 5u);
+    EXPECT_EQ(sb.len, 5u);
+    EXPECT_STREQ(sb.buf, "hello");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendEmptyString) {
+    StrBuf sb;
+    strbuf_init(&sb, 16);
+    size_t written = strbuf_append(&sb, "");
+    EXPECT_EQ(written, 0u);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_STREQ(sb.buf, "");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendTruncates) {
+    // cap=8: room for 7 chars + '\0'. "overflow" has 8 chars — must be truncated to 7.
+    StrBuf sb;
+    strbuf_init(&sb, 8);
+    size_t written = strbuf_append(&sb, "overflow");
+    EXPECT_EQ(written, 7u);          // only 7 chars fit (cap-1)
+    EXPECT_EQ(sb.len, 7u);
+    EXPECT_EQ(std::strlen(sb.buf), 7u);
+    EXPECT_STREQ(sb.buf, "overflo");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendAlwaysNulTerminates) {
+    // Even after a truncating append, buf must be NUL-terminated.
+    StrBuf sb;
+    strbuf_init(&sb, 4);
+    strbuf_append(&sb, "abcdef");
+    // buf must be valid C-string of length <= 3
+    EXPECT_EQ(std::strlen(sb.buf), 3u);
+    EXPECT_EQ(sb.buf[3], '\0');
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendAccumulates) {
+    // Multiple appends must concatenate content.
+    StrBuf sb;
+    strbuf_init(&sb, 32);
+    strbuf_append(&sb, "foo");
+    strbuf_append(&sb, "bar");
+    strbuf_append(&sb, "baz");
+    EXPECT_EQ(sb.len, 9u);
+    EXPECT_STREQ(sb.buf, "foobarbaz");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendAccumulatesWithTruncation) {
+    // Fill the buffer step by step; last append must be truncated.
+    StrBuf sb;
+    strbuf_init(&sb, 8);   // 7 usable chars
+    size_t w1 = strbuf_append(&sb, "abc");   // fits: 3 chars
+    size_t w2 = strbuf_append(&sb, "defgh"); // only 4 chars fit (7-3=4), "defg" written
+    EXPECT_EQ(w1, 3u);
+    EXPECT_EQ(w2, 4u);
+    EXPECT_EQ(sb.len, 7u);
+    EXPECT_STREQ(sb.buf, "abcdefg");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendToFullBufferReturnsZero) {
+    // Once the buffer is full, further appends return 0.
+    StrBuf sb;
+    strbuf_init(&sb, 4);   // 3 usable chars
+    strbuf_append(&sb, "abc");
+    EXPECT_EQ(sb.len, 3u);
+    size_t written = strbuf_append(&sb, "more");
+    EXPECT_EQ(written, 0u);
+    EXPECT_EQ(sb.len, 3u);
+    EXPECT_STREQ(sb.buf, "abc");
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, AppendCapOneBehavior) {
+    // cap=1: only '\0' fits. Every append returns 0.
+    StrBuf sb;
+    strbuf_init(&sb, 1);
+    size_t written = strbuf_append(&sb, "hello");
+    EXPECT_EQ(written, 0u);
+    EXPECT_STREQ(sb.buf, "");
+    strbuf_free(&sb);
+}
+
+// ---------- strbuf_clear ----------
+
+TEST(StrBuf, ClearResetsContent) {
+    StrBuf sb;
+    strbuf_init(&sb, 16);
+    strbuf_append(&sb, "hello");
+    strbuf_clear(&sb);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_STREQ(sb.buf, "");
+    // After clear, cap must remain unchanged.
+    EXPECT_EQ(sb.cap, 16u);
+    strbuf_free(&sb);
+}
+
+TEST(StrBuf, ClearAllowsReuse) {
+    // After clear, the buffer should be fully reusable.
+    StrBuf sb;
+    strbuf_init(&sb, 8);
+    strbuf_append(&sb, "abcdef");
+    strbuf_clear(&sb);
+    strbuf_append(&sb, "xyz");
+    EXPECT_EQ(sb.len, 3u);
+    EXPECT_STREQ(sb.buf, "xyz");
+    strbuf_free(&sb);
+}
+
+// ---------- strbuf_free ----------
+
+TEST(StrBuf, FreeZerosFields) {
+    StrBuf sb;
+    strbuf_init(&sb, 32);
+    strbuf_append(&sb, "data");
+    strbuf_free(&sb);
+    EXPECT_EQ(sb.buf, nullptr);
+    EXPECT_EQ(sb.len, 0u);
+    EXPECT_EQ(sb.cap, 0u);
+}
+
+TEST(StrBuf, FreeOnNullBufIsSafe) {
+    // Calling strbuf_free on an uninitialized/zeroed StrBuf must not crash.
+    StrBuf sb = {nullptr, 0, 0};
+    strbuf_free(&sb); // must not crash (free(NULL) is defined no-op)
+}
+
+// ---------- randomized StrBuf properties ----------
+
+TEST(StrBufRand, AppendNeverExceedsCap) {
+    // After any sequence of appends, len must always be < cap.
+    std::mt19937 rng(0x5B00F01);
+    std::uniform_int_distribution<size_t> cap_dist(1, 64);
+    std::uniform_int_distribution<size_t> slen_dist(0, 80);
+    std::uniform_int_distribution<int>    n_appends_dist(1, 10);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        size_t cap = cap_dist(rng);
+        StrBuf sb;
+        strbuf_init(&sb, cap);
+        if (sb.buf == nullptr) continue;
+
+        int n = n_appends_dist(rng);
+        for (int k = 0; k < n; ++k) {
+            std::string s = rand_str(rng, slen_dist(rng));
+            strbuf_append(&sb, s.c_str());
+            ASSERT_LT(sb.len, sb.cap)
+                << "len >= cap after append (iter=" << iter << " k=" << k << ")";
+            ASSERT_EQ(sb.buf[sb.len], '\0')
+                << "NUL missing after append";
+        }
+        strbuf_free(&sb);
+    }
+}
+
+TEST(StrBufRand, AppendReturnedBytesMatchContent) {
+    // The sum of returned bytes from all appends must equal final sb.len
+    // (when no single append overflows in the middle of a call).
+    std::mt19937 rng(0x5B00F02);
+    std::uniform_int_distribution<size_t> cap_dist(4, 128);
+    std::uniform_int_distribution<size_t> slen_dist(0, 30);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        size_t cap = cap_dist(rng);
+        StrBuf sb;
+        strbuf_init(&sb, cap);
+        if (sb.buf == nullptr) continue;
+
+        size_t total_written = 0;
+        for (int k = 0; k < 8; ++k) {
+            std::string s = rand_str(rng, slen_dist(rng));
+            total_written += strbuf_append(&sb, s.c_str());
+        }
+        ASSERT_EQ(total_written, sb.len)
+            << "Sum of returned bytes != sb.len (iter=" << iter << ")";
+        strbuf_free(&sb);
+    }
+}
+
+TEST(StrBufRand, ContentMatchesManualConcat) {
+    // Build the same string manually and compare to StrBuf content.
+    std::mt19937 rng(0x5B00F03);
+    std::uniform_int_distribution<size_t> cap_dist(8, 128);
+    std::uniform_int_distribution<size_t> slen_dist(0, 40);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        size_t cap = cap_dist(rng);
+        StrBuf sb;
+        strbuf_init(&sb, cap);
+        if (sb.buf == nullptr) continue;
+
+        std::string expected;
+        for (int k = 0; k < 6; ++k) {
+            std::string s = rand_str(rng, slen_dist(rng));
+            strbuf_append(&sb, s.c_str());
+            expected += s;
+        }
+        // Truncate expected to cap-1 chars (what the buffer allows).
+        if (expected.size() >= cap) {
+            expected = expected.substr(0, cap - 1);
+        }
+        ASSERT_STREQ(sb.buf, expected.c_str())
+            << "Content mismatch at iter=" << iter << " cap=" << cap;
+        strbuf_free(&sb);
+    }
+}
+
+TEST(StrBufRand, ClearAndRefill) {
+    // After strbuf_clear the buffer is reusable and behaves identically.
+    std::mt19937 rng(0x5B00F04);
+    std::uniform_int_distribution<size_t> cap_dist(4, 64);
+    std::uniform_int_distribution<size_t> slen_dist(0, 40);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        size_t cap = cap_dist(rng);
+        StrBuf sb;
+        strbuf_init(&sb, cap);
+        if (sb.buf == nullptr) continue;
+
+        // First fill
+        std::string s1 = rand_str(rng, slen_dist(rng));
+        strbuf_append(&sb, s1.c_str());
+
+        strbuf_clear(&sb);
+        ASSERT_EQ(sb.len, 0u);
+        ASSERT_EQ(sb.cap, cap);
+
+        // Second fill — must behave exactly as a fresh init
+        std::string s2 = rand_str(rng, slen_dist(rng));
+        strbuf_append(&sb, s2.c_str());
+
+        std::string expected = s2.size() < cap ? s2 : s2.substr(0, cap - 1);
+        ASSERT_STREQ(sb.buf, expected.c_str())
+            << "After clear+refill mismatch at iter=" << iter;
+        strbuf_free(&sb);
+    }
+}

@@ -35,3 +35,57 @@ int asm_c(int n) {
     }                                // add ecx, 1 / jmp .loop
     return sum;
 }
+
+/* ---------- Задание 4: чтение локальных переменных из кадра стека ----------
+ *
+ * Модель памяти кадра:
+ *
+ *   Высокие адреса (rbp) = frame + frame_size
+ *   Низкие адреса  (rsp) = frame
+ *
+ * Слот с offset = -8 лежит по адресу rbp + offset = (frame + frame_size) - 8.
+ * Так как offset отрицателен, итоговый указатель внутри буфера:
+ *   ptr = frame + frame_size + offset   (offset < 0 → адрес левее rbp)
+ *
+ * Знаковое расширение выполняется автоматически при присвоении значения
+ * знакового типа (int8_t / int16_t / int32_t / int64_t) в int64_t.
+ */
+#include <string.h>   /* memcpy */
+
+int64_t frame_read_local(const FrameLayout *layout, const uint8_t *frame, int slot) {
+    const SlotInfo *s = &layout->slots[slot];
+    /* Адрес начала слота внутри снимка: rbp находится в конце буфера */
+    const uint8_t *ptr = frame + layout->frame_size + s->offset;
+
+    int64_t result = 0;
+    switch (s->size) {
+        case 1: {
+            int8_t v;
+            memcpy(&v, ptr, 1);
+            result = (int64_t)v;
+            break;
+        }
+        case 2: {
+            int16_t v;
+            memcpy(&v, ptr, 2);
+            result = (int64_t)v;
+            break;
+        }
+        case 4: {
+            int32_t v;
+            memcpy(&v, ptr, 4);
+            result = (int64_t)v;
+            break;
+        }
+        case 8: {
+            int64_t v;
+            memcpy(&v, ptr, 8);
+            result = v;
+            break;
+        }
+        default:
+            result = 0;
+            break;
+    }
+    return result;
+}

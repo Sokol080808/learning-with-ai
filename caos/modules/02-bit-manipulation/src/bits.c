@@ -39,3 +39,21 @@ uint32_t reverse_bytes(uint32_t x) {
            ((x & 0x00FF0000u) >>  8) |
            ((x & 0xFF000000u) >> 24);
 }
+
+// Контракт: упаковать flags, r, g, b в одно 32-битное слово.
+// Биты 31-24 = flags, 23-16 = r, 15-8 = g, 7-0 = b.
+uint32_t pack_fields(uint8_t flags, uint8_t r, uint8_t g, uint8_t b) {
+    return ((uint32_t)flags << 24) |
+           ((uint32_t)r    << 16) |
+           ((uint32_t)g    <<  8) |
+           ((uint32_t)b         );
+}
+
+// Контракт: распаковать слово, собранное pack_fields, обратно в четыре байта.
+void unpack_fields(uint32_t packed,
+                   uint8_t *flags, uint8_t *r, uint8_t *g, uint8_t *b) {
+    *flags = (uint8_t)((packed >> 24) & 0xFFu);
+    *r     = (uint8_t)((packed >> 16) & 0xFFu);
+    *g     = (uint8_t)((packed >>  8) & 0xFFu);
+    *b     = (uint8_t)((packed       ) & 0xFFu);
+}
