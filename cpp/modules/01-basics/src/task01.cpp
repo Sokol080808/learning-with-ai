@@ -66,3 +66,10 @@ void swap_ints(int& a, int& b) {
     // TODO: поменяй значения a и b местами (без std::swap).
     (void)a; (void)b;
 }
+
+std::string_view first_word(std::string_view s) {
+    // TODO: найди первый пробел (s.find(' ')), верни подстроку [0, pos).
+    // Если пробела нет — вернуть весь s. Если s пуст или начинается с пробела — пустой view.
+    (void)s;
+    return {};  // ЗАГЛУШКА: всегда возвращает пустой view — рантайм-тесты КРАСНЫЕ
+}

@@ -52,3 +52,11 @@ std::size_t drop_below(std::vector<int>& v, int threshold) {
     (void)v; (void)threshold;
     return 0;
 }
+
+std::vector<int> evens_squared(const std::vector<int>& xs) {
+    // TODO: используй C++20 Ranges — ленивый конвейер из views::filter (чётные)
+    // и views::transform (возвести в квадрат), затем материализуй результат
+    // через std::ranges::copy + std::back_inserter или ranges::to<std::vector>.
+    (void)xs;
+    return {};
+}

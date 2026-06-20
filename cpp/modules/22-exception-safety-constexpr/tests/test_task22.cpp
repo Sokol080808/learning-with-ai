@@ -738,3 +738,127 @@ TEST(ConstexprStrProps, ReversedMatchesStdReverseOracle) {
         }
     }
 }
+
+// =============================================================================
+// Задание 6. my_swap — условный noexcept и корректность обмена.
+// =============================================================================
+
+// --- Вспомогательные типы для static_assert ---
+
+// Тип с throwing-move: компилятор не может пометить my_swap noexcept.
+struct ThrowingMove {
+    int value{0};
+    ThrowingMove() = default;
+    explicit ThrowingMove(int v) : value(v) {}
+    // User-provided move БЕЗ noexcept → надёжно noexcept(false) на всех компиляторах.
+    // (Дефолтный `noexcept(false) = default` для move с тривиальными членами g++ и clang
+    //  трактуют по-разному — некоторые версии g++ всё равно считают тип nothrow-move.)
+    ThrowingMove(ThrowingMove&& o) : value(o.value) {}                 // throwing (noexcept(false))
+    ThrowingMove& operator=(ThrowingMove&& o) { value = o.value; return *this; }
+    ThrowingMove(const ThrowingMove&) = default;
+    ThrowingMove& operator=(const ThrowingMove&) = default;
+};
+
+// Compile-time проверки условного noexcept (срабатывают при сборке).
+// Используем std::declval, чтобы не создавать переменные и не получать
+// -Wunneeded-internal-declaration от clang.
+//
+// 1) int — noexcept-move → my_swap обязан быть noexcept.
+static_assert(
+    noexcept(my_swap(std::declval<int&>(), std::declval<int&>())),
+    "my_swap<int> должен быть noexcept: int — noexcept-move");
+
+// 2) ThrowingMove — throwing-move → my_swap НЕ noexcept.
+static_assert(
+    !noexcept(my_swap(std::declval<ThrowingMove&>(), std::declval<ThrowingMove&>())),
+    "my_swap<ThrowingMove> должен НЕ быть noexcept: move бросает");
+
+// 3) NoexceptWrapper<ThrowingMove> форсирует noexcept-move →
+//    my_swap снова noexcept.
+static_assert(
+    noexcept(my_swap(std::declval<NoexceptWrapper<ThrowingMove>&>(),
+                     std::declval<NoexceptWrapper<ThrowingMove>&>())),
+    "my_swap<NoexceptWrapper<ThrowingMove>> должен быть noexcept: обёртка форсирует noexcept-move");
+
+// --- Функциональные тесты корректности обмена ---
+
+TEST(MySwap, SwapsIntegers) {
+    int a = 10, b = 20;
+    my_swap(a, b);
+    EXPECT_EQ(a, 20);
+    EXPECT_EQ(b, 10);
+}
+
+TEST(MySwap, SwapsStrings) {
+    std::string a = "hello", b = "world";
+    my_swap(a, b);
+    EXPECT_EQ(a, "world");
+    EXPECT_EQ(b, "hello");
+}
+
+TEST(MySwap, SwapsThrowingMoveCorrectly) {
+    ThrowingMove a{42}, b{99};
+    my_swap(a, b);
+    EXPECT_EQ(a.value, 99);
+    EXPECT_EQ(b.value, 42);
+}
+
+TEST(MySwap, SwapsNoexceptWrapperCorrectly) {
+    NoexceptWrapper<ThrowingMove> a{ThrowingMove{7}};
+    NoexceptWrapper<ThrowingMove> b{ThrowingMove{13}};
+    my_swap(a, b);
+    EXPECT_EQ(a.value.value, 13);
+    EXPECT_EQ(b.value.value, 7);
+}
+
+TEST(MySwap, IsInvolution) {
+    // Два вызова my_swap возвращают к исходному (инволюция).
+    int a = 5, b = 8;
+    my_swap(a, b);
+    my_swap(a, b);
+    EXPECT_EQ(a, 5);
+    EXPECT_EQ(b, 8);
+}
+
+// ===== РАНДОМИЗИРОВАННЫЙ / PROPERTY-ТЕСТ =====
+//
+// Свойство: my_swap обменивает значения корректно для любой пары int
+// (сравнивается с std::swap-оракулом) и является инволюцией.
+// Сид фиксирован — детерминирован, CI не «мигает».
+
+TEST(MySwapProps, SwapMatchesStdSwapOracle) {
+    std::mt19937 rng(0x5EED0Au);
+    std::uniform_int_distribution<int> val(-100000, 100000);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        int a = val(rng), b = val(rng);
+        int ea = a, eb = b;
+        std::swap(ea, eb);     // оракул
+        my_swap(a, b);
+        ASSERT_EQ(a, ea) << "iter=" << iter;
+        ASSERT_EQ(b, eb) << "iter=" << iter;
+
+        // Инволюция: повторный swap возвращает к исходному.
+        const int orig_a = a, orig_b = b;
+        my_swap(a, b);
+        my_swap(a, b);
+        ASSERT_EQ(a, orig_a) << "iter=" << iter;
+        ASSERT_EQ(b, orig_b) << "iter=" << iter;
+    }
+}
+
+// Свойство: NoexceptWrapper обменивается корректно и independently от
+// ThrowingMove-обёртываемого типа.
+TEST(MySwapProps, NoexceptWrapperSwapIsCorrect) {
+    std::mt19937 rng(0xAB9C1u);
+    std::uniform_int_distribution<int> val(-500, 500);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int va = val(rng), vb = val(rng);
+        NoexceptWrapper<ThrowingMove> a{ThrowingMove{va}};
+        NoexceptWrapper<ThrowingMove> b{ThrowingMove{vb}};
+        my_swap(a, b);
+        ASSERT_EQ(a.value.value, vb) << "iter=" << iter;
+        ASSERT_EQ(b.value.value, va) << "iter=" << iter;
+    }
+}

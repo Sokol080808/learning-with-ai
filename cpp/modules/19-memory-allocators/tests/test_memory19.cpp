@@ -332,6 +332,76 @@ TEST(PlacementNew, ForwardsConstructorArgs) {
     destroy_at19(v);
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Задание 6. ArenaAllocator<T> — std::allocator-совместимый аллокатор
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Минимальные требования к типу-аллокатору на уровне типов (проверяем статически,
+// чтобы ловить регрессии интерфейса ещё на этапе компиляции).
+static_assert(std::is_same_v<ArenaAllocator<int>::value_type, int>,
+              "value_type должен быть T");
+static_assert(
+    std::is_same_v<
+        std::allocator_traits<ArenaAllocator<int>>::rebind_alloc<double>,
+        ArenaAllocator<double>>,
+    "rebind_alloc<U> должен давать ArenaAllocator<U>");
+
+TEST(ArenaAllocator, VectorRoundTripsValuesFromArena) {
+    alignas(std::max_align_t) std::byte buf[4096];
+    BumpAllocator arena(buf, sizeof(buf));
+    ASSERT_EQ(arena.used(), 0u);
+
+    std::vector<int, ArenaAllocator<int>> v{ ArenaAllocator<int>(arena) };
+    constexpr int N = 50;
+    for (int i = 0; i < N; ++i) v.push_back(i * 3 - 7);
+
+    // round-trip: значения сохранились.
+    ASSERT_EQ(v.size(), static_cast<std::size_t>(N));
+    for (int i = 0; i < N; ++i) EXPECT_EQ(v[i], i * 3 - 7);
+
+    // Основная нагрузка пришлась на арену — счётчик занятых байт вырос и его
+    // хватает хотя бы под текущее содержимое вектора.
+    EXPECT_GT(arena.used(), 0u);
+    EXPECT_GE(arena.used(), v.size() * sizeof(int));
+}
+
+TEST(ArenaAllocator, EqualWhenSameArenaIncludingRebind) {
+    alignas(std::max_align_t) std::byte buf1[256], buf2[256];
+    BumpAllocator a1(buf1, sizeof(buf1));
+    BumpAllocator a2(buf2, sizeof(buf2));
+
+    ArenaAllocator<int>    i1(a1);
+    ArenaAllocator<int>    i1b(a1);
+    ArenaAllocator<int>    i2(a2);
+    ArenaAllocator<double> d1(a1);   // rebind на тот же arena
+
+    EXPECT_TRUE(i1 == i1b);          // одна арена → равны
+    EXPECT_TRUE(i1 == d1);           // разный T, та же арена → всё равно равны
+    EXPECT_TRUE(i1 != i2);           // разные арены → не равны
+    EXPECT_FALSE(i1 == i2);
+}
+
+TEST(ArenaAllocator, RebindConstructorSharesArena) {
+    alignas(std::max_align_t) std::byte buf[256];
+    BumpAllocator arena(buf, sizeof(buf));
+    ArenaAllocator<int> ai(arena);
+    // Конвертирующий (rebind) конструктор: ArenaAllocator<int> → ArenaAllocator<char>.
+    ArenaAllocator<char> ac(ai);
+    EXPECT_EQ(ai.arena(), ac.arena());
+}
+
+TEST(ArenaAllocator, RawAllocateIsAlignedAndDrawsFromArena) {
+    alignas(std::max_align_t) std::byte buf[1024];
+    BumpAllocator arena(buf, sizeof(buf));
+    ArenaAllocator<double> ad(arena);
+
+    double* p = ad.allocate(3);
+    ASSERT_NE(p, nullptr);
+    EXPECT_TRUE(is_aligned(p, alignof(double)));
+    EXPECT_GE(arena.used(), 3 * sizeof(double));
+    ad.deallocate(p, 3);             // no-op, но обязан компилироваться и не падать
+}
+
 // ===== РАНДОМИЗИРОВАННЫЕ / PROPERTY-ТЕСТЫ (детерминированы фиксированным сидом) =====
 //
 // Эти тесты не повторяют фиксированные примеры, а прогоняют сотни сгенерированных
@@ -721,6 +791,52 @@ TEST(PoolAllocatorProps, DeallocateAllocateRoundTrip) {
         void* again = pool.allocate();
         ASSERT_NE(again, nullptr);
         EXPECT_EQ(pool.free_count(), 0u);
+    }
+}
+
+// ── Задание 6. ArenaAllocator — property ─────────────────────────────────────
+
+// Для случайной последовательности push_back содержимое
+// std::vector<int, ArenaAllocator<int>> ВСЕГДА совпадает с эталонным
+// std::vector<int> (тот же ввод), а основная нагрузка идёт из арены: счётчик
+// занятых байт монотонно неубывает и покрывает текущее содержимое вектора.
+TEST(ArenaAllocatorProps, MatchesStdVectorAndDrawsFromArena) {
+    std::mt19937 rng(0xC0FFEEu);
+    std::uniform_int_distribution<int> val(-1000000, 1000000);
+    std::uniform_int_distribution<int> len(0, 200);
+
+    for (int iter = 0; iter < 200; ++iter) {
+        // Арена с запасом: рост capacity у vector тоже идёт через арену, поэтому
+        // суммарно нужно заметно больше, чем итоговый размер (старые буферы при
+        // реаллокации не возвращаются — bump-арена их не переиспользует).
+        std::vector<std::byte> storage(1u << 20);  // 1 MiB
+        BumpAllocator arena(storage.data(), storage.size());
+
+        std::vector<int, ArenaAllocator<int>> v{ ArenaAllocator<int>(arena) };
+        std::vector<int> oracle;  // эталон на обычном std::allocator
+
+        const int k = len(rng);
+        std::size_t prev_used = arena.used();
+        for (int i = 0; i < k; ++i) {
+            const int x = val(rng);
+            v.push_back(x);
+            oracle.push_back(x);
+
+            // Содержимое совпадает с эталоном на каждом шаге.
+            ASSERT_EQ(v.size(), oracle.size());
+            ASSERT_TRUE(std::equal(v.begin(), v.end(), oracle.begin()));
+
+            // Занятость арены монотонно неубывает.
+            EXPECT_GE(arena.used(), prev_used);
+            prev_used = arena.used();
+        }
+
+        // Финальный round-trip и проверка, что нагрузка действительно из арены.
+        ASSERT_TRUE(std::equal(v.begin(), v.end(), oracle.begin()));
+        if (k > 0) {
+            EXPECT_GT(arena.used(), 0u);
+            EXPECT_GE(arena.used(), v.size() * sizeof(int));
+        }
     }
 }
 

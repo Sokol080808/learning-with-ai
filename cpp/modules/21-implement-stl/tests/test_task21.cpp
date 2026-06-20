@@ -219,6 +219,157 @@ TEST(IntrusiveList, ReinsertAfterErase) {
 }
 
 // =====================================================================
+// Задание 6. IntrusiveList::iterator (forward) + Vector Rule of 5
+// =====================================================================
+
+// --- 6a. Forward-итератор IntrusiveList: range-for и std::distance. ---
+TEST(IntrusiveListIterator, DistanceEqualsSize) {
+    IntrusiveList<int> lst;
+    Node<int> a{1}, b{2}, c{3}, d{4};
+    lst.push_back(&a);
+    lst.push_back(&b);
+    lst.push_back(&c);
+    lst.push_back(&d);
+    // std::distance ходит по итератору, опираясь на iterator_category.
+    EXPECT_EQ(static_cast<std::size_t>(std::distance(lst.begin(), lst.end())),
+              lst.size());
+}
+
+TEST(IntrusiveListIterator, RangeForVisitsInOrder) {
+    IntrusiveList<int> lst;
+    Node<int> a{10}, b{20}, c{30};
+    lst.push_back(&a);
+    lst.push_back(&b);
+    lst.push_back(&c);
+    int sum = 0;
+    std::vector<int> seen;
+    for (int x : lst) {          // требует begin()/end() и operator*/++/!=
+        sum += x;
+        seen.push_back(x);
+    }
+    EXPECT_EQ(sum, 60);
+    EXPECT_EQ(seen, (std::vector<int>{10, 20, 30}));
+}
+
+TEST(IntrusiveListIterator, EmptyListBeginEqualsEnd) {
+    IntrusiveList<int> lst;
+    EXPECT_EQ(lst.begin(), lst.end());
+    EXPECT_EQ(std::distance(lst.begin(), lst.end()), 0);
+}
+
+TEST(IntrusiveListIterator, HasForwardIteratorTraits) {
+    using It = IntrusiveList<int>::iterator;
+    static_assert(std::is_same_v<It::iterator_category,
+                                 std::forward_iterator_tag>,
+                  "category must be forward_iterator_tag");
+    static_assert(std::is_same_v<It::value_type, int>);
+    static_assert(std::is_same_v<It::reference, int&>);
+    static_assert(std::is_same_v<It::pointer, int*>);
+    static_assert(std::is_same_v<It::difference_type, std::ptrdiff_t>);
+    // iterator_traits должен видеть те же типы через сам итератор.
+    static_assert(std::is_same_v<std::iterator_traits<It>::value_type, int>);
+    SUCCEED();
+}
+
+TEST(IntrusiveListIterator, ArrowOperatorReachesMembers) {
+    IntrusiveList<std::string> lst;
+    Node<std::string> a{"hi"}, b{"world"};
+    lst.push_back(&a);
+    lst.push_back(&b);
+    auto it = lst.begin();
+    EXPECT_EQ(it->size(), 2u);   // "hi"
+    ++it;
+    EXPECT_EQ(it->size(), 5u);   // "world"
+}
+
+// --- 6b. Vector Rule of 5: глубокая копия + перемещение. ---
+TEST(VectorRuleOf5, CopyIsDeepAndIndependent) {
+    Vector<int> a;
+    for (int i = 0; i < 5; ++i) a.push_back(i);
+    Vector<int> b = a;                 // copy-конструктор
+    EXPECT_EQ(b.size(), a.size());
+    for (std::size_t i = 0; i < a.size(); ++i) EXPECT_EQ(a[i], b[i]);
+    // Меняем копию — оригинал не должен пострадать (глубокая копия).
+    b[0] = 999;
+    b.push_back(42);
+    EXPECT_EQ(a[0], 0);
+    EXPECT_EQ(a.size(), 5u);
+    EXPECT_EQ(b[0], 999);
+    EXPECT_EQ(b.size(), 6u);
+}
+
+TEST(VectorRuleOf5, MoveTransfersAndEmptiesSource) {
+    Vector<int> a;
+    for (int i = 0; i < 4; ++i) a.push_back(i * 10);
+    Vector<int> b = std::move(a);      // move-конструктор
+    EXPECT_EQ(b.size(), 4u);
+    EXPECT_EQ(b[3], 30);
+    // Источник остаётся в валидном пустом состоянии.
+    EXPECT_EQ(a.size(), 0u);
+    EXPECT_EQ(a.capacity(), 0u);
+    EXPECT_TRUE(a.empty());
+    // ...и пригоден для повторного использования.
+    a.push_back(7);
+    EXPECT_EQ(a.size(), 1u);
+    EXPECT_EQ(a[0], 7);
+}
+
+TEST(VectorRuleOf5, CopyAssignReplacesContents) {
+    Vector<int> a;
+    for (int i = 0; i < 3; ++i) a.push_back(i);
+    Vector<int> b;
+    for (int i = 0; i < 10; ++i) b.push_back(-1);
+    b = a;                              // copy-присваивание
+    EXPECT_EQ(b.size(), 3u);
+    for (std::size_t i = 0; i < a.size(); ++i) EXPECT_EQ(b[i], a[i]);
+    b[0] = 555;                         // независимость после присваивания
+    EXPECT_EQ(a[0], 0);
+}
+
+TEST(VectorRuleOf5, MoveAssignTransfersAndEmptiesSource) {
+    Vector<int> a;
+    for (int i = 0; i < 6; ++i) a.push_back(i);
+    Vector<int> b;
+    b.push_back(100);
+    b = std::move(a);                   // move-присваивание
+    EXPECT_EQ(b.size(), 6u);
+    EXPECT_EQ(b[5], 5);
+    EXPECT_EQ(a.size(), 0u);
+    EXPECT_TRUE(a.empty());
+}
+
+TEST(VectorRuleOf5, SelfCopyAssignIsSafe) {
+    Vector<int> a;
+    for (int i = 0; i < 4; ++i) a.push_back(i);
+    Vector<int>& ref = a;
+    a = ref;                            // самоприсваивание не должно ломать
+    EXPECT_EQ(a.size(), 4u);
+    for (int i = 0; i < 4; ++i) EXPECT_EQ(a[static_cast<std::size_t>(i)], i);
+}
+
+TEST(VectorRuleOf5, WorksWithStringsDeepCopy) {
+    Vector<std::string> a;
+    a.push_back("alpha");
+    a.push_back("beta");
+    Vector<std::string> b = a;
+    b[0] = "GAMMA";
+    EXPECT_EQ(a[0], "alpha");
+    EXPECT_EQ(b[0], "GAMMA");
+    EXPECT_EQ(a.size(), 2u);
+    EXPECT_EQ(b.size(), 2u);
+}
+
+TEST(VectorRuleOf5, NoexceptMoveEnablesContainerOptimizations) {
+    // Move-конструктор/присваивание не должны бросать — это включает
+    // move-if-noexcept в реальных контейнерах.
+    static_assert(std::is_nothrow_move_constructible_v<Vector<int>>,
+                  "Vector move-ctor must be noexcept");
+    static_assert(std::is_nothrow_move_assignable_v<Vector<int>>,
+                  "Vector move-assign must be noexcept");
+    SUCCEED();
+}
+
+// =====================================================================
 // Задание 4. LRUCache<K, V>
 // =====================================================================
 TEST(LRUCache, RejectsZeroCapacity) {
@@ -596,6 +747,93 @@ TEST(IntrusiveListProps, EraseThenReinsertGoesToTail) {
             ASSERT_EQ(p->value, *check);
             ++check;
         }
+    }
+}
+
+// ---------------------------------------------------------------------
+// Задание 6a. IntrusiveList::iterator — обход через итератор сверяем с
+// прямым обходом узлов: distance == size, сумма по range-for == сумма пула.
+// ---------------------------------------------------------------------
+TEST(IntrusiveListIteratorProps, TraversalMatchesOracle) {
+    std::mt19937 rng(0x17E7u);
+    for (int trial = 0; trial < 200; ++trial) {
+        std::deque<Node<int>> pool;          // стабильные адреса узлов
+        IntrusiveList<int>    mine;
+        std::vector<int>      oracle;         // эталонный порядок значений
+        std::uniform_int_distribution<int> val(-1000, 1000);
+
+        int n = static_cast<int>(rng() % 40u);
+        for (int i = 0; i < n; ++i) {
+            int x = val(rng);
+            pool.emplace_back(x);
+            mine.push_back(&pool.back());
+            oracle.push_back(x);
+        }
+        // distance по forward-итератору == размеру.
+        ASSERT_EQ(static_cast<std::size_t>(
+                      std::distance(mine.begin(), mine.end())),
+                  mine.size());
+        ASSERT_EQ(mine.size(), oracle.size());
+        // range-for выдаёт ровно те же значения в том же порядке.
+        std::vector<int> collected;
+        for (int x : mine) collected.push_back(x);
+        ASSERT_EQ(collected, oracle);
+        // И std::accumulate по итераторам совпадает с эталоном.
+        long long sum_mine =
+            std::accumulate(mine.begin(), mine.end(), 0LL);
+        long long sum_orcl =
+            std::accumulate(oracle.begin(), oracle.end(), 0LL);
+        ASSERT_EQ(sum_mine, sum_orcl);
+    }
+}
+
+// ---------------------------------------------------------------------
+// Задание 6b. Vector Rule of 5 — копия/перемещение сохраняют содержимое
+// (round-trip против std::vector), а источник move обнуляется.
+// ---------------------------------------------------------------------
+TEST(VectorRuleOf5Props, CopyAndMovePreserveContents) {
+    std::mt19937 rng(0x5A1Eu);
+    for (int trial = 0; trial < 300; ++trial) {
+        Vector<int>      src;
+        std::vector<int> oracle;
+        int n = static_cast<int>(rng() % 60u);
+        std::uniform_int_distribution<int> val(-1000, 1000);
+        for (int i = 0; i < n; ++i) {
+            int x = val(rng);
+            src.push_back(x);
+            oracle.push_back(x);
+        }
+
+        // 1) Глубокая копия совпадает с оракулом поэлементно.
+        Vector<int> copy = src;
+        ASSERT_EQ(copy.size(), oracle.size());
+        for (std::size_t i = 0; i < oracle.size(); ++i)
+            ASSERT_EQ(copy[i], oracle[i]);
+
+        // 2) Независимость: мутация копии не трогает оригинал.
+        if (!copy.empty()) {
+            copy[0] = copy[0] + 1;
+            ASSERT_EQ(static_cast<std::size_t>(src.size()), oracle.size());
+            for (std::size_t i = 0; i < oracle.size(); ++i)
+                ASSERT_EQ(src[i], oracle[i]);
+        }
+
+        // 3) Move переносит содержимое и обнуляет источник.
+        Vector<int> moved = std::move(src);
+        ASSERT_EQ(moved.size(), oracle.size());
+        for (std::size_t i = 0; i < oracle.size(); ++i)
+            ASSERT_EQ(moved[i], oracle[i]);
+        ASSERT_EQ(src.size(), 0u);
+        ASSERT_EQ(src.capacity(), 0u);
+        ASSERT_TRUE(src.empty());
+
+        // 4) Move-присваивание в уже занятый вектор — round-trip сохраняется.
+        Vector<int> dst;
+        dst.push_back(-7);
+        dst = std::move(moved);
+        ASSERT_EQ(dst.size(), oracle.size());
+        for (std::size_t i = 0; i < oracle.size(); ++i)
+            ASSERT_EQ(dst[i], oracle[i]);
     }
 }
 

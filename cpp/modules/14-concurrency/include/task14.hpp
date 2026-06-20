@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <queue>
 #include <optional>
+#include <future>
 
 // Сумма элементов, посчитанная параллельно в num_threads потоках (num_threads >= 1).
 long parallel_sum(const std::vector<long>& v, unsigned num_threads);
@@ -87,3 +88,12 @@ long producer_consumer_sum(unsigned num_producers, unsigned num_consumers,
 // распределялся по первым потокам (никакой элемент не потерян и не посчитан
 // дважды).
 long parallel_sum_balanced(const std::vector<long>& v, unsigned num_threads);
+
+// -------------------------------------------------------------------------
+// Задание 7. Параллельная сумма через std::async / std::future.
+//
+// Разбить xs на parts частей (сбалансировано: остаток распределяется по первым
+// частям), запустить каждую через std::async(std::launch::async, ...) и собрать
+// результаты через future.get(). parts <= 0 считать как 1; parts > xs.size()
+// допустимо (лишние futures дают 0). Возвращает сумму элементов xs.
+long parallel_sum_async(const std::vector<long>& xs, int parts);

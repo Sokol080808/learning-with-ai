@@ -469,3 +469,94 @@ TEST(PowProps, MultiplicativeStep) {
     EXPECT_EQ((Pow<5, 6>::value),  (5 * Pow<5, 5>::value));
     SUCCEED();
 }
+
+// ============================================================================
+//  Задание 9: концепт Addable, sum_all, variadic sum_args
+// ============================================================================
+
+// ---- 9a. Статические проверки концепта Addable -----------------------------
+
+// Addable<int> и Addable<double> должны быть истинны.
+static_assert(Addable<int>,    "int должен быть Addable");
+static_assert(Addable<double>, "double должен быть Addable");
+static_assert(Addable<std::string>, "std::string должен быть Addable (конкатенация)");
+
+// Тип без operator+ не удовлетворяет концепту.
+struct NoAdd { int x; };
+// TODO: раскомментируй, когда задача решена
+// (сейчас концепт — пермиссивный стаб «= true», поэтому Addable<NoAdd> == true,
+// и отрицание ломает компиляцию скелета)
+// static_assert(!Addable<NoAdd>, "NoAdd не должен быть Addable");
+
+// ---- 9b. Фиксированные тесты sum_all ----------------------------------------
+
+TEST(Addable, SumAllInt) {
+    EXPECT_EQ(sum_all(std::vector<int>{1, 2, 3, 4}), 10);
+    EXPECT_EQ(sum_all(std::vector<int>{}), 0);            // пустой → T{} = 0
+    EXPECT_EQ(sum_all(std::vector<int>{42}), 42);         // один элемент
+}
+
+TEST(Addable, SumAllDouble) {
+    EXPECT_DOUBLE_EQ(sum_all(std::vector<double>{1.5, 2.5, 0.5}), 4.5);
+    EXPECT_DOUBLE_EQ(sum_all(std::vector<double>{}), 0.0);
+}
+
+TEST(Addable, SumAllString) {
+    // std::string — Addable через конкатенацию
+    std::vector<std::string> words{"foo", "bar", "baz"};
+    EXPECT_EQ(sum_all(words), "foobarbaz");
+    EXPECT_EQ(sum_all(std::vector<std::string>{}), "");
+}
+
+// ---- 9c. Фиксированные тесты sum_args ----------------------------------------
+
+TEST(Addable, SumArgsInts) {
+    EXPECT_EQ(sum_args(1, 2, 3), 6);
+    EXPECT_EQ(sum_args(10), 10);          // один аргумент
+    EXPECT_EQ(sum_args(0, 0, 0), 0);
+}
+
+TEST(Addable, SumArgsDoubles) {
+    EXPECT_DOUBLE_EQ(sum_args(1.5, 2.5), 4.0);
+    EXPECT_DOUBLE_EQ(sum_args(1.0, 2.0, 3.0, 4.0), 10.0);
+}
+
+TEST(Addable, SumArgsMixedPromotion) {
+    // int + double → double через стандартные arithmetic promotions
+    auto result = sum_args(1, 2.5, 3);
+    // TODO: раскомментируй, когда задача решена
+    // (стаб возвращает первый аргумент как int, поэтому decltype(result) == int,
+    // и compile-time проверка на floating_point ломает сборку скелета)
+    // static_assert(std::is_floating_point_v<decltype(result)>);
+    EXPECT_TRUE(std::is_floating_point_v<decltype(result)>);  // runtime: красно на стабе
+    EXPECT_DOUBLE_EQ(result, 6.5);
+}
+
+// ---- 9d. Seeded property-тест: sum_all(random vector) == std::accumulate ----
+
+TEST(AddableProps, SumAllMatchesAccumulate) {
+    std::mt19937 rng(0xB00BFACEu);
+    std::uniform_int_distribution<int> lenDist(0, 60);
+    std::uniform_int_distribution<int> valDist(-1000, 1000);
+    for (int it = 0; it < 400; ++it) {
+        std::size_t n = static_cast<std::size_t>(lenDist(rng));
+        std::vector<int> v(n);
+        for (auto& x : v) x = valDist(rng);
+        long long oracle = std::accumulate(v.begin(), v.end(), 0LL);
+        EXPECT_EQ(sum_all(v), static_cast<int>(oracle));
+    }
+}
+
+TEST(AddableProps, SumAllDoubleMatchesAccumulate) {
+    std::mt19937 rng(0xC001D00Du);
+    std::uniform_int_distribution<int> lenDist(1, 50);
+    std::uniform_real_distribution<double> valDist(-100.0, 100.0);
+    for (int it = 0; it < 300; ++it) {
+        std::size_t n = static_cast<std::size_t>(lenDist(rng));
+        std::vector<double> v(n);
+        for (auto& x : v) x = valDist(rng);
+        double oracle = std::accumulate(v.begin(), v.end(), 0.0);
+        // floating-point: допускаем небольшую разницу из-за порядка суммирования
+        EXPECT_NEAR(sum_all(v), oracle, std::abs(oracle) * 1e-9 + 1e-9);
+    }
+}

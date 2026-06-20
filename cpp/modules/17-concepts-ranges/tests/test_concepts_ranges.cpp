@@ -500,3 +500,136 @@ TEST(TakeNProps, EdgeEmptyAndStrings) {
     EXPECT_EQ(take_n(v, 0), (std::vector<std::string>{}));
     EXPECT_EQ(take_n(v, 99), v);
 }
+
+// =====================================================================
+// Задание 6 — sort_by_age + youngest_name (проекции std::ranges)
+// =====================================================================
+
+TEST(SortByAge, BasicOrder) {
+    std::vector<Person> people{{"Зина", 30}, {"Алёша", 22}, {"Маша", 25}};
+    auto out = sort_by_age(people);
+    ASSERT_EQ(out.size(), 3u);
+    EXPECT_EQ(out[0].age, 22);
+    EXPECT_EQ(out[1].age, 25);
+    EXPECT_EQ(out[2].age, 30);
+}
+
+TEST(SortByAge, DoesNotMutateInput) {
+    std::vector<Person> orig{{"А", 5}, {"Б", 3}, {"В", 9}};
+    std::vector<Person> copy = orig;
+    sort_by_age(orig);      // принимает по значению — оригинал НЕ изменяется
+    EXPECT_EQ(orig, copy);  // вектор orig остался в исходном порядке
+}
+
+TEST(SortByAge, SingleElement) {
+    std::vector<Person> v{{"Один", 42}};
+    auto out = sort_by_age(v);
+    EXPECT_EQ(out.size(), 1u);
+    EXPECT_EQ(out[0].name, "Один");
+}
+
+TEST(SortByAge, EmptyVector) {
+    std::vector<Person> v{};
+    EXPECT_TRUE(sort_by_age(v).empty());
+}
+
+TEST(SortByAge, AllSameAge) {
+    std::vector<Person> v{{"А", 10}, {"Б", 10}, {"В", 10}};
+    auto out = sort_by_age(v);
+    ASSERT_EQ(out.size(), 3u);
+    for (const auto& p : out) EXPECT_EQ(p.age, 10);
+}
+
+TEST(YounguestName, FindsYoungest) {
+    std::vector<Person> people{{"Зина", 30}, {"Алёша", 22}, {"Маша", 25}};
+    EXPECT_EQ(youngest_name(people), "Алёша");
+}
+
+TEST(YounguestName, EmptyReturnsEmptyString) {
+    std::vector<Person> v{};
+    EXPECT_EQ(youngest_name(v), "");
+}
+
+TEST(YounguestName, SingleElement) {
+    std::vector<Person> v{{"Один", 7}};
+    EXPECT_EQ(youngest_name(v), "Один");
+}
+
+TEST(YounguestName, TieReturnFirst) {
+    // min_element возвращает первый минимум при равных значениях
+    std::vector<Person> v{{"А", 5}, {"Б", 5}, {"В", 10}};
+    EXPECT_EQ(youngest_name(v), "А");
+}
+
+// ---------------------------------------------------------------------
+// Задание 6 — property/seeded тесты (std::mt19937, сид фиксирован)
+// ---------------------------------------------------------------------
+
+TEST(ProjectionProps, SortByAgeMatchesManualSort) {
+    std::mt19937 rng(0x17C0FFEEu);
+    std::uniform_int_distribution<int> sizeDist(0, 40);
+    std::uniform_int_distribution<int> ageDist(1, 100);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(sizeDist(rng));
+        // Используем уникальные имена-индексы, чтобы youngest_name -> find_if
+        // не путал одноимённых Person из разных позиций.
+        std::vector<Person> people(n);
+        for (std::size_t i = 0; i < n; ++i) {
+            people[i].name = "P" + std::to_string(i);
+            people[i].age  = ageDist(rng);
+        }
+
+        std::vector<Person> out = sort_by_age(people);
+
+        // 1) Размер сохранён
+        EXPECT_EQ(out.size(), people.size());
+        // 2) Результат отсортирован по age
+        for (std::size_t i = 1; i < out.size(); ++i)
+            EXPECT_LE(out[i - 1].age, out[i].age);
+        // 3) Мультисет по age совпадает с входом (перестановка)
+        std::vector<int> inAges, outAges;
+        for (const auto& p : people) inAges.push_back(p.age);
+        for (const auto& p : out)    outAges.push_back(p.age);
+        std::sort(inAges.begin(),  inAges.end());
+        std::sort(outAges.begin(), outAges.end());
+        EXPECT_EQ(inAges, outAges);
+        // 4) Для непустых: youngest_name возвращает имя Person с минимальным age
+        if (!people.empty()) {
+            const int min_age = out.front().age;
+            std::string yn = youngest_name(people);
+            // Находим Person с этим именем во входе (имена уникальны)
+            auto found = std::ranges::find_if(people,
+                [&](const Person& p) { return p.name == yn; });
+            ASSERT_NE(found, people.end());
+            EXPECT_EQ(found->age, min_age);
+        }
+    }
+}
+
+TEST(ProjectionProps, YounguestNameMatchesMinElementOracle) {
+    std::mt19937 rng(0x17A9EDu);
+    std::uniform_int_distribution<int> sizeDist(1, 30);
+    std::uniform_int_distribution<int> ageDist(0, 60);
+
+    for (int iter = 0; iter < 200; ++iter) {
+        const std::size_t n = static_cast<std::size_t>(sizeDist(rng));
+        std::vector<Person> people(n);
+        for (std::size_t i = 0; i < n; ++i) {
+            people[i].name = "P" + std::to_string(i);
+            people[i].age  = ageDist(rng);
+        }
+
+        // Оракул: std::min_element по age вручную
+        auto oracle_it = std::min_element(people.begin(), people.end(),
+            [](const Person& a, const Person& b) { return a.age < b.age; });
+        const int min_age = oracle_it->age;
+
+        std::string yn = youngest_name(people);
+        // Найти Person с полученным именем и проверить, что age == min_age
+        auto it = std::ranges::find_if(people,
+            [&](const Person& p) { return p.name == yn; });
+        ASSERT_NE(it, people.end()) << "youngest_name вернула имя, которого нет во входе";
+        EXPECT_EQ(it->age, min_age);
+    }
+}

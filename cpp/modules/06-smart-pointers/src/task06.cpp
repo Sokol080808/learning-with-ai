@@ -1,4 +1,5 @@
 #include "task06.hpp"
+#include <optional>  // std::optional, std::nullopt
 #include <utility>   // std::move
 #include <stdexcept> // std::logic_error
 
@@ -121,4 +122,14 @@ std::string SharedResource::read() const {
 SharedResource SharedResource::share() const {
     // TODO: вернуть копию *this так, чтобы оба объекта владели одним shared-блоком.
     throw std::logic_error("TODO: SharedResource::share");
+}
+
+// ---------------------------------------------------------------------------
+// Задание 6. maybe_at: безопасный доступ к элементу вектора через optional.
+
+std::optional<int> maybe_at(const std::vector<int>& v, std::size_t i) {
+    // TODO: если i < v.size() — вернуть std::optional{v[i]}, иначе std::nullopt.
+    (void)v;
+    (void)i;
+    return std::nullopt;  // заглушка: всегда пусто — тесты с валидными индексами упадут
 }

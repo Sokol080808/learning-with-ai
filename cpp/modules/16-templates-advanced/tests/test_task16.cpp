@@ -446,3 +446,87 @@ TEST(TagDispatchProps, EmptyAndSingleEdge) {
     EXPECT_EQ(adv::distance_dispatch(sl.begin(), sl.end()), 1);
     EXPECT_EQ(adv::fast_path_calls(), 1);
 }
+
+// =====================================================================
+// Задание 6. all_of_pred — fold по &&
+// =====================================================================
+
+namespace {
+auto is_even = [](int x) { return x % 2 == 0; };
+auto is_positive = [](int x) { return x > 0; };
+}  // namespace
+
+// --- Фиксированные краевые случаи ---
+
+TEST(AllOfFold, AllEvenTrue) {
+    EXPECT_TRUE(adv::all_of_pred(is_even, 2, 4, 6));
+}
+
+TEST(AllOfFold, OneOddFalse) {
+    EXPECT_FALSE(adv::all_of_pred(is_even, 2, 4, 5));
+    EXPECT_FALSE(adv::all_of_pred(is_even, 1, 2, 4));
+    EXPECT_FALSE(adv::all_of_pred(is_even, 1));
+}
+
+TEST(AllOfFold, EmptyPackTrue) {
+    // Пустой пакет — vacuous truth: предикат не нарушен ни разу.
+    EXPECT_TRUE(adv::all_of_pred(is_even));
+}
+
+TEST(AllOfFold, SingleElementBothWays) {
+    EXPECT_TRUE(adv::all_of_pred(is_even, 0));
+    EXPECT_TRUE(adv::all_of_pred(is_positive, 42));
+    EXPECT_FALSE(adv::all_of_pred(is_positive, -1));
+}
+
+TEST(AllOfFold, MixedTypes) {
+    // Предикат работает с любым типом, совместимым с вызовом.
+    auto is_nonzero = [](auto x) { return x != 0; };
+    EXPECT_TRUE(adv::all_of_pred(is_nonzero, 1, 2, 3, 4));
+    EXPECT_FALSE(adv::all_of_pred(is_nonzero, 1, 0, 3));
+}
+
+// --- Seeded property-тест: оракул — ручная проверка по вектору ---
+
+TEST(AllOfFoldProps, MatchesManualCheckSeeded) {
+    // Инвариант: all_of_pred(p, a0..a4) == (p(a0) && p(a1) && p(a2) && p(a3) && p(a4)).
+    // Используем фиксированный сид — результат детерминирован, CI не флакает.
+    std::mt19937 rng(0xA110F01Du);
+    std::uniform_int_distribution<int> dist(-20, 20);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        int a = dist(rng), b = dist(rng), c = dist(rng), d = dist(rng), e = dist(rng);
+
+        // Оракул: вручную И-им результаты предиката для всех пяти значений.
+        bool oracle_even     = is_even(a) && is_even(b) && is_even(c) && is_even(d) && is_even(e);
+        bool oracle_positive = is_positive(a) && is_positive(b) && is_positive(c)
+                               && is_positive(d) && is_positive(e);
+
+        EXPECT_EQ(adv::all_of_pred(is_even,     a, b, c, d, e), oracle_even);
+        EXPECT_EQ(adv::all_of_pred(is_positive, a, b, c, d, e), oracle_positive);
+
+        // Инвариант согласованности: all_of_pred из одного элемента == p(элемент).
+        EXPECT_EQ(adv::all_of_pred(is_even, a),     is_even(a));
+        EXPECT_EQ(adv::all_of_pred(is_positive, a), is_positive(a));
+    }
+}
+
+TEST(AllOfFoldProps, ShortCircuitSemantics) {
+    // Если первый аргумент уже ложен — результат false независимо от остальных.
+    // Проверяем через разные позиции «плохого» элемента.
+    std::mt19937 rng(0xBAD1dea0u);
+    std::uniform_int_distribution<int> even_dist(-50, 50);
+
+    for (int iter = 0; iter < 200; ++iter) {
+        // Генерируем чётные числа — все подходят под is_even.
+        int e0 = even_dist(rng) * 2;
+        int e1 = even_dist(rng) * 2;
+        int e2 = even_dist(rng) * 2;
+        // Нечётный элемент в разных позициях должен давать false.
+        EXPECT_FALSE(adv::all_of_pred(is_even, 1, e0, e1));
+        EXPECT_FALSE(adv::all_of_pred(is_even, e0, 1, e1));
+        EXPECT_FALSE(adv::all_of_pred(is_even, e0, e1, 1));
+        // Все чётные — true.
+        EXPECT_TRUE(adv::all_of_pred(is_even, e0, e1, e2));
+    }
+}

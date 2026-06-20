@@ -225,3 +225,56 @@ constexpr Array<T, N> reversed(const Array<T, N>& in) {
     (void)in;
     return Array<T, N>{};
 }
+
+// -----------------------------------------------------------------------------
+// Задание 6. my_swap — обобщённый swap с корректным условным noexcept.
+//
+// Контракт:
+//   my_swap(a, b) — обменять два значения через move.
+//   noexcept(my_swap(a, b)) == true  iff  T — noexcept-move-constructible &&
+//                                          noexcept-move-assignable.
+//
+// Ключевая идея: спецификатор noexcept(EXPR) принимает compile-time bool;
+// std::is_nothrow_move_constructible_v<T> и std::is_nothrow_move_assignable_v<T>
+// дают нужные трейты. Тело — стандартные три move-хода.
+//
+// Вспомогательный тип NoexceptWrapper<T>: форсирует noexcept-move у любого T,
+// оборачивая его move-конструктор в явный noexcept. Нужен в тестах, чтобы
+// контролировать ветку «noexcept-движение разрешено».
+// -----------------------------------------------------------------------------
+
+// Обёртка: делает move noexcept независимо от внутреннего типа.
+// Хранит T по значению; все операции делегируются, move явно noexcept.
+template <class T>
+struct NoexceptWrapper {
+    T value;
+
+    NoexceptWrapper() = default;
+    explicit NoexceptWrapper(T v) : value(std::move(v)) {}
+
+    // Принудительно noexcept move — это и есть цель обёртки.
+    // Сигнатуры noexcept сохранены, чтобы static_assert в тестах компилировался.
+    NoexceptWrapper(NoexceptWrapper&& other) noexcept
+        : value(std::move(other.value)) {}
+    NoexceptWrapper& operator=(NoexceptWrapper&& other) noexcept {
+        // TODO: реализуй перемещающее присваивание
+        (void)other;
+        return *this;
+    }
+
+    // Копирование разрешено через T.
+    NoexceptWrapper(const NoexceptWrapper&) = default;
+    NoexceptWrapper& operator=(const NoexceptWrapper&) = default;
+};
+
+// Обобщённый swap через move с корректным условным noexcept.
+// noexcept-спецификация сохранена корректной (трейты), чтобы
+// static_assert в тестах компилировался; рантайм-логика — заглушка.
+template <class T>
+void my_swap(T& a, T& b)
+    noexcept(std::is_nothrow_move_constructible_v<T> &&
+             std::is_nothrow_move_assignable_v<T>)
+{
+    // TODO: реализуй три move-хода: tmp = move(a); a = move(b); b = move(tmp)
+    (void)a; (void)b;
+}

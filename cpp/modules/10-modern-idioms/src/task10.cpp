@@ -1,5 +1,6 @@
 #include "task10.hpp"
 #include <stdexcept>
+#include <optional>
 // #include <ranges>
 // #include <algorithm>
 
@@ -40,4 +41,11 @@ std::pair<int, int> divmod(int a, int b) {
     (void)a;
     (void)b;
     return {0, 0};
+}
+
+std::optional<int> safe_divide(int a, int b) {
+    // TODO: если b == 0 — вернуть std::nullopt; иначе std::optional<int>{a / b}.
+    (void)a;
+    (void)b;
+    return std::nullopt;  // заглушка: всегда nullopt (неверно для b != 0)
 }
