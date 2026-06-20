@@ -1,6 +1,11 @@
 // Эти тесты трогать не нужно — это эталон поведения.
 // Они на C++ (GoogleTest), но вызывают твои C-функции через extern "C".
 #include <gtest/gtest.h>
+#include <random>
+#include <vector>
+#include <unordered_set>
+#include <algorithm>
+#include <climits>
 
 extern "C" {
 #include "paging.h"
@@ -135,4 +140,416 @@ TEST(LruVsFifo, CyclicWorstCaseTies) {
     const int refs[] = {1, 2, 3, 4, 1, 2, 3, 4, 1, 2, 3, 4};
     EXPECT_EQ(fifo_page_faults(refs, 12, 3), 12);
     EXPECT_EQ(lru_page_faults(refs, 12, 3), 12);
+}
+
+// ============================================================
+// RANDOMIZED / PROPERTY TESTS
+// ============================================================
+
+// ----------------------------------------------------------
+// Helper: naive (brute-force) FIFO oracle
+// ----------------------------------------------------------
+static int fifo_oracle(const std::vector<int>& refs, int frames) {
+    std::vector<int> mem;   // loaded pages in load order
+    int faults = 0;
+    int next_evict = 0;     // circular pointer into mem[]
+    for (int p : refs) {
+        auto it = std::find(mem.begin(), mem.end(), p);
+        if (it != mem.end()) continue;  // hit
+        ++faults;
+        if ((int)mem.size() < frames) {
+            mem.push_back(p);
+        } else {
+            mem[next_evict] = p;
+            next_evict = (next_evict + 1) % frames;
+        }
+    }
+    return faults;
+}
+
+// ----------------------------------------------------------
+// Helper: naive (brute-force) LRU oracle
+// ----------------------------------------------------------
+static int lru_oracle(const std::vector<int>& refs, int frames) {
+    // mem[i] = {page, last_use_time}
+    std::vector<std::pair<int,int>> mem;
+    int faults = 0;
+    for (int t = 0; t < (int)refs.size(); ++t) {
+        int p = refs[t];
+        // Check hit
+        bool hit = false;
+        for (auto& slot : mem) {
+            if (slot.first == p) { slot.second = t; hit = true; break; }
+        }
+        if (hit) continue;
+        ++faults;
+        if ((int)mem.size() < frames) {
+            mem.push_back({p, t});
+        } else {
+            // evict LRU: minimum last_use_time
+            int evict_idx = 0;
+            for (int i = 1; i < (int)mem.size(); ++i)
+                if (mem[i].second < mem[evict_idx].second) evict_idx = i;
+            mem[evict_idx] = {p, t};
+        }
+    }
+    return faults;
+}
+
+// ----------------------------------------------------------
+// page_number + page_offset: round-trip identity
+//   page_number(addr, ps) * ps + page_offset(addr, ps) == addr
+// ----------------------------------------------------------
+TEST(PageNumberRandom, RoundTripIdentity) {
+    std::mt19937 rng(0xC0FFEE);
+    // page sizes: powers of two from 64 to 65536
+    const size_t page_sizes[] = {64, 128, 256, 512, 1024, 2048, 4096, 8192, 16384, 32768, 65536};
+    std::uniform_int_distribution<size_t> addr_dist(0, (size_t)1 << 24);
+
+    for (int iter = 0; iter < 1000; ++iter) {
+        size_t ps = page_sizes[rng() % 11];
+        size_t addr = addr_dist(rng);
+        size_t pn = page_number(addr, ps);
+        size_t po = page_offset(addr, ps);
+        ASSERT_EQ(pn * ps + po, addr)
+            << "round-trip failed: addr=" << addr << " ps=" << ps;
+    }
+}
+
+// ----------------------------------------------------------
+// page_offset: always in [0, page_size-1]
+// ----------------------------------------------------------
+TEST(PageOffsetRandom, AlwaysInRange) {
+    std::mt19937 rng(0xC0FFEE + 1);
+    const size_t page_sizes[] = {64, 128, 256, 512, 1024, 2048, 4096, 8192, 65536};
+    std::uniform_int_distribution<size_t> addr_dist(0, (size_t)1 << 25);
+
+    for (int iter = 0; iter < 1000; ++iter) {
+        size_t ps = page_sizes[rng() % 9];
+        size_t addr = addr_dist(rng);
+        size_t off = page_offset(addr, ps);
+        ASSERT_LT(off, ps)
+            << "offset out of range: addr=" << addr << " ps=" << ps << " off=" << off;
+    }
+}
+
+// ----------------------------------------------------------
+// page_number: addresses within same page share a page number;
+//              address at page boundary starts a new page.
+// ----------------------------------------------------------
+TEST(PageNumberRandom, SamePageSameNumber) {
+    std::mt19937 rng(0xDEAD);
+    const size_t page_sizes[] = {256, 512, 1024, 4096, 8192};
+    std::uniform_int_distribution<size_t> addr_dist(0, (size_t)1 << 22);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        size_t ps = page_sizes[rng() % 5];
+        size_t addr = addr_dist(rng);
+        // all addresses in [page_start, page_start + ps - 1] share the same page number
+        size_t page_start = (addr / ps) * ps;
+        ASSERT_EQ(page_number(page_start, ps), page_number(page_start + ps - 1, ps))
+            << "start and end of same page have different page numbers";
+        // next page starts a new number
+        ASSERT_EQ(page_number(page_start + ps, ps), page_number(page_start, ps) + 1)
+            << "page boundary does not increment page number";
+    }
+}
+
+// ----------------------------------------------------------
+// page_number: monotone — larger address in same/later page
+// ----------------------------------------------------------
+TEST(PageNumberRandom, MonotoneLargerAddress) {
+    std::mt19937 rng(0xBEEF);
+    const size_t page_sizes[] = {256, 1024, 4096};
+    std::uniform_int_distribution<size_t> addr_dist(0, (size_t)1 << 20);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        size_t ps = page_sizes[rng() % 3];
+        size_t a = addr_dist(rng);
+        size_t b = addr_dist(rng);
+        if (a > b) std::swap(a, b);
+        ASSERT_LE(page_number(a, ps), page_number(b, ps))
+            << "page_number not monotone: a=" << a << " b=" << b << " ps=" << ps;
+    }
+}
+
+// ----------------------------------------------------------
+// FIFO oracle agreement: function matches brute-force reference
+// ----------------------------------------------------------
+TEST(FifoRandom, MatchesOracleSmallWorkingSet) {
+    std::mt19937 rng(0xC0FFEE);
+    std::uniform_int_distribution<int> page_dist(0, 7);   // 8 distinct pages
+    std::uniform_int_distribution<int> frames_dist(1, 4);
+
+    for (int iter = 0; iter < 800; ++iter) {
+        int n = 12 + (int)(rng() % 9);  // length 12..20
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        int got = fifo_page_faults(refs.data(), n, frames);
+        int exp = fifo_oracle(refs, frames);
+        ASSERT_EQ(got, exp)
+            << "FIFO mismatch: frames=" << frames << " refs=[";
+    }
+}
+
+TEST(FifoRandom, MatchesOracleLargerWorkingSet) {
+    std::mt19937 rng(0xFEEDBEEF);
+    std::uniform_int_distribution<int> page_dist(0, 15);
+    std::uniform_int_distribution<int> frames_dist(1, 6);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        int n = 20 + (int)(rng() % 31);  // length 20..50
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        int got = fifo_page_faults(refs.data(), n, frames);
+        int exp = fifo_oracle(refs, frames);
+        ASSERT_EQ(got, exp)
+            << "FIFO large mismatch: frames=" << frames << " n=" << n;
+    }
+}
+
+// ----------------------------------------------------------
+// LRU oracle agreement
+// ----------------------------------------------------------
+TEST(LruRandom, MatchesOracleSmallWorkingSet) {
+    std::mt19937 rng(0xC0FFEE + 42);
+    std::uniform_int_distribution<int> page_dist(0, 7);
+    std::uniform_int_distribution<int> frames_dist(1, 4);
+
+    for (int iter = 0; iter < 800; ++iter) {
+        int n = 12 + (int)(rng() % 9);
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        int got = lru_page_faults(refs.data(), n, frames);
+        int exp = lru_oracle(refs, frames);
+        ASSERT_EQ(got, exp)
+            << "LRU mismatch: frames=" << frames;
+    }
+}
+
+TEST(LruRandom, MatchesOracleLargerWorkingSet) {
+    std::mt19937 rng(0xABCDEF01);
+    std::uniform_int_distribution<int> page_dist(0, 15);
+    std::uniform_int_distribution<int> frames_dist(1, 6);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        int n = 20 + (int)(rng() % 31);
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        int got = lru_page_faults(refs.data(), n, frames);
+        int exp = lru_oracle(refs, frames);
+        ASSERT_EQ(got, exp)
+            << "LRU large mismatch: frames=" << frames << " n=" << n;
+    }
+}
+
+// ----------------------------------------------------------
+// Invariant: faults in [distinct_pages, n]
+//   - lower bound: must fault at least once for each distinct page seen
+//     (cold miss, unavoidable)
+//   - upper bound: cannot fault more than n times (one per ref)
+// ----------------------------------------------------------
+TEST(FaultBounds, FifoFaultsInRange) {
+    std::mt19937 rng(0x12345678);
+    std::uniform_int_distribution<int> page_dist(0, 9);
+    std::uniform_int_distribution<int> frames_dist(1, 4);
+
+    for (int iter = 0; iter < 600; ++iter) {
+        int n = 10 + (int)(rng() % 21);
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        std::unordered_set<int> distinct(refs.begin(), refs.end());
+        int cold = (int)distinct.size();
+
+        int got = fifo_page_faults(refs.data(), n, frames);
+        ASSERT_GE(got, std::min(cold, n))
+            << "FIFO below cold-miss lower bound";
+        ASSERT_LE(got, n)
+            << "FIFO above total-refs upper bound";
+    }
+}
+
+TEST(FaultBounds, LruFaultsInRange) {
+    std::mt19937 rng(0x87654321);
+    std::uniform_int_distribution<int> page_dist(0, 9);
+    std::uniform_int_distribution<int> frames_dist(1, 4);
+
+    for (int iter = 0; iter < 600; ++iter) {
+        int n = 10 + (int)(rng() % 21);
+        int frames = frames_dist(rng);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        std::unordered_set<int> distinct(refs.begin(), refs.end());
+        int cold = (int)distinct.size();
+
+        int got = lru_page_faults(refs.data(), n, frames);
+        ASSERT_GE(got, std::min(cold, n))
+            << "LRU below cold-miss lower bound";
+        ASSERT_LE(got, n)
+            << "LRU above total-refs upper bound";
+    }
+}
+
+// ----------------------------------------------------------
+// Monotone frames: more frames => faults never increase for LRU
+// (LRU has the stack property — no Belady anomaly)
+// ----------------------------------------------------------
+TEST(LruRandom, MoreFramesNeverWorse) {
+    std::mt19937 rng(0x9999CAFE);
+    std::uniform_int_distribution<int> page_dist(0, 9);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = 12 + (int)(rng() % 13);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        // For any two frame counts f1 < f2, LRU(f1) >= LRU(f2)
+        for (int f1 = 1; f1 <= 4; ++f1) {
+            int faults_f1 = lru_page_faults(refs.data(), n, f1);
+            int faults_f2 = lru_page_faults(refs.data(), n, f1 + 1);
+            ASSERT_GE(faults_f1, faults_f2)
+                << "LRU anomaly: more frames gave more faults: f1=" << f1;
+        }
+    }
+}
+
+// ----------------------------------------------------------
+// Frames >= working set => only cold misses for both FIFO and LRU
+// ----------------------------------------------------------
+TEST(FaultBounds, EnoughFramesOnlyColdMisses) {
+    std::mt19937 rng(0xCAFEBABE);
+    std::uniform_int_distribution<int> page_dist(0, 7);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = 8 + (int)(rng() % 13);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        std::unordered_set<int> distinct(refs.begin(), refs.end());
+        int cold = (int)distinct.size();
+        int frames = cold;  // exactly enough to hold entire working set
+
+        int fifo_f = fifo_page_faults(refs.data(), n, frames);
+        int lru_f  = lru_page_faults(refs.data(), n, frames);
+
+        ASSERT_EQ(fifo_f, cold)
+            << "FIFO: frames>=working_set but got extra faults";
+        ASSERT_EQ(lru_f, cold)
+            << "LRU: frames>=working_set but got extra faults";
+    }
+}
+
+// ----------------------------------------------------------
+// Single distinct page: exactly 1 fault regardless of length or frames
+// ----------------------------------------------------------
+TEST(FaultEdgeCases, SingleDistinctPage) {
+    std::mt19937 rng(0x111);
+    for (int iter = 0; iter < 300; ++iter) {
+        int n = 1 + (int)(rng() % 50);
+        int frames = 1 + (int)(rng() % 5);
+        int page = (int)(rng() % 100);
+        std::vector<int> refs(n, page);
+
+        ASSERT_EQ(fifo_page_faults(refs.data(), n, frames), 1)
+            << "FIFO single distinct page: expected 1 fault";
+        ASSERT_EQ(lru_page_faults(refs.data(), n, frames), 1)
+            << "LRU single distinct page: expected 1 fault";
+    }
+}
+
+// ----------------------------------------------------------
+// frames = 1: every change of page is a fault
+// ----------------------------------------------------------
+TEST(FaultEdgeCases, OneFrame) {
+    std::mt19937 rng(0x222);
+    std::uniform_int_distribution<int> page_dist(0, 4);
+
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = 5 + (int)(rng() % 16);
+        std::vector<int> refs(n);
+        for (int& r : refs) r = page_dist(rng);
+
+        // With 1 frame: fault on ref[0], then fault whenever ref[i] != ref[i-1]
+        int expected = 1;
+        for (int i = 1; i < n; ++i)
+            if (refs[i] != refs[i-1]) ++expected;
+
+        ASSERT_EQ(fifo_page_faults(refs.data(), n, 1), expected)
+            << "FIFO 1-frame mismatch";
+        ASSERT_EQ(lru_page_faults(refs.data(), n, 1), expected)
+            << "LRU 1-frame mismatch";
+    }
+}
+
+// ----------------------------------------------------------
+// All unique refs: every ref is a cold miss (faults == n)
+// ----------------------------------------------------------
+TEST(FaultEdgeCases, AllUniqueFaultsEqualsN) {
+    std::mt19937 rng(0x333);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int n = 4 + (int)(rng() % 17);
+        int frames = 1 + (int)(rng() % (n < 4 ? n : 4));
+        // Build a sequence of n distinct pages
+        std::vector<int> refs(n);
+        std::iota(refs.begin(), refs.end(), 0);
+        std::shuffle(refs.begin(), refs.end(), rng);
+
+        ASSERT_EQ(fifo_page_faults(refs.data(), n, frames), n)
+            << "FIFO all-unique: expected n faults";
+        ASSERT_EQ(lru_page_faults(refs.data(), n, frames), n)
+            << "LRU all-unique: expected n faults";
+    }
+}
+
+// ----------------------------------------------------------
+// page_number / page_offset edge cases
+// ----------------------------------------------------------
+TEST(PageEdgeCases, AddressZero) {
+    const size_t page_sizes[] = {64, 256, 1024, 4096};
+    for (size_t ps : page_sizes) {
+        EXPECT_EQ(page_number(0, ps), 0u);
+        EXPECT_EQ(page_offset(0, ps), 0u);
+    }
+}
+
+TEST(PageEdgeCases, ExactlyAtPageBoundary) {
+    // addr == ps: page 1, offset 0
+    const size_t page_sizes[] = {64, 256, 1024, 4096};
+    for (size_t ps : page_sizes) {
+        EXPECT_EQ(page_number(ps, ps), 1u);
+        EXPECT_EQ(page_offset(ps, ps), 0u);
+        // one before boundary: page 0, offset ps-1
+        EXPECT_EQ(page_number(ps - 1, ps), 0u);
+        EXPECT_EQ(page_offset(ps - 1, ps), ps - 1);
+    }
+}
+
+TEST(PageEdgeCases, LargeAddressSmallPage) {
+    // addr = 0xFFFFFF, ps = 64: page = addr/64, offset = addr%64
+    size_t addr = 0xFFFFFF;
+    size_t ps   = 64;
+    EXPECT_EQ(page_number(addr, ps), addr / ps);
+    EXPECT_EQ(page_offset(addr, ps), addr % ps);
+}
+
+TEST(PageEdgeCases, MinimalPageSize) {
+    // page_size = 1 (degenerate power of two): every address is its own page
+    // The module guarantees page_size is a power of two >= 1
+    // page_number(addr, 1) == addr, page_offset(addr, 1) == 0
+    for (size_t addr = 0; addr < 1000; ++addr) {
+        EXPECT_EQ(page_number(addr, 1), addr);
+        EXPECT_EQ(page_offset(addr, 1), 0u);
+    }
 }
