@@ -43,3 +43,25 @@ uint32_t reverse_bytes(uint32_t x) {
     (void)x;
     return 0;  // TODO: собери число с перевёрнутым порядком байт
 }
+
+// Контракт: упаковать flags, r, g, b в одно 32-битное слово.
+// Биты 31-24 = flags, 23-16 = r, 15-8 = g, 7-0 = b.
+uint32_t pack_fields(uint8_t flags, uint8_t r, uint8_t g, uint8_t b) {
+    (void)flags;
+    (void)r;
+    (void)g;
+    (void)b;
+    return 0;  // TODO: сдвинь каждое поле на нужное число бит и соедини через |
+}
+
+// Контракт: распаковать слово, собранное pack_fields, обратно в четыре байта.
+// Записывает результаты по указателям flags, r, g, b (не NULL).
+void unpack_fields(uint32_t packed,
+                   uint8_t *flags, uint8_t *r, uint8_t *g, uint8_t *b) {
+    (void)packed;
+    (void)flags;
+    (void)r;
+    (void)g;
+    (void)b;
+    // TODO: сдвинь packed вправо на нужное число бит и маскируй 0xFF для каждого поля
+}

@@ -37,3 +37,17 @@ long mutex_counter(int num_threads, int per_thread) {
     (void)per_thread;
     return 0; // TODO: посчитай под мьютексом, верни итог счётчика
 }
+
+// Ограниченный producer-consumer на кольцевом буфере.
+// n_producers потоков-производителей каждый кладёт items_per_producer элементов
+// в общий кольцевой буфер ёмкостью buf_cap; n_consumers потоков-потребителей
+// читают из буфера и суммируют значения. Верни итоговую сумму всех элементов.
+// Подсказка: тебе понадобится мьютекс и два условия (not_full, not_empty).
+long producer_consumer(int n_producers, int n_consumers,
+                       int buf_cap, int items_per_producer) {
+    (void)n_producers;
+    (void)n_consumers;
+    (void)buf_cap;
+    (void)items_per_producer;
+    return 0; // TODO: реализуй producer-consumer с кольцевым буфером
+}

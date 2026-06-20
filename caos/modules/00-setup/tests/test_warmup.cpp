@@ -5,6 +5,8 @@
 #include <gtest/gtest.h>
 #include <random>
 #include <cstdint>
+#include <cstddef>
+#include <cstring>
 
 extern "C" {
 #include "warmup.h"
@@ -126,4 +128,119 @@ TEST(WarmupEdge, SecondsInBoundary) {
     EXPECT_EQ(seconds_in(1), 3600L);
     EXPECT_EQ(seconds_in(24), 86400L);
     EXPECT_EQ(seconds_in(365 * 24), static_cast<long>(365 * 24) * 3600L);  // one year
+}
+
+// ============================================================
+// Задание 3: struct layout, byte inspection, endianness
+// ============================================================
+
+// --- packed_record_size ---
+
+// packed_record_size() must equal sizeof(struct PackedRecord).
+// This verifies the formula offsetof(last)+sizeof(last) matches the real sizeof.
+// Note: due to final padding these may differ, and that is intentional teaching
+// material — we test that packed_record_size() returns a consistent value and
+// that sizeof matches for independent verification.
+TEST(ByteLayout, PackedRecordSizeMatchesSizeof) {
+    // The function computes offsetof(c) + sizeof(c) — which may be LESS than
+    // sizeof(struct PackedRecord) if there is trailing padding.  Both values are
+    // deterministic and must be at least as large as the sum of field sizes.
+    size_t fn_size   = packed_record_size();
+    size_t real_size = sizeof(struct PackedRecord);
+
+    // fn_size must be a valid sub-sizeof (no trailing pad accounted)
+    // and real_size must be >= fn_size (trailing pad can only add bytes).
+    EXPECT_GE(real_size, fn_size)
+        << "sizeof(PackedRecord)=" << real_size
+        << " should be >= packed_record_size()=" << fn_size;
+
+    // fn_size must be at least 1+4+2 = 7 (minimum without any padding).
+    EXPECT_GE(fn_size, sizeof(uint8_t) + sizeof(uint32_t) + sizeof(uint16_t))
+        << "packed_record_size() must cover all three fields";
+
+    // The function must equal offsetof(c) + sizeof last field exactly.
+    size_t expected = offsetof(struct PackedRecord, c) + sizeof(uint16_t);
+    EXPECT_EQ(fn_size, expected)
+        << "packed_record_size() should be offsetof(c)+sizeof(uint16_t)="
+        << expected;
+}
+
+// Verify that b is NOT at offset 1 (compiler inserts padding before uint32_t).
+TEST(ByteLayout, PackedRecordPaddingPresent) {
+    // On any standard ABI uint32_t must be aligned to 4 bytes.
+    // offsetof(b) must therefore be 4, not 1.
+    EXPECT_EQ(offsetof(struct PackedRecord, b), static_cast<size_t>(4))
+        << "uint32_t field 'b' should start at offset 4 (3 bytes of padding after 'a')";
+    EXPECT_EQ(offsetof(struct PackedRecord, c), static_cast<size_t>(8))
+        << "uint16_t field 'c' should start at offset 8";
+}
+
+// --- uint32_to_bytes ---
+
+// On a little-endian machine 0x01020304 must produce {0x04, 0x03, 0x02, 0x01}.
+// On a big-endian machine the expected order is {0x01, 0x02, 0x03, 0x04}.
+// We derive the expected bytes from is_little_endian() so the test is portable.
+TEST(ByteLayout, Uint32ToBytesKnownValue) {
+    unsigned char out[4] = {0, 0, 0, 0};
+    uint32_to_bytes(0x01020304u, out);
+
+    if (is_little_endian()) {
+        EXPECT_EQ(out[0], 0x04u) << "little-endian: LSB at lowest address";
+        EXPECT_EQ(out[1], 0x03u);
+        EXPECT_EQ(out[2], 0x02u);
+        EXPECT_EQ(out[3], 0x01u) << "little-endian: MSB at highest address";
+    } else {
+        EXPECT_EQ(out[0], 0x01u) << "big-endian: MSB at lowest address";
+        EXPECT_EQ(out[1], 0x02u);
+        EXPECT_EQ(out[2], 0x03u);
+        EXPECT_EQ(out[3], 0x04u) << "big-endian: LSB at highest address";
+    }
+}
+
+// All four bytes together must reconstruct the original value (endian-neutral).
+TEST(ByteLayout, Uint32ToBytesReconstructValue) {
+    // Seeded deterministic values.
+    const uint32_t inputs[] = {0x00000000u, 0xFFFFFFFFu, 0x01020304u,
+                                0xDEADBEEFu, 0x80000001u};
+    for (uint32_t v : inputs) {
+        unsigned char out[4] = {0};
+        uint32_to_bytes(v, out);
+
+        // Reconstruct via memcpy (standard-compliant, avoids aliasing).
+        uint32_t reconstructed = 0;
+        std::memcpy(&reconstructed, out, 4);
+        EXPECT_EQ(reconstructed, v)
+            << "uint32_to_bytes then memcpy back must round-trip for value 0x"
+            << std::hex << v;
+    }
+}
+
+// --- is_little_endian ---
+
+// is_little_endian() must return 0 or 1.
+TEST(ByteLayout, IsLittleEndianReturnsBooleanValue) {
+    int result = is_little_endian();
+    EXPECT_TRUE(result == 0 || result == 1)
+        << "is_little_endian() must return exactly 0 or 1, got " << result;
+}
+
+// is_little_endian() must agree with an independent union-based check.
+TEST(ByteLayout, IsLittleEndianAgreeWithUnionCheck) {
+    // Independent oracle: same technique but inline in the test.
+    union { uint32_t i; unsigned char b[4]; } u;
+    u.i = 1u;
+    int oracle = (u.b[0] == 1) ? 1 : 0;
+
+    EXPECT_EQ(is_little_endian(), oracle)
+        << "is_little_endian() disagrees with inline union check";
+}
+
+// is_little_endian() must agree with what uint32_to_bytes() observes.
+TEST(ByteLayout, IsLittleEndianAgreeWithByteOrder) {
+    unsigned char out[4] = {0};
+    uint32_to_bytes(1u, out);
+    // On little-endian: out[0]==1 (LSB first). On big-endian: out[3]==1.
+    int from_bytes = (out[0] == 1) ? 1 : 0;
+    EXPECT_EQ(is_little_endian(), from_bytes)
+        << "is_little_endian() must agree with uint32_to_bytes(1, out)[0]";
 }

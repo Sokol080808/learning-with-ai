@@ -6,6 +6,7 @@
 
 #include "floats.h"
 #include <string.h>   // memcpy
+#include <math.h>     // floor, isnan, isinf, signbit
 
 // Контракт: вернуть сырые 32 бита числа f, как они лежат в памяти,
 // упакованные в uint32_t (бит 31 — знак, биты 30..23 — экспонента, биты 22..0 — мантисса).
@@ -31,4 +32,21 @@ int float_raw_exponent(float f) {
 int my_isnan(float f) {
     (void)f;   // TODO
     return 0;  // TODO: заглушка
+}
+
+// Контракт: собрать float из трёх полей IEEE 754 (одинарная точность).
+// sign — знаковый бит (только младший бит), biased_exp — 8-битное поле экспоненты,
+// mantissa — 23 бита мантиссы.
+float float_pack(int sign, int biased_exp, uint32_t mantissa) {
+    (void)sign;        // TODO
+    (void)biased_exp;  // TODO
+    (void)mantissa;    // TODO
+    return 0.0f;       // TODO: заглушка — даёт неверный результат
+}
+
+// Контракт: округлить x к ближайшему целому по правилу «ties-to-even»
+// (банковское округление): половинки идут к чётному соседу.
+double round_half_to_even(double x) {
+    (void)x;   // TODO
+    return 0.0; // TODO: заглушка — даёт неверный результат
 }

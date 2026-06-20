@@ -5,6 +5,7 @@
 // пересекаются, при нехватке места возвращается NULL, а reset снова даёт полный объём.
 
 #include <gtest/gtest.h>
+#include <algorithm> // std::shuffle (детерминированная перетасовка в heap-тестах)
 #include <cstdint>   // std::uintptr_t
 #include <cstring>   // std::memset
 #include <random>    // std::mt19937, std::uniform_int_distribution
@@ -433,6 +434,274 @@ TEST(Arena, RandomRoundTripAfterReset) {
             << "pointer mismatch in second pass at i=" << i
             << " (expected " << first_pass[i].first << ", got " << p << ")";
     }
+}
+
+// ── heap_* : настоящий аллокатор с освобождением блоков ──────────────────────
+// Эти тесты проверяют ПОВЕДЕНИЕ heap_init / heap_malloc / heap_free поверх
+// неявного списка (implicit free list): выравнивание payload по 8, отсутствие
+// перекрытий, переиспользование освобождённой памяти и слияние соседей.
+//
+// Все тесты сначала зовут heap_init(), чтобы стартовать с чистой кучи —
+// глобальный буфер общий между тестами. heap_* трогаются ТОЛЬКО в рантайме,
+// поэтому файл компилируется и против заглушки.
+
+namespace {
+
+// «Указатель payload выровнен по 8?» — то же, что aligned8, отдельное имя
+// для читаемости heap-тестов.
+bool heap_aligned8(const void *p) {
+    return (reinterpret_cast<std::uintptr_t>(p) % 8u) == 0u;
+}
+
+// Записать узнаваемый паттерн во весь блок (проверка, что память пригодна и не
+// пересекается с чужой).
+void fill_pattern(void *p, size_t n, unsigned char pat) {
+    std::memset(p, pat, n);
+}
+bool check_pattern(const void *p, size_t n, unsigned char pat) {
+    const unsigned char *b = static_cast<const unsigned char *>(p);
+    for (size_t i = 0; i < n; ++i) {
+        if (b[i] != pat) return false;
+    }
+    return true;
+}
+
+}  // namespace
+
+// Базовая выдача: непустой указатель, выровнен по 8, в него можно писать.
+TEST(Heap, SingleMallocAlignedAndUsable) {
+    heap_init();
+    void *p = heap_malloc(40);
+    ASSERT_NE(p, nullptr);
+    EXPECT_TRUE(heap_aligned8(p));
+    fill_pattern(p, 40, 0x5A);
+    EXPECT_TRUE(check_pattern(p, 40, 0x5A));
+    heap_free(p);
+}
+
+// Любой выданный payload выровнен по 8, даже при «кривых» размерах запроса.
+TEST(Heap, EveryPayloadAligned) {
+    heap_init();
+    const size_t sizes[] = {1, 3, 7, 8, 9, 17, 31, 33, 64, 100};
+    std::vector<void *> ptrs;
+    for (size_t n : sizes) {
+        void *p = heap_malloc(n);
+        ASSERT_NE(p, nullptr) << "NULL for n=" << n;
+        EXPECT_TRUE(heap_aligned8(p)) << "payload for n=" << n << " not aligned by 8";
+        ptrs.push_back(p);
+    }
+    for (void *p : ptrs) heap_free(p);
+}
+
+// Несколько живых блоков не пересекаются: интервалы [p, p+n) попарно не
+// перекрываются. Заодно пишем разные паттерны и проверяем их целостность.
+TEST(Heap, LiveBlocksDoNotOverlap) {
+    heap_init();
+    struct B { unsigned char *p; size_t n; unsigned char pat; };
+    std::vector<B> bs;
+    const size_t sizes[] = {16, 24, 40, 8, 72, 100, 33};
+    unsigned char pat = 1;
+    for (size_t n : sizes) {
+        auto *p = static_cast<unsigned char *>(heap_malloc(n));
+        ASSERT_NE(p, nullptr) << "NULL for n=" << n;
+        fill_pattern(p, n, pat);
+        bs.push_back({p, n, pat});
+        ++pat;
+    }
+    // Попарная проверка непересечения интервалов.
+    for (size_t i = 0; i < bs.size(); ++i) {
+        for (size_t j = i + 1; j < bs.size(); ++j) {
+            auto ai = reinterpret_cast<std::uintptr_t>(bs[i].p);
+            auto aj = reinterpret_cast<std::uintptr_t>(bs[j].p);
+            bool disjoint = (ai + bs[i].n <= aj) || (aj + bs[j].n <= ai);
+            EXPECT_TRUE(disjoint) << "blocks " << i << " and " << j << " overlap";
+        }
+    }
+    // Все паттерны целы — никто никого не затёр.
+    for (auto &b : bs) {
+        EXPECT_TRUE(check_pattern(b.p, b.n, b.pat)) << "block clobbered";
+    }
+    for (auto &b : bs) heap_free(b.p);
+}
+
+// Освобождённую память можно переиспользовать: после free того же размера запрос
+// снова проходит (а не упирается в потолок). Гоняем много циклов alloc/free
+// одного размера — куча не должна «протекать».
+TEST(Heap, FreeEnablesReuse) {
+    heap_init();
+    void *first = heap_malloc(1000);
+    ASSERT_NE(first, nullptr);
+    heap_free(first);
+
+    // 10000 раз выделить и сразу освободить 1000 байт — если бы free не
+    // возвращал память, куча 64 KiB кончилась бы за ~64 итерации.
+    for (int i = 0; i < 10000; ++i) {
+        void *p = heap_malloc(1000);
+        ASSERT_NE(p, nullptr) << "reuse failed at iteration " << i;
+        heap_free(p);
+    }
+}
+
+// Слияние соседей (coalescing): три смежных блока, освобождаем все три, после
+// чего должен помещаться запрос крупнее любого по отдельности.
+TEST(Heap, CoalesceAdjacentFreesAllowsBigAlloc) {
+    heap_init();
+    // Три блока по 5000 байт подряд.
+    void *a = heap_malloc(5000);
+    void *b = heap_malloc(5000);
+    void *c = heap_malloc(5000);
+    ASSERT_NE(a, nullptr);
+    ASSERT_NE(b, nullptr);
+    ASSERT_NE(c, nullptr);
+
+    // Освобождаем в «неудобном» порядке: края, потом середину. Если слияние
+    // работает, три дырки по ~5000 сольются в один блок ~15000.
+    heap_free(a);
+    heap_free(c);
+    heap_free(b);
+
+    // Запрос 14000 больше любого отдельного блока (5000), но влезет в слитую
+    // область. Без coalescing это вернуло бы NULL.
+    void *big = heap_malloc(14000);
+    EXPECT_NE(big, nullptr) << "coalescing failed: 14000 did not fit after freeing 3x5000";
+    heap_free(big);
+}
+
+// Слияние с ЛЕВЫМ соседом по футеру: выделяем A,B; освобождаем A, затем B.
+// При free(B) блок должен слиться с уже свободным A слева (boundary tag).
+TEST(Heap, CoalesceWithLeftNeighbor) {
+    heap_init();
+    void *a = heap_malloc(6000);
+    void *b = heap_malloc(6000);
+    void *tail = heap_malloc(8);   // барьер, чтобы B не слился вправо со всем хвостом
+    ASSERT_NE(a, nullptr);
+    ASSERT_NE(b, nullptr);
+    ASSERT_NE(tail, nullptr);
+
+    heap_free(a);   // A свободен
+    heap_free(b);   // B освобождаем — должен прилипнуть к A слева
+
+    // Слитый блок A+B вмещает ~12000; запрос 11000 пройти обязан.
+    void *merged = heap_malloc(11000);
+    EXPECT_NE(merged, nullptr) << "left-coalescing failed: 11000 did not fit into A+B";
+    heap_free(merged);
+    heap_free(tail);
+}
+
+// heap_malloc(0): валидный ненулевой указатель, безопасный для heap_free.
+TEST(Heap, ZeroMallocReturnsFreeablePointer) {
+    heap_init();
+    void *p = heap_malloc(0);
+    ASSERT_NE(p, nullptr);
+    EXPECT_TRUE(heap_aligned8(p));
+    heap_free(p);  // не должно падать
+}
+
+// heap_free(NULL) — пустая операция, ничего не ломает.
+TEST(Heap, FreeNullIsNoop) {
+    heap_init();
+    heap_free(nullptr);  // не падать
+    void *p = heap_malloc(16);
+    EXPECT_NE(p, nullptr);
+    heap_free(p);
+}
+
+// Запрос больше всей кучи — NULL, и куча остаётся работоспособной.
+TEST(Heap, TooBigReturnsNull) {
+    heap_init();
+    EXPECT_EQ(heap_malloc(64 * 1024 + 1), nullptr);
+    // Куча не испортилась — обычная выдача работает.
+    void *p = heap_malloc(64);
+    EXPECT_NE(p, nullptr);
+    heap_free(p);
+}
+
+// ── heap_* рандомизированные тесты (seed фиксирован) ─────────────────────────
+
+// Любой указатель из heap_malloc выровнен по 8 при случайных размерах.
+TEST(Heap, RandomAlignmentInvariant) {
+    heap_init();
+    std::mt19937 rng(0x9A11C0DE);
+    std::uniform_int_distribution<size_t> dist(1, 200);
+
+    std::vector<void *> live;
+    for (int i = 0; i < 400; ++i) {
+        size_t n = dist(rng);
+        void *p = heap_malloc(n);
+        if (!p) break;
+        EXPECT_TRUE(heap_aligned8(p)) << "unaligned payload at i=" << i << " n=" << n;
+        live.push_back(p);
+    }
+    for (void *p : live) heap_free(p);
+}
+
+// Случайный поток alloc/free: ни один живой блок не должен быть затёрт чужим
+// (каждому присваиваем уникальный байтовый паттерн и периодически проверяем).
+TEST(Heap, RandomNoOverlapAndIntegrity) {
+    heap_init();
+    std::mt19937 rng(0x1234ABCD);
+    std::uniform_int_distribution<size_t> size_dist(1, 300);
+    std::uniform_int_distribution<int> coin(0, 1);
+
+    struct Live { unsigned char *p; size_t n; unsigned char pat; };
+    std::vector<Live> live;
+    unsigned char next_pat = 1;
+
+    for (int step = 0; step < 4000; ++step) {
+        // С вероятностью ~1/2 освобождаем случайный живой блок, иначе выделяем.
+        if (!live.empty() && coin(rng)) {
+            size_t idx = rng() % live.size();
+            // Перед освобождением убеждаемся, что блок ещё цел.
+            EXPECT_TRUE(check_pattern(live[idx].p, live[idx].n, live[idx].pat))
+                << "block corrupted before free at step " << step;
+            heap_free(live[idx].p);
+            live[idx] = live.back();
+            live.pop_back();
+        } else {
+            size_t n = size_dist(rng);
+            auto *p = static_cast<unsigned char *>(heap_malloc(n));
+            if (!p) continue;  // куча временно заполнена — ок
+            unsigned char pat = next_pat ? next_pat : 1;
+            ++next_pat;
+            fill_pattern(p, n, pat);
+            live.push_back({p, n, pat});
+        }
+        // Каждые 200 шагов проверяем целостность ВСЕХ живых блоков.
+        if (step % 200 == 0) {
+            for (auto &b : live) {
+                EXPECT_TRUE(check_pattern(b.p, b.n, b.pat))
+                    << "live block corrupted at step " << step;
+            }
+        }
+    }
+    for (auto &b : live) heap_free(b.p);
+}
+
+// После полного освобождения всех блоков coalescing должен восстановить кучу
+// почти целиком: запрос, близкий к полному объёму, снова проходит.
+TEST(Heap, FullFreeRestoresLargeCapacity) {
+    heap_init();
+    std::mt19937 rng(0x0FF1CE55);
+    std::uniform_int_distribution<size_t> dist(16, 256);
+
+    std::vector<void *> live;
+    // Набиваем кучу множеством мелких блоков.
+    for (int i = 0; i < 5000; ++i) {
+        void *p = heap_malloc(dist(rng));
+        if (!p) break;
+        live.push_back(p);
+    }
+    ASSERT_GE(live.size(), 50u) << "too few allocs to be a meaningful test";
+
+    // Освобождаем в перемешанном (но детерминированном) порядке.
+    std::shuffle(live.begin(), live.end(), rng);
+    for (void *p : live) heap_free(p);
+
+    // Теперь вся куча должна слиться обратно: крупный запрос (60 KiB) проходит.
+    void *big = heap_malloc(60 * 1024);
+    EXPECT_NE(big, nullptr)
+        << "after freeing everything, 60 KiB alloc failed — coalescing incomplete";
+    heap_free(big);
 }
 
 // Alignment padding must never exceed 7 bytes per alloc — the bump pointer

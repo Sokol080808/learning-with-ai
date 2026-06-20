@@ -423,3 +423,119 @@ TEST(CrossFunctionRandom, ToggleOnOneBitEqualsClearBit) {
         }
     }
 }
+
+// ============================================================
+//  pack_fields / unpack_fields tests
+// ============================================================
+
+// ---------- pack_fields: exact bit positions ----------
+
+// The 'flags' byte must land in bits 31-24.
+TEST(PackFields, FlagsInBits31to24) {
+    uint32_t packed = pack_fields(0xABu, 0x00u, 0x00u, 0x00u);
+    EXPECT_EQ((packed >> 24) & 0xFFu, 0xABu);
+    // Other fields are zero — remaining bits must be zero.
+    EXPECT_EQ(packed & 0x00FFFFFFu, 0x00u);
+}
+
+// The 'r' byte must land in bits 23-16.
+TEST(PackFields, RInBits23to16) {
+    uint32_t packed = pack_fields(0x00u, 0xCDu, 0x00u, 0x00u);
+    EXPECT_EQ((packed >> 16) & 0xFFu, 0xCDu);
+    EXPECT_EQ(packed & 0xFF00FFFFu, 0x00u);
+}
+
+// The 'g' byte must land in bits 15-8.
+TEST(PackFields, GInBits15to8) {
+    uint32_t packed = pack_fields(0x00u, 0x00u, 0xEFu, 0x00u);
+    EXPECT_EQ((packed >> 8) & 0xFFu, 0xEFu);
+    EXPECT_EQ(packed & 0xFFFF00FFu, 0x00u);
+}
+
+// The 'b' byte must land in bits 7-0.
+TEST(PackFields, BInBits7to0) {
+    uint32_t packed = pack_fields(0x00u, 0x00u, 0x00u, 0x12u);
+    EXPECT_EQ(packed & 0xFFu, 0x12u);
+    EXPECT_EQ(packed & 0xFFFFFF00u, 0x00u);
+}
+
+// Known full value: pack(0x11, 0x22, 0x33, 0x44) == 0x11223344.
+TEST(PackFields, KnownValue) {
+    EXPECT_EQ(pack_fields(0x11u, 0x22u, 0x33u, 0x44u), 0x11223344u);
+}
+
+// All-zero inputs produce 0.
+TEST(PackFields, AllZero) {
+    EXPECT_EQ(pack_fields(0u, 0u, 0u, 0u), 0x00000000u);
+}
+
+// All-0xFF inputs produce 0xFFFFFFFF.
+TEST(PackFields, AllMax) {
+    EXPECT_EQ(pack_fields(0xFFu, 0xFFu, 0xFFu, 0xFFu), 0xFFFFFFFFu);
+}
+
+// ---------- unpack_fields: round-trip ----------
+
+// Round-trip: unpack(pack(f, r, g, b)) must return the original four values.
+TEST(UnpackFields, RoundTripKnown) {
+    uint8_t f2, r2, g2, b2;
+    unpack_fields(pack_fields(0x11u, 0x22u, 0x33u, 0x44u), &f2, &r2, &g2, &b2);
+    EXPECT_EQ(f2, 0x11u);
+    EXPECT_EQ(r2, 0x22u);
+    EXPECT_EQ(g2, 0x33u);
+    EXPECT_EQ(b2, 0x44u);
+}
+
+TEST(UnpackFields, RoundTripAllZero) {
+    uint8_t f2 = 1, r2 = 1, g2 = 1, b2 = 1;
+    unpack_fields(0x00000000u, &f2, &r2, &g2, &b2);
+    EXPECT_EQ(f2, 0u);
+    EXPECT_EQ(r2, 0u);
+    EXPECT_EQ(g2, 0u);
+    EXPECT_EQ(b2, 0u);
+}
+
+TEST(UnpackFields, RoundTripAllMax) {
+    uint8_t f2, r2, g2, b2;
+    unpack_fields(0xFFFFFFFFu, &f2, &r2, &g2, &b2);
+    EXPECT_EQ(f2, 0xFFu);
+    EXPECT_EQ(r2, 0xFFu);
+    EXPECT_EQ(g2, 0xFFu);
+    EXPECT_EQ(b2, 0xFFu);
+}
+
+// ---------- randomized round-trip ----------
+
+TEST(PackUnpackRandom, RoundTrip) {
+    std::mt19937 rng(0xC0FFEE + 42);
+    std::uniform_int_distribution<uint32_t> dist8(0, 255);
+    for (int iter = 0; iter < 1000; ++iter) {
+        uint8_t f = static_cast<uint8_t>(dist8(rng));
+        uint8_t r = static_cast<uint8_t>(dist8(rng));
+        uint8_t g = static_cast<uint8_t>(dist8(rng));
+        uint8_t b = static_cast<uint8_t>(dist8(rng));
+        uint8_t f2, r2, g2, b2;
+        unpack_fields(pack_fields(f, r, g, b), &f2, &r2, &g2, &b2);
+        EXPECT_EQ(f2, f) << "iter=" << iter;
+        EXPECT_EQ(r2, r) << "iter=" << iter;
+        EXPECT_EQ(g2, g) << "iter=" << iter;
+        EXPECT_EQ(b2, b) << "iter=" << iter;
+    }
+}
+
+// Each field must be exactly in its designated byte lane (no bleeding into neighbours).
+TEST(PackUnpackRandom, FieldsDoNotBleed) {
+    std::mt19937 rng(0xC0FFEE + 43);
+    std::uniform_int_distribution<uint32_t> dist8(0, 255);
+    for (int iter = 0; iter < 500; ++iter) {
+        uint8_t f = static_cast<uint8_t>(dist8(rng));
+        uint8_t r = static_cast<uint8_t>(dist8(rng));
+        uint8_t g = static_cast<uint8_t>(dist8(rng));
+        uint8_t b = static_cast<uint8_t>(dist8(rng));
+        uint32_t packed = pack_fields(f, r, g, b);
+        EXPECT_EQ((packed >> 24) & 0xFFu, (uint32_t)f) << "flags field iter=" << iter;
+        EXPECT_EQ((packed >> 16) & 0xFFu, (uint32_t)r) << "r field iter=" << iter;
+        EXPECT_EQ((packed >>  8) & 0xFFu, (uint32_t)g) << "g field iter=" << iter;
+        EXPECT_EQ((packed      ) & 0xFFu, (uint32_t)b) << "b field iter=" << iter;
+    }
+}

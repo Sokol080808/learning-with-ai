@@ -3,6 +3,8 @@
 // Подключаем СВОЙ заголовок — там лежат сигнатуры. Если тип в .c и в .h разойдётся,
 // компилятор сразу заругается. Это полезно: он ловит расхождения за тебя.
 #include "integers.h"
+#include <stdint.h>
+#include <stddef.h>
 
 // 1, если знаковое сложение a+b переполнит int32_t; иначе 0.
 //
@@ -37,5 +39,23 @@ int32_t sign_extend(uint32_t x, int bits) {
 
 // 1, если машина little-endian; 0, если big-endian.
 int is_little_endian(void) {
+    return 0;  // TODO
+}
+
+// Кодирует *pkt в big-endian байты buf[0..11] (12 байт: 2+2+4+4).
+// Возвращает 12 при успехе; -1, если buf == NULL или buf_size < 12.
+int packet_encode(const PacketHeader *pkt, uint8_t *buf, size_t buf_size) {
+    (void)pkt;
+    (void)buf;
+    (void)buf_size;
+    return 0;  // TODO
+}
+
+// Декодирует big-endian байты из buf в *out.
+// Возвращает 12 при успехе; -1, если buf == NULL, out == NULL или buf_size < 12.
+int packet_decode(const uint8_t *buf, size_t buf_size, PacketHeader *out) {
+    (void)buf;
+    (void)buf_size;
+    (void)out;
     return 0;  // TODO
 }

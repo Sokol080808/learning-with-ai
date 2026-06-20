@@ -34,3 +34,13 @@ long ptr_distance(const int* a, const int* b) {
     (void)b;
     return 0;  // TODO: верни разницу указателей в элементах
 }
+
+// Вычислить раскладку «виртуальной» структуры по массиву дескрипторов полей.
+// Для каждого поля записывает смещение (с учётом padding) в offsets_out[i].
+// Возвращает полный sizeof структуры, включая хвостовой padding.
+size_t layout_compute(const Field* fields, int n, size_t* offsets_out) {
+    (void)fields;
+    (void)n;
+    (void)offsets_out;
+    return 0;  // TODO: вычисли смещения и итоговый sizeof с учётом выравнивания
+}

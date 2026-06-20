@@ -436,3 +436,186 @@ TEST(AddOverflows, Commutativity) {
             << "a=" << a << " b=" << b;
     }
 }
+
+// ============================================================
+// PacketHeader encode / decode (network byte order, big-endian)
+// ============================================================
+
+// Wire size: version(2) + port(2) + length(4) + checksum(4) = 12 bytes.
+static const size_t PKT_WIRE_SIZE = 12;
+
+// --- packet_encode: exact byte layout -------------------------------------------
+
+TEST(PacketEncode, NullBufReturnsError) {
+    PacketHeader pkt = {1, 80, 100, 0xDEADBEEFu};
+    EXPECT_EQ(packet_encode(&pkt, nullptr, PKT_WIRE_SIZE), -1);
+}
+
+TEST(PacketEncode, SmallBufReturnsError) {
+    PacketHeader pkt = {1, 80, 100, 0xDEADBEEFu};
+    uint8_t buf[16] = {};
+    EXPECT_EQ(packet_encode(&pkt, buf, PKT_WIRE_SIZE - 1), -1);
+}
+
+TEST(PacketEncode, ReturnsWireSize) {
+    PacketHeader pkt = {1, 80, 100, 0u};
+    uint8_t buf[16] = {};
+    EXPECT_EQ(packet_encode(&pkt, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+}
+
+TEST(PacketEncode, ExactBytesKnownValue) {
+    // version=0x0102, port=0x0304, length=0x05060708, checksum=0x090A0B0C
+    PacketHeader pkt;
+    pkt.version  = 0x0102u;
+    pkt.port     = 0x0304u;
+    pkt.length   = 0x05060708u;
+    pkt.checksum = 0x090A0B0Cu;
+
+    uint8_t buf[16] = {};
+    ASSERT_EQ(packet_encode(&pkt, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+
+    // version big-endian
+    EXPECT_EQ(buf[0],  0x01u) << "version high byte";
+    EXPECT_EQ(buf[1],  0x02u) << "version low byte";
+    // port big-endian
+    EXPECT_EQ(buf[2],  0x03u) << "port high byte";
+    EXPECT_EQ(buf[3],  0x04u) << "port low byte";
+    // length big-endian
+    EXPECT_EQ(buf[4],  0x05u) << "length byte 0";
+    EXPECT_EQ(buf[5],  0x06u) << "length byte 1";
+    EXPECT_EQ(buf[6],  0x07u) << "length byte 2";
+    EXPECT_EQ(buf[7],  0x08u) << "length byte 3";
+    // checksum big-endian
+    EXPECT_EQ(buf[8],  0x09u) << "checksum byte 0";
+    EXPECT_EQ(buf[9],  0x0Au) << "checksum byte 1";
+    EXPECT_EQ(buf[10], 0x0Bu) << "checksum byte 2";
+    EXPECT_EQ(buf[11], 0x0Cu) << "checksum byte 3";
+}
+
+TEST(PacketEncode, AllZeros) {
+    PacketHeader pkt = {0, 0, 0, 0};
+    uint8_t buf[16];
+    std::memset(buf, 0xFF, sizeof(buf));  // poison
+    ASSERT_EQ(packet_encode(&pkt, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+    for (size_t i = 0; i < PKT_WIRE_SIZE; ++i)
+        EXPECT_EQ(buf[i], 0u) << "byte " << i << " should be zero";
+}
+
+TEST(PacketEncode, AllOnes) {
+    PacketHeader pkt;
+    pkt.version  = 0xFFFFu;
+    pkt.port     = 0xFFFFu;
+    pkt.length   = 0xFFFFFFFFu;
+    pkt.checksum = 0xFFFFFFFFu;
+    uint8_t buf[16] = {};
+    ASSERT_EQ(packet_encode(&pkt, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+    for (size_t i = 0; i < PKT_WIRE_SIZE; ++i)
+        EXPECT_EQ(buf[i], 0xFFu) << "byte " << i;
+}
+
+// --- packet_decode: null/size guards ------------------------------------------
+
+TEST(PacketDecode, NullBufReturnsError) {
+    PacketHeader out;
+    EXPECT_EQ(packet_decode(nullptr, PKT_WIRE_SIZE, &out), -1);
+}
+
+TEST(PacketDecode, NullOutReturnsError) {
+    uint8_t buf[16] = {};
+    EXPECT_EQ(packet_decode(buf, PKT_WIRE_SIZE, nullptr), -1);
+}
+
+TEST(PacketDecode, SmallBufReturnsError) {
+    uint8_t buf[16] = {};
+    PacketHeader out;
+    EXPECT_EQ(packet_decode(buf, PKT_WIRE_SIZE - 1, &out), -1);
+}
+
+TEST(PacketDecode, ReturnsWireSize) {
+    uint8_t buf[16] = {};
+    PacketHeader out;
+    EXPECT_EQ(packet_decode(buf, sizeof(buf), &out), (int)PKT_WIRE_SIZE);
+}
+
+TEST(PacketDecode, ExactBytesKnownValue) {
+    // Same known value as PacketEncode.ExactBytesKnownValue
+    uint8_t buf[16] = {
+        0x01, 0x02,              // version = 0x0102
+        0x03, 0x04,              // port    = 0x0304
+        0x05, 0x06, 0x07, 0x08, // length  = 0x05060708
+        0x09, 0x0A, 0x0B, 0x0C, // checksum= 0x090A0B0C
+        0, 0, 0, 0               // padding, must not be read
+    };
+    PacketHeader out = {};
+    ASSERT_EQ(packet_decode(buf, sizeof(buf), &out), (int)PKT_WIRE_SIZE);
+    EXPECT_EQ(out.version,  0x0102u);
+    EXPECT_EQ(out.port,     0x0304u);
+    EXPECT_EQ(out.length,   0x05060708u);
+    EXPECT_EQ(out.checksum, 0x090A0B0Cu);
+}
+
+// --- round-trip ---------------------------------------------------------------
+
+TEST(PacketRoundTrip, EncodeDecodePredefined) {
+    PacketHeader orig;
+    orig.version  = 0x0001u;
+    orig.port     = 0x1F90u;  // 8080
+    orig.length   = 0x00000400u;
+    orig.checksum = 0xDEADBEEFu;
+
+    uint8_t buf[16] = {};
+    ASSERT_EQ(packet_encode(&orig, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+
+    PacketHeader got = {};
+    ASSERT_EQ(packet_decode(buf, sizeof(buf), &got), (int)PKT_WIRE_SIZE);
+
+    EXPECT_EQ(got.version,  orig.version);
+    EXPECT_EQ(got.port,     orig.port);
+    EXPECT_EQ(got.length,   orig.length);
+    EXPECT_EQ(got.checksum, orig.checksum);
+}
+
+TEST(PacketRoundTrip, RandomRoundTrip) {
+    // Randomized round-trip: encode then decode must recover the original.
+    std::mt19937 rng(0xC0DE1234u);
+    std::uniform_int_distribution<uint32_t> dist32;
+    std::uniform_int_distribution<uint32_t> dist16(0, 0xFFFFu);
+
+    for (int i = 0; i < 500; ++i) {
+        PacketHeader orig;
+        orig.version  = static_cast<uint16_t>(dist16(rng));
+        orig.port     = static_cast<uint16_t>(dist16(rng));
+        orig.length   = dist32(rng);
+        orig.checksum = dist32(rng);
+
+        uint8_t buf[16] = {};
+        ASSERT_EQ(packet_encode(&orig, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+
+        PacketHeader got = {};
+        ASSERT_EQ(packet_decode(buf, sizeof(buf), &got), (int)PKT_WIRE_SIZE);
+
+        EXPECT_EQ(got.version,  orig.version)  << "i=" << i;
+        EXPECT_EQ(got.port,     orig.port)     << "i=" << i;
+        EXPECT_EQ(got.length,   orig.length)   << "i=" << i;
+        EXPECT_EQ(got.checksum, orig.checksum) << "i=" << i;
+    }
+}
+
+TEST(PacketRoundTrip, BigEndianByteOrder) {
+    // Verify big-endian layout: for a field with value V, the first encoded byte
+    // must be the most significant byte of V.
+    PacketHeader pkt;
+    pkt.version  = 0xABCDu;
+    pkt.port     = 0x1234u;
+    pkt.length   = 0x11223344u;
+    pkt.checksum = 0x55667788u;
+
+    uint8_t buf[16] = {};
+    ASSERT_EQ(packet_encode(&pkt, buf, sizeof(buf)), (int)PKT_WIRE_SIZE);
+
+    // Most-significant byte of each field must come first on the wire.
+    EXPECT_EQ(buf[0], (pkt.version  >> 8) & 0xFFu)  << "version MSB first";
+    EXPECT_EQ(buf[2], (pkt.port     >> 8) & 0xFFu)  << "port MSB first";
+    EXPECT_EQ(buf[4], (pkt.length   >> 24) & 0xFFu) << "length MSB first";
+    EXPECT_EQ(buf[8], (pkt.checksum >> 24) & 0xFFu) << "checksum MSB first";
+}
