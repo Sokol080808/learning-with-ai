@@ -390,4 +390,57 @@ void destroy_at19(T* p) {
     throw std::logic_error("TODO: destroy_at19");
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// Задание 6. ArenaAllocator<T> — std::allocator-совместимый аллокатор поверх арены.
+//
+// Обёртка над BumpAllocator, удовлетворяющая *Allocator named requirement*:
+//   * using value_type = T;
+//   * explicit ArenaAllocator(BumpAllocator& arena) noexcept
+//   * template<class U> ArenaAllocator(const ArenaAllocator<U>&) noexcept  — rebind
+//   * T* allocate(std::size_t n)                — n*sizeof(T) байт из арены, align=alignof(T)
+//   * void deallocate(T*, std::size_t) noexcept — no-op (bump-арена)
+//   * operator== / operator!=                  — равны, если та же арена
+//   * arena() const noexcept                   — доступ к арене (для сравнения и rebind)
+// ─────────────────────────────────────────────────────────────────────────────
+template <class T>
+class ArenaAllocator {
+public:
+    using value_type = T;
+
+    explicit ArenaAllocator(BumpAllocator& arena) noexcept : arena_(&arena) {}
+
+    // Конвертирующий (rebind) конструктор: ArenaAllocator<U> → ArenaAllocator<T>.
+    template <class U>
+    ArenaAllocator(const ArenaAllocator<U>& other) noexcept : arena_(other.arena_) {}
+
+    // TODO: вернуть n*sizeof(T) байт из арены, выровненных по alignof(T).
+    // (Заглушка всегда бросает — память не выдаётся.)
+    T* allocate(std::size_t n) {
+        (void)n;
+        throw std::bad_alloc{};
+    }
+
+    // no-op для bump-арены — компилируется и не падает, но ничего не делает.
+    void deallocate(T* /*p*/, std::size_t /*n*/) noexcept {
+        // TODO: no-op (bump-арена не освобождает память поблочно — это намеренно)
+    }
+
+    const BumpAllocator* arena() const noexcept { return arena_; }
+
+private:
+    BumpAllocator* arena_;
+
+    template <class U>
+    friend class ArenaAllocator;
+};
+
+template <class T, class U>
+bool operator==(const ArenaAllocator<T>& a, const ArenaAllocator<U>& b) noexcept {
+    return a.arena() == b.arena();
+}
+template <class T, class U>
+bool operator!=(const ArenaAllocator<T>& a, const ArenaAllocator<U>& b) noexcept {
+    return !(a == b);
+}
+
 }  // namespace m19

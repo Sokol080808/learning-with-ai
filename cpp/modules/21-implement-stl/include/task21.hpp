@@ -51,8 +51,35 @@ public:
     // Запрещаем копирование/перемещение по умолчанию, пока ты не реализуешь
     // их сам (иначе компилятор сгенерировал бы поверхностные версии,
     // которые двойным free сломали бы ручное управление памятью).
-    Vector(const Vector&)            = delete;
-    Vector& operator=(const Vector&) = delete;
+    // TODO: реализуй Rule of 5 — глубокая копия и move с кражей указателя.
+    // Заглушки ниже объявляют правильные сигнатуры (в т.ч. noexcept у move),
+    // чтобы static_assert(is_nothrow_move_*) компилировался, но логика
+    // намеренно неверна — тесты будут красными до настоящей реализации.
+
+    // Copy-конструктор: должен выделить новый блок и скопировать элементы.
+    // Заглушка: просто ничего не делает => b[i] != a[i] (другая память).
+    Vector(const Vector& /*other*/) {
+        // TODO: реализуй глубокую копию
+    }
+
+    // Copy-присваивание: должно освободить старое и скопировать новое.
+    // Заглушка: ничего не делает.
+    Vector& operator=(const Vector& /*other*/) {
+        // TODO: реализуй copy-and-swap или аналог
+        return *this;
+    }
+
+    // Move-конструктор: должен украсть data_/size_/cap_ и обнулить источник.
+    // Заглушка объявлена noexcept (правильно), но ничего не крадёт.
+    Vector(Vector&& /*other*/) noexcept {
+        // TODO: укради указатель и обнули источник
+    }
+
+    // Move-присваивание: аналогично.
+    Vector& operator=(Vector&& /*other*/) noexcept {
+        // TODO: освободи своё, укради чужое
+        return *this;
+    }
 
     void push_back(const T& value) {
         (void)value;
@@ -194,9 +221,62 @@ class IntrusiveList {
 public:
     using size_type = std::size_t;
 
+    // -----------------------------------------------------------------
+    // TODO: реализуй тела операторов итератора.
+    // Сигнатуры и typedef-ы правильные (static_assert-ы компилируются),
+    // но operator* и operator++ содержат неверные заглушки — тесты будут
+    // красными до настоящей реализации.
+    // -----------------------------------------------------------------
+    class iterator {
+    public:
+        // Пять обязательных typedef-ов для std::iterator_traits.
+        using iterator_category = std::forward_iterator_tag;
+        using value_type        = T;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = T*;
+        using reference         = T&;
+
+        iterator() = default;
+        explicit iterator(Node<T>* node) : node_(node) {}
+
+        // TODO: верни node_->value.
+        // Заглушка бросает — range-for упадёт в runtime (тесты красные).
+        reference operator*() const {
+            throw std::logic_error("TODO: IntrusiveList::iterator::operator*");
+        }
+        // TODO: верни &node_->value.
+        pointer operator->() const {
+            throw std::logic_error("TODO: IntrusiveList::iterator::operator->");
+        }
+
+        // TODO: продвинь node_ = node_->next.
+        // Заглушка ничего не делает => бесконечный цикл / неверный результат.
+        iterator& operator++() {
+            // TODO: node_ = node_->next;
+            return *this;
+        }
+        iterator operator++(int) {
+            iterator tmp = *this;
+            ++(*this);
+            return tmp;
+        }
+
+        bool operator==(const iterator& other) const { return node_ == other.node_; }
+        bool operator!=(const iterator& other) const { return node_ != other.node_; }
+
+    private:
+        Node<T>* node_ = nullptr;
+    };
+
     IntrusiveList() = default;
     IntrusiveList(const IntrusiveList&)            = delete;
     IntrusiveList& operator=(const IntrusiveList&) = delete;
+
+    // TODO: begin() должен вернуть итератор на head_, end() — nullptr-итератор.
+    // Заглушки возвращают оба nullptr => begin() == end() для непустого списка
+    // (range-for не войдёт в тело => тесты красные).
+    iterator begin() { return iterator(nullptr); }  // TODO: iterator(head_)
+    iterator end()   { return iterator(nullptr); }
 
     void push_back(Node<T>* node) {
         (void)node;

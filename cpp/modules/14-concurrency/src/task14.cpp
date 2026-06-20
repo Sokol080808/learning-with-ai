@@ -3,6 +3,7 @@
 // #include <mutex>
 // #include <atomic>
 // #include <condition_variable>
+// #include <future>
 
 long parallel_sum(const std::vector<long>& v, unsigned num_threads) {
     // TODO: раздели массив на num_threads частей, посчитай частичные суммы в потоках,
@@ -80,5 +81,16 @@ long parallel_sum_balanced(const std::vector<long>& v, unsigned num_threads) {
     // по первым потокам: первые (size % num_threads) кусков на 1 элемент длиннее.
     // Потоки без элементов просто дают 0. Результат == обычной сумме.
     (void)v; (void)num_threads;
+    return -1;
+}
+
+// ---------------------------- Задание 7 ----------------------------------
+
+long parallel_sum_async(const std::vector<long>& xs, int parts) {
+    // TODO: разбей xs на parts частей (сбалансировано: первые rem кусков длиннее на 1),
+    // запусти каждую через std::async(std::launch::async, ...) и собери результаты
+    // через future.get(). parts <= 0 приравнивай к 1. Лишние futures
+    // (пустые диапазоны) возвращают 0. Подсказка: #include <future> в шапке файла.
+    (void)xs; (void)parts;
     return -1;
 }

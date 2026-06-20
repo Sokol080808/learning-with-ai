@@ -431,6 +431,113 @@ TEST(DynArrayProps, FillOverwritesAndAtBoundsThrow) {
     EXPECT_THROW(empty.at(-1), std::out_of_range);
 }
 
+// ── Задание 9: DynArray — правило трёх ───────────────────────────────────────────
+
+// Краевые случаи: копирование пустого и единичного массивов.
+TEST(DynArrayRuleOfThree, CopyEmptyArray) {
+    DynArray a(0, 99);
+    DynArray b = a;
+    EXPECT_EQ(b.size(), 0);
+    EXPECT_EQ(b.sum(), 0);
+}
+
+TEST(DynArrayRuleOfThree, CopyConstructorIsDeep) {
+    DynArray a(4, 7);
+    DynArray b = a;
+    EXPECT_EQ(b.size(), 4);
+    // Те же значения.
+    for (int i = 0; i < b.size(); ++i) EXPECT_EQ(b.at(i), 7);
+    // Изменение копии не затрагивает оригинал.
+    b.at(0) = 999;
+    EXPECT_EQ(a.at(0), 7);
+    EXPECT_EQ(b.at(0), 999);
+}
+
+TEST(DynArrayRuleOfThree, CopyAssignmentIsDeep) {
+    DynArray a(3, 5);
+    DynArray b(3, 0);
+    b = a;
+    EXPECT_EQ(b.size(), 3);
+    for (int i = 0; i < b.size(); ++i) EXPECT_EQ(b.at(i), 5);
+    // Независимость после присваивания.
+    a.at(1) = 42;
+    EXPECT_EQ(b.at(1), 5);  // b не изменился
+}
+
+TEST(DynArrayRuleOfThree, SelfAssignmentSafe) {
+    DynArray a(3, 11);
+    // Самоприсваивание не должно ни крашиться, ни менять данные.
+    DynArray& ref = a;
+    ref = a;
+    EXPECT_EQ(a.size(), 3);
+    EXPECT_EQ(a.at(0), 11);
+    EXPECT_EQ(a.at(1), 11);
+    EXPECT_EQ(a.at(2), 11);
+}
+
+TEST(DynArrayRuleOfThree, CopyToDifferentSizeTarget) {
+    // Присваивание массива большего размера в меньший (и наоборот).
+    DynArray big(10, 1);
+    DynArray small(2, 99);
+    small = big;
+    EXPECT_EQ(small.size(), 10);
+    EXPECT_EQ(small.sum(), 10);
+
+    DynArray big2(8, 2);
+    DynArray small2(2, 3);
+    big2 = small2;
+    EXPECT_EQ(big2.size(), 2);
+    EXPECT_EQ(big2.sum(), 6);
+}
+
+// ── Seeded property-тест: глубокая копия элементно согласована
+//    и независима после модификации ────────────────────────────────────────────
+TEST(DynArrayRuleOfThree, SeededPropertyDeepCopyMatchesAndIsIndependent) {
+    // Фиксированный сид — тест детерминирован и не флакает.
+    std::mt19937 rng(0xC0DE42u);
+    std::uniform_int_distribution<int> sz(0, 40);
+    std::uniform_int_distribution<int> val(-1000, 1000);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int n = sz(rng);
+        // Строим DynArray со случайными значениями через at().
+        DynArray a(n, 0);
+        std::vector<int> expected(n);
+        for (int i = 0; i < n; ++i) {
+            expected[i] = val(rng);
+            a.at(i) = expected[i];
+        }
+
+        // Инвариант 1: copy-constructor — поэлементное равенство.
+        DynArray b = a;
+        ASSERT_EQ(b.size(), n) << "iter=" << iter;
+        for (int i = 0; i < n; ++i) {
+            EXPECT_EQ(b.at(i), expected[i]) << "iter=" << iter << " i=" << i;
+        }
+
+        // Инвариант 2: изменение копии не меняет оригинал.
+        if (n > 0) {
+            b.at(0) = val(rng) + 100000;  // мутируем копию
+            EXPECT_EQ(a.at(0), expected[0]) << "iter=" << iter;
+        }
+
+        // Инвариант 3: copy-assignment — поэлементное равенство.
+        DynArray c(sz(rng), val(rng));  // c произвольного размера
+        c = a;
+        ASSERT_EQ(c.size(), n) << "iter=" << iter;
+        for (int i = 0; i < n; ++i) {
+            EXPECT_EQ(c.at(i), expected[i]) << "iter=" << iter << " i=" << i;
+        }
+
+        // Инвариант 4: изменение источника a после присваивания не трогает c.
+        if (n > 0) {
+            int saved = c.at(0);
+            a.at(0) = val(rng) - 200000;  // мутируем источник
+            EXPECT_EQ(c.at(0), saved) << "iter=" << iter;
+        }
+    }
+}
+
 // ── OwnedInt: глубокая копия — отдельный буфер и независимость значений ───────
 TEST(OwnedIntProps, DeepCopyHasSeparateBufferAndIsIndependent) {
     std::mt19937 rng(0x0DDBEEFu);

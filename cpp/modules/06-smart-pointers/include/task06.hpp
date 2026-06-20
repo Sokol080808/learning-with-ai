@@ -1,5 +1,6 @@
 #pragma once
 #include <memory>
+#include <optional>
 #include <vector>
 #include <string>
 #include <cstddef>
@@ -121,3 +122,9 @@ public:
 private:
     std::shared_ptr<std::string> data_;
 };
+
+// ---------------------------------------------------------------------------
+// Задание 6. Безопасный доступ к элементу вектора: возвращает std::optional<int>.
+// Если i < v.size() — вернуть std::optional содержащий v[i];
+// иначе — вернуть std::nullopt (нет исключений, нет UB).
+std::optional<int> maybe_at(const std::vector<int>& v, std::size_t i);

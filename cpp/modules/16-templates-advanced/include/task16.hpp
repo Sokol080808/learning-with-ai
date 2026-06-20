@@ -163,4 +163,19 @@ std::ptrdiff_t distance_dispatch(It begin, It end) {
     throw std::logic_error("TODO: distance_dispatch");
 }
 
+// =====================================================================
+// Задание 6. all_of_pred — fold по &&.
+//   all_of_pred(pred, xs...) -> bool
+//   Возвращает true, если предикат pred истинен для ВСЕХ аргументов xs.
+//   Пустой пакет -> true (vacuous truth).
+//   Реализация: fold-выражение по &&.
+// =====================================================================
+
+template <class Pred, class... Ts>
+bool all_of_pred(Pred /*p*/, Ts... /*xs*/) {
+    // TODO: реализуй через fold-выражение (p(xs) && ...).
+    // Подсказка: унарный && над пустым пакетом = true, над непустым = p(x0) && p(x1) && ...
+    return false;  // нарочно неверная заглушка
+}
+
 }  // namespace adv

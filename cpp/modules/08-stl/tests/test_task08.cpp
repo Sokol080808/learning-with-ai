@@ -457,3 +457,66 @@ TEST(StlProps, WordFrequencyInvariants) {
     // Идемпотентность приведения регистра: один и тот же ключ.
     EXPECT_EQ(word_frequency("Aa aA AA aa")["aa"], 4);
 }
+
+// ===== evens_squared (Идея 8 — C++20 Ranges) =====
+
+TEST(Stl, EvensSquaredFixed) {
+    // Базовый пример из условия задачи.
+    EXPECT_EQ(evens_squared({1, 2, 3, 4, 5, 6}), (std::vector<int>{4, 16, 36}));
+}
+
+TEST(Stl, EvensSquaredEdgeCases) {
+    // Пустой вход — пустой результат.
+    EXPECT_TRUE(evens_squared({}).empty());
+    // Все нечётные — результат пустой.
+    EXPECT_TRUE(evens_squared({1, 3, 5, 7}).empty());
+    // Все чётные.
+    EXPECT_EQ(evens_squared({2, 4, 6}), (std::vector<int>{4, 16, 36}));
+    // Один элемент — чётный.
+    EXPECT_EQ(evens_squared({-4}), (std::vector<int>{16}));
+    // Ноль — чётный, 0^2 == 0.
+    EXPECT_EQ(evens_squared({0}), (std::vector<int>{0}));
+    // Отрицательные чётные: квадрат положительный.
+    EXPECT_EQ(evens_squared({-2, -3, -4}), (std::vector<int>{4, 16}));
+}
+
+// Seeded property-тест: результат должен точно совпадать с ручным filter+square.
+TEST(StlProps, EvensSquaredMatchesOracle) {
+    std::mt19937 rng(0x08E5u);
+    std::uniform_int_distribution<int> len_dist(0, 50);
+    // Ограничиваем значения: квадрат не должен выходить за int.
+    std::uniform_int_distribution<int> val_dist(-46340, 46340);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        const int n = len_dist(rng);
+        std::vector<int> xs(n);
+        for (int& x : xs) x = val_dist(rng);
+
+        std::vector<int> got = evens_squared(xs);
+
+        // Оракул: ручной цикл filter+square без ranges.
+        std::vector<int> oracle;
+        for (int x : xs) {
+            if (x % 2 == 0) oracle.push_back(x * x);
+        }
+
+        ASSERT_EQ(got, oracle)
+            << "evens_squared должна совпадать с ручным filter+square";
+
+        // Дополнительные инварианты результата:
+        // 1. Все элементы результата — неотрицательны (квадраты).
+        for (int x : got) ASSERT_GE(x, 0);
+
+        // 2. Порядок сохранён — got является подпоследовательностью квадратов xs.
+        std::size_t j = 0;
+        for (int x : xs) {
+            if (x % 2 == 0) {
+                if (j < got.size()) {
+                    ASSERT_EQ(got[j], x * x);
+                    ++j;
+                }
+            }
+        }
+        ASSERT_EQ(j, got.size());
+    }
+}

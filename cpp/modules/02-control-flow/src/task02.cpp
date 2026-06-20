@@ -53,3 +53,16 @@ int binary_search(const std::vector<int>& v, int target) {
     (void)v; (void)target;
     return 0;
 }
+
+std::string print_box(int w, int h, char fill) {
+    // TODO: построй прямоугольник w×h из символа fill, строки разделяй '\n'.
+    // Подсказка: внешний цикл по h строкам, внутренний — по w символам.
+    (void)w; (void)h; (void)fill;
+    return "";
+}
+
+std::string print_box(int side, char fill) {
+    // TODO: вызови перегрузку print_box(side, side, fill).
+    (void)side; (void)fill;
+    return "";
+}

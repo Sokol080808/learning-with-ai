@@ -4,6 +4,8 @@
 #include <cstdint>
 #include <limits>
 #include <random>
+#include <string>
+#include <string_view>
 #include "task01.hpp"
 
 TEST(Basics, ToFahrenheit) {
@@ -412,4 +414,88 @@ TEST(BasicsProps, SwapIntsExchangesValues) {
     swap_ints(p, q);
     EXPECT_EQ(p, std::numeric_limits<int>::max());
     EXPECT_EQ(q, std::numeric_limits<int>::min());
+}
+
+// ===== Задание 9: first_word =====
+
+// --- Фиксированные краевые случаи ---
+
+TEST(Basics, FirstWordFixed) {
+    // Обычный случай: слово с пробелом после.
+    EXPECT_EQ(first_word("hello world"), "hello");
+    // Несколько слов — берём первое.
+    EXPECT_EQ(first_word("one two three"), "one");
+    // Только одно слово, без пробела.
+    EXPECT_EQ(first_word("single"), "single");
+    // Пустая строка -> пустой view.
+    EXPECT_EQ(first_word(""), "");
+    // Строка из одних пробелов -> пустой view (первый символ — пробел).
+    EXPECT_EQ(first_word("   "), "");
+    // Ведущий пробел -> первое «слово» пустое.
+    EXPECT_EQ(first_word(" leading"), "");
+    // Слово с пробелом ровно в конце.
+    EXPECT_EQ(first_word("end "), "end");
+    // Ровно один пробел.
+    EXPECT_EQ(first_word(" "), "");
+}
+
+TEST(Basics, FirstWordZeroCopy) {
+    // Проверяем zero-copy: .data() результата должен указывать ВНУТРЬ исходной строки.
+    const std::string source = "hello world";
+    const std::string_view sv(source);
+    const std::string_view result = first_word(sv);
+
+    // Результат — подстрока: .data() совпадает с началом source.
+    EXPECT_EQ(result.data(), source.data())
+        << "first_word должна возвращать view внутрь исходной строки, а не копию";
+    EXPECT_EQ(result, "hello");
+}
+
+// --- Property-тест (seeded): оракул + инвариант zero-copy ---
+
+TEST(BasicsProps, FirstWordMatchesOracleAndIsZeroCopy) {
+    // Строим случайные строки из маленького алфавита (слова из 'a'-'e', разделитель ' ').
+    // Фиксированный сид — CI не мигает.
+    std::mt19937 rng(0xF1235700u);  // фиксированный сид
+
+    // Вспомогательная лямбда: ожидаемое слово через стандартный std::string::find.
+    auto oracle = [](const std::string& s) -> std::string {
+        const auto pos = s.find(' ');
+        if (pos == std::string::npos) return s;
+        return s.substr(0, pos);
+    };
+
+    // Генерируем случайные строки: слова длиной 0–8 символов, 0–3 слова.
+    std::uniform_int_distribution<int> word_count(0, 3);
+    std::uniform_int_distribution<int> word_len(0, 8);
+    // char не поддерживается uniform_int_distribution — используем int
+    std::uniform_int_distribution<int> letter(static_cast<int>('a'), static_cast<int>('e'));
+
+    for (int i = 0; i < 600; ++i) {
+        std::string s;
+        const int words = word_count(rng);
+        for (int w = 0; w < words; ++w) {
+            if (w > 0) s += ' ';
+            const int len = word_len(rng);
+            for (int c = 0; c < len; ++c) s += static_cast<char>(letter(rng));
+        }
+
+        const std::string_view sv(s);
+        const std::string_view result = first_word(sv);
+        const std::string expected = oracle(s);
+
+        // 1. Содержимое совпадает с оракулом.
+        EXPECT_EQ(result, expected) << "s=\"" << s << "\"";
+
+        // 2. Zero-copy: если строка не пустая, .data() указывает внутрь s.
+        if (!s.empty()) {
+            EXPECT_GE(result.data(), s.data())
+                << "first_word вернул указатель до начала строки: s=\"" << s << "\"";
+            EXPECT_LE(result.data(), s.data() + s.size())
+                << "first_word вернул указатель за конец строки: s=\"" << s << "\"";
+        }
+
+        // 3. Длина результата <= длины исходной строки.
+        EXPECT_LE(result.size(), s.size()) << "s=\"" << s << "\"";
+    }
 }

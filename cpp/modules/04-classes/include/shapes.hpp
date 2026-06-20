@@ -1,0 +1,68 @@
+#pragma once
+#include <string>
+#include <cmath>
+
+// ──────────────────────────────────────────────────────────────────────────
+// Задание 5. Иерархия фигур (Shape hierarchy).
+//
+// Демонстрирует:
+//   * абстрактный базовый класс с чисто виртуальными методами;
+//   * виртуальный диспатч (вызов переопределения через базовый указатель/ссылку);
+//   * виртуальный деструктор — без него delete через Shape* давал бы UB;
+//   * override и final как инструменты безопасности при наследовании;
+//   * полиморфизм через std::unique_ptr<Shape>.
+// ──────────────────────────────────────────────────────────────────────────
+
+// Абстрактный базовый класс. Нельзя создать объект типа Shape напрямую —
+// у него есть хотя бы один чисто виртуальный метод (= 0).
+class Shape {
+public:
+    // TODO: объяви виртуальный деструктор (virtual ~Shape() = default).
+    // Без него delete через базовый указатель — неопределённое поведение.
+    virtual ~Shape() = default;
+
+    // TODO: объяви чисто виртуальные методы (= 0), которые обязан реализовать каждый наследник.
+    virtual double area()      const = 0;
+    virtual double perimeter() const = 0;
+    virtual std::string name() const = 0;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// Circle — окружность радиуса r.
+// ──────────────────────────────────────────────────────────────────────────
+class Circle final : public Shape {
+public:
+    // TODO: реализуй конструктор, сохраняющий радиус.
+    explicit Circle(double r);
+
+    // TODO: переопредели все три виртуальных метода Shape.
+    double area()      const override;  // π·r²
+    double perimeter() const override;  // 2·π·r
+    std::string name() const override;  // "Circle"
+
+    double radius() const;
+
+private:
+    double r_;
+};
+
+// ──────────────────────────────────────────────────────────────────────────
+// Rectangle — прямоугольник со сторонами w × h.
+// ──────────────────────────────────────────────────────────────────────────
+class Rectangle final : public Shape {
+public:
+    // TODO: реализуй конструктор, сохраняющий ширину и высоту.
+    Rectangle(double w, double h);
+
+    // TODO: переопредели все три виртуальных метода Shape.
+    double area()      const override;  // w·h
+    double perimeter() const override;  // 2·(w+h)
+    std::string name() const override;  // "Rectangle"
+
+    double width()  const;
+    double height() const;
+
+private:
+    double w_;
+    double h_;
+};

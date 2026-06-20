@@ -75,6 +75,21 @@ void DynArray::fill(int value) {
     (void)value;
 }
 
+// ── Задание 9: DynArray — правило трёх ───────────────────────────────────────
+DynArray::DynArray(const DynArray& other) : data_(nullptr), size_(0) {
+    // TODO: выделить новый буфер того же размера и скопировать элементы.
+    // Копирование должно быть ГЛУБОКИМ: два объекта не должны делить один буфер.
+    (void)other;
+}
+
+DynArray& DynArray::operator=(const DynArray& other) {
+    // TODO: защититься от самоприсваивания, освободить старый буфер,
+    // выделить новый той же длины и скопировать элементы.
+    // Не течь при self-assignment и при исключении.
+    (void)other;
+    return *this;
+}
+
 // ── Задание 8: OwnedInt (глубокое vs поверхностное копирование) ───────────────
 OwnedInt::OwnedInt(int value) : ptr_(new int(value)) {
     // Конструктор уже корректен: один int на куче.

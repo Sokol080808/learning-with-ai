@@ -5,6 +5,7 @@
 #include <cstddef>
 #include <memory>
 #include <stdexcept>
+#include <array>
 
 // Стек (LIFO) поверх std::vector. Реализуй методы прямо здесь (шаблон).
 template <class T>
@@ -136,6 +137,58 @@ public:
 private:
     std::vector<T> buf_;
 };
+
+// ─────────────────────────────────────────────────────────────────────────
+// Задание 8. Очередь на кольцевом буфере Queue<T, CAPACITY>.
+// FIFO-дисциплина: enqueue добавляет в хвост, dequeue убирает из головы.
+// Кольцевой буфер: массив фиксированного размера, голова/хвост двигаются
+// по модулю — «обёртка» (wrap-around). Нет динамической аллокации.
+// ─────────────────────────────────────────────────────────────────────────
+template <class T, std::size_t CAPACITY = 64>
+class Queue {
+public:
+    // Добавить в хвост. Если буфер полон — бросить std::overflow_error.
+    void enqueue(const T& value) {
+        // TODO: проверить переполнение, положить value в buf_[tail_],
+        //       сдвинуть tail_ по кольцу ((tail_+1)%CAPACITY), увеличить size_.
+        (void)value;
+        throw std::logic_error("TODO: Queue::enqueue");
+    }
+
+    // Убрать из головы. Если пуста — бросить std::underflow_error.
+    void dequeue() {
+        // TODO: проверить пустоту, сдвинуть head_ по кольцу, уменьшить size_.
+        throw std::logic_error("TODO: Queue::dequeue");
+    }
+
+    // Первый элемент (без удаления). Если пуста — бросить std::underflow_error.
+    const T& front() const {
+        // TODO: проверить пустоту, вернуть buf_[head_].
+        throw std::logic_error("TODO: Queue::front");
+    }
+
+    bool empty() const {
+        // TODO
+        return true;
+    }
+
+    std::size_t size() const {
+        // TODO
+        return 0;
+    }
+
+private:
+    std::array<T, CAPACITY> buf_{};  // кольцевой буфер фиксированного размера
+    std::size_t head_ = 0;           // индекс головы (следующий для dequeue)
+    std::size_t tail_ = 0;           // индекс хвоста (следующий для enqueue)
+    std::size_t size_ = 0;           // число элементов в буфере
+};
+
+// ─────────────────────────────────────────────────────────────────────────
+// Задание 9. Сортировка слиянием — O(n log n), divide-and-conquer.
+// Реализовано в src/task13.cpp.
+// ─────────────────────────────────────────────────────────────────────────
+std::vector<int> merge_sort(std::vector<int> v);
 
 // ─────────────────────────────────────────────────────────────────────────
 // Задание 7. Дерево бинарного поиска (BST) по int.

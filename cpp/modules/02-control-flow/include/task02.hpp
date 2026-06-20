@@ -30,3 +30,13 @@ std::vector<int> sieve(int n);
 // Бинарный поиск в отсортированном по возрастанию векторе.
 // Возвращает индекс элемента, равного target, или -1, если его нет.
 int binary_search(const std::vector<int>& v, int target);
+
+// --- Задание 9: перегрузка + значения по умолчанию ---
+
+// Прямоугольник w×h из символа fill; строки разделены '\n'.
+// Пример: print_box(3, 2) == "***\n***"
+std::string print_box(int w, int h, char fill = '*');
+
+// Квадрат side×side — перегрузка с одним целым параметром.
+// Пример: print_box(2) == "**\n**"
+std::string print_box(int side, char fill = '*');

@@ -499,6 +499,76 @@ TEST(SharedResProps, UseCountMatchesLiveOwners) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// Задание 6. maybe_at: безопасный доступ к элементу вектора через optional.
+
+TEST(MaybeAt, ValidIndex) {
+    std::vector<int> v = {10, 20, 30};
+    auto r = maybe_at(v, 1);
+    ASSERT_TRUE(r.has_value());
+    EXPECT_EQ(*r, 20);
+}
+
+TEST(MaybeAt, FirstAndLastIndex) {
+    std::vector<int> v = {7, 8, 9};
+    ASSERT_TRUE(maybe_at(v, 0).has_value());
+    EXPECT_EQ(*maybe_at(v, 0), 7);
+    ASSERT_TRUE(maybe_at(v, 2).has_value());
+    EXPECT_EQ(*maybe_at(v, 2), 9);
+}
+
+TEST(MaybeAt, OutOfBoundsReturnsNullopt) {
+    std::vector<int> v = {1, 2, 3};
+    EXPECT_FALSE(maybe_at(v, 3).has_value());
+    EXPECT_FALSE(maybe_at(v, 100).has_value());
+    EXPECT_EQ(maybe_at(v, 3), std::nullopt);
+}
+
+TEST(MaybeAt, EmptyVectorAlwaysNullopt) {
+    std::vector<int> v;
+    EXPECT_FALSE(maybe_at(v, 0).has_value());
+    EXPECT_EQ(maybe_at(v, 0), std::nullopt);
+}
+
+TEST(MaybeAt, SingleElement) {
+    std::vector<int> v = {42};
+    ASSERT_TRUE(maybe_at(v, 0).has_value());
+    EXPECT_EQ(*maybe_at(v, 0), 42);
+    EXPECT_FALSE(maybe_at(v, 1).has_value());
+}
+
+// Seeded property: для случайных векторов и индексов
+//   has_value() == (i < size)   и   *result == v[i] когда в границах.
+TEST(MaybeAtProps, HasValueIffInBoundsAndValueCorrect) {
+    std::mt19937 rng(0xDEADBEEFu);
+    std::uniform_int_distribution<int>       lenDist(0, 50);
+    std::uniform_int_distribution<int>       valDist(-1000, 1000);
+    std::uniform_int_distribution<std::size_t> idxDist(0, 60);
+
+    for (int iter = 0; iter < 500; ++iter) {
+        int len = lenDist(rng);
+        std::vector<int> v;
+        v.reserve(len);
+        for (int k = 0; k < len; ++k) v.push_back(valDist(rng));
+
+        std::size_t i = idxDist(rng);
+        auto result = maybe_at(v, i);
+
+        // Инвариант: has_value совпадает с оракулом (i < v.size())
+        bool expected_present = (i < v.size());
+        EXPECT_EQ(result.has_value(), expected_present)
+            << "v.size()=" << v.size() << " i=" << i;
+
+        // Инвариант: значение совпадает с прямым обращением
+        if (expected_present) {
+            EXPECT_EQ(*result, v[i])
+                << "v.size()=" << v.size() << " i=" << i;
+        } else {
+            EXPECT_EQ(result, std::nullopt);
+        }
+    }
+}
+
 TEST(SharedResProps, ShareIsIdempotentOnData) {
     std::mt19937 rng(0xC0FFEEu);
     std::uniform_int_distribution<int> charDist('A', 'Z');
