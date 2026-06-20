@@ -750,8 +750,11 @@ struct ThrowingMove {
     int value{0};
     ThrowingMove() = default;
     explicit ThrowingMove(int v) : value(v) {}
-    ThrowingMove(ThrowingMove&&) noexcept(false) = default;   // throwing!
-    ThrowingMove& operator=(ThrowingMove&&) noexcept(false) = default;
+    // User-provided move БЕЗ noexcept → надёжно noexcept(false) на всех компиляторах.
+    // (Дефолтный `noexcept(false) = default` для move с тривиальными членами g++ и clang
+    //  трактуют по-разному — некоторые версии g++ всё равно считают тип nothrow-move.)
+    ThrowingMove(ThrowingMove&& o) : value(o.value) {}                 // throwing (noexcept(false))
+    ThrowingMove& operator=(ThrowingMove&& o) { value = o.value; return *this; }
     ThrowingMove(const ThrowingMove&) = default;
     ThrowingMove& operator=(const ThrowingMove&) = default;
 };
