@@ -3,6 +3,7 @@
 // Подключаем СВОЙ заголовок — так компилятор сверит, что твои реализации
 // совпадают по сигнатуре с объявлениями в include/paging.h.
 #include "paging.h"
+#include <stdlib.h>   // calloc/malloc/free для ленивых L2-таблиц
 
 // Контракт: номер страницы для адреса addr при размере страницы page_size.
 // page_size — степень двойки. Номер страницы = addr / page_size.
@@ -54,4 +55,60 @@ int lru_page_faults(const int *refs, int n, int frames) {
     //       Не забудь обновлять «время» и при попадании (hit) — этим LRU и отличается
     //       от FIFO.
     return 0;  // TODO: пока заглушка — тест падает специально
+}
+
+// ============================================================
+//  Двухуровневая таблица страниц (симулятор трансляции)
+// ============================================================
+//
+// Раскладка vaddr (32 бита):  [ L1: 10 | L2: 10 | offset: 12 ].
+// L1 — директория из PT_ENTRIES указателей на L2-таблицы.
+// L2 — таблица из PT_ENTRIES записей; запись хранит номер кадра + present.
+// L2-таблицы создаются лениво (только под используемые куски памяти).
+
+// Одна запись L2: present == 0 -> страница не отображена.
+typedef struct {
+    uint32_t frame;    // номер физического кадра
+    int      present;  // 1, если страница отображена
+} L2Entry;
+
+// Вложенная таблица второго уровня: PT_ENTRIES записей.
+typedef struct {
+    L2Entry entries[PT_ENTRIES];
+} L2Table;
+
+// Сама таблица страниц: директория L1 + счётчик розданных кадров.
+struct PageTable {
+    L2Table *l1[PT_ENTRIES];  // l1[i] == NULL, пока кусок не использован
+    uint32_t next_frame;      // следующий свободный кадр для ленивой раздачи
+};
+
+PageTable *pt_create(void) {
+    // TODO: выдели и обнули структуру PageTable, чтобы все l1[] == NULL.
+    return NULL;  // TODO: пока заглушка — тест падает специально
+}
+
+void pt_destroy(PageTable *pt) {
+    // TODO: освободи все ненулевые L2-таблицы, затем саму структуру.
+    (void)pt;  // TODO
+}
+
+int64_t pt_walk(PageTable *pt, uint32_t vaddr, int alloc) {
+    // TODO: разбей vaddr на (l1, l2, offset), пройди по уровням.
+    //       Если alloc == 0 и запись отсутствует — верни -1 (page fault).
+    //       Если alloc != 0 — создай недостающее и назначь свежий кадр.
+    //       Верни (frame << PT_PAGE_BITS) | offset.
+    (void)pt;     // TODO
+    (void)vaddr;  // TODO
+    (void)alloc;  // TODO
+    return -1;  // TODO: пока заглушка — тест падает специально
+}
+
+int pt_map(PageTable *pt, uint32_t vaddr, uint32_t paddr) {
+    // TODO: найди (или создай) L2-запись для vaddr и запиши в неё
+    //       номер кадра из paddr (paddr >> PT_PAGE_BITS), present = 1.
+    (void)pt;     // TODO
+    (void)vaddr;  // TODO
+    (void)paddr;  // TODO
+    return -1;  // TODO: пока заглушка — тест падает специально
 }

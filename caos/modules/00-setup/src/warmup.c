@@ -5,6 +5,8 @@
 // GoogleTest (что ожидалось / что получилось) и почини обе функции.
 
 #include "warmup.h"
+#include <stddef.h>
+#include <string.h>
 
 // Контракт: вернуть сумму a и b.
 int add(int a, int b) {
@@ -18,4 +20,27 @@ int add(int a, int b) {
 long seconds_in(int hours) {
     (void)hours;
     return 0; // TODO: верни число секунд в `hours` часах.
+}
+
+/* ---- Задание 3: байты, структуры и порядок памяти ---- */
+
+// Контракт: вернуть размер struct PackedRecord, вычисленный через
+// offsetof последнего поля + sizeof последнего поля.
+// Подумай: где в памяти лежит поле c? Какой у него размер?
+size_t packed_record_size(void) {
+    return 0; // TODO: вычисли через offsetof(struct PackedRecord, c) + sizeof последнего поля.
+}
+
+// Контракт: разложить 32-битное целое value по байтам памяти в out[0..3].
+// out[0] — байт по наименьшему адресу. Используй memcpy или приведение указателя.
+void uint32_to_bytes(uint32_t value, unsigned char out[4]) {
+    (void)value;
+    (void)out;
+    // TODO: скопируй байты value в out в порядке хранения в памяти.
+}
+
+// Контракт: вернуть 1, если машина little-endian; 0 — если big-endian.
+// Подсказка: запиши 1 в uint32_t, посмотри на первый байт через union или указатель.
+int is_little_endian(void) {
+    return 0; // TODO: определи порядок байт через union или указатель.
 }

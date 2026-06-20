@@ -14,6 +14,8 @@
 #include <algorithm>
 #include <climits>
 #include <cstring>
+#include <map>
+#include <set>
 
 extern "C" {
 #include "buggy.h"
@@ -458,4 +460,204 @@ TEST(CountCharRand, AdditiveSplit) {
         EXPECT_EQ(whole, split_sum)
             << "iter=" << iter;
     }
+}
+
+// ============================================================
+// ЗАДАНИЕ 5: FreqTable — хеш-таблица счётчиков частот слов
+// Тесты проверяют корректное поведение ПОСЛЕ починки всех трёх
+// багов.  На студенческой ветке (stub) они красные.
+// ============================================================
+
+// ---------- базовые случаи ----------
+
+// Пустая таблица: любой lookup возвращает 0, unique == 0.
+TEST(FreqTable, EmptyLookupIsZero) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    EXPECT_EQ(freq_lookup(t, "hello"), 0u);
+    EXPECT_EQ(freq_lookup(t, ""),      0u);
+    EXPECT_EQ(freq_unique(t),          0u);
+    freq_destroy(t);
+}
+
+// Одно слово добавлено один раз → count == 1, unique == 1.
+TEST(FreqTable, SingleWordOnce) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    EXPECT_EQ(freq_add(t, "cat"), 0);
+    EXPECT_EQ(freq_lookup(t, "cat"), 1u);
+    EXPECT_EQ(freq_unique(t),        1u);
+    freq_destroy(t);
+}
+
+// Одно слово добавлено многократно → count растёт, unique остаётся 1.
+// Ловит баг 3 (логическая ошибка: счётчик не увеличивался при повторном слове).
+TEST(FreqTable, SingleWordRepeated) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    for (int i = 0; i < 10; i++) {
+        EXPECT_EQ(freq_add(t, "dog"), 0) << "i=" << i;
+    }
+    EXPECT_EQ(freq_lookup(t, "dog"), 10u);  // баг 3: без фикса вернёт 1
+    EXPECT_EQ(freq_unique(t),         1u);
+    freq_destroy(t);
+}
+
+// Два разных слова: счётчики независимы.
+TEST(FreqTable, TwoDistinctWords) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    freq_add(t, "apple");
+    freq_add(t, "banana");
+    freq_add(t, "apple");
+    EXPECT_EQ(freq_lookup(t, "apple"),  2u);
+    EXPECT_EQ(freq_lookup(t, "banana"), 1u);
+    EXPECT_EQ(freq_unique(t),           2u);
+    freq_destroy(t);
+}
+
+// Слово не добавленное → 0.
+TEST(FreqTable, AbsentWordIsZero) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    freq_add(t, "present");
+    EXPECT_EQ(freq_lookup(t, "absent"), 0u);
+    freq_destroy(t);
+}
+
+// freq_destroy(NULL) не должен падать.
+TEST(FreqTable, DestroyNullIsSafe) {
+    freq_destroy(nullptr);  // UB / segfault без правильной проверки
+}
+
+// ---------- баг 3: логическая ошибка в freq_add ----------
+
+// Ключевой тест на баг 3: слово повторяется ровно N раз,
+// lookup должен вернуть N, а unique == 1.
+TEST(FreqTable, Bug3RepeatCount) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    const int N = 7;
+    for (int i = 0; i < N; i++) freq_add(t, "repeat");
+    // Без фикса (strcmp(word, word) всегда 0) freq_add считает, что слово
+    // уже есть, и инкрементирует — но это случайно работает правильно.
+    // Настоящий баг: strcmp(word, word)==0 всегда, поэтому первый же
+    // вызов попадает в if и увеличивает несуществующий count.
+    // На практике: freq_add при первом вызове находит «совпадение»
+    // с неинициализированным мусором → UB или segfault.
+    // После починки: ровно N.
+    EXPECT_EQ(freq_lookup(t, "repeat"), static_cast<size_t>(N));
+    EXPECT_EQ(freq_unique(t), 1u);
+    freq_destroy(t);
+}
+
+// ---------- баг 2: signed overflow в хеш-функции ----------
+
+// Длинные слова вызывают переполнение, если хеш считается в signed int.
+// После фикса (unsigned int) слова с длинными ключами хешируются корректно
+// и попадают в правильные корзины → lookup находит их.
+TEST(FreqTable, Bug2LongWordHash) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    // Строка из 80 символов 'z' (код 122): при signed int h*33+122
+    // переполняется уже на ~6-м символе → UBSan/UBSAN кричит.
+    std::string longword(80, 'z');
+    freq_add(t, longword.c_str());
+    freq_add(t, longword.c_str());
+    freq_add(t, longword.c_str());
+    EXPECT_EQ(freq_lookup(t, longword.c_str()), 3u);
+    freq_destroy(t);
+}
+
+// ---------- баг 1: use-after-free в freq_lookup ----------
+
+// После вызова freq_destroy память освобождена.  Этот тест проверяет,
+// что lookup до destroy работает корректно (ASan проверит сам процесс
+// на use-after-free при выполнении тестов с -fsanitize=address).
+TEST(FreqTable, Bug1UseAfterFreeGuard) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    freq_add(t, "alpha");
+    freq_add(t, "beta");
+    freq_add(t, "alpha");
+    // lookup ПЕРЕД destroy — должно вернуть правильное значение
+    EXPECT_EQ(freq_lookup(t, "alpha"), 2u);
+    EXPECT_EQ(freq_lookup(t, "beta"),  1u);
+    freq_destroy(t);
+    // После destroy не вызываем lookup — это и есть use-after-free.
+    // ASan поймает его в студенческой версии, где был баг.
+}
+
+// ---------- randomized / property тесты ----------
+
+// Оракул: std::map<string,int> считает то же самое.
+// Ловит оба бага логики (3) и хеша (2) на случайных данных.
+TEST(FreqTableRand, AgainstMapOracle) {
+    std::mt19937 rng(0xFEED42);
+    // Словарь из 8 коротких слов, повторяемых случайно.
+    const std::vector<std::string> vocab = {
+        "the", "cat", "sat", "on", "mat", "a", "dog", "ran"
+    };
+    std::uniform_int_distribution<int> word_dist(0, static_cast<int>(vocab.size()) - 1);
+    std::uniform_int_distribution<int> cnt_dist(1, 200);
+
+    for (int iter = 0; iter < 100; ++iter) {
+        FreqTable* t = freq_create();
+        ASSERT_NE(t, nullptr);
+        std::map<std::string, int> oracle;
+
+        int ops = cnt_dist(rng);
+        for (int i = 0; i < ops; i++) {
+            const std::string& w = vocab[word_dist(rng)];
+            freq_add(t, w.c_str());
+            oracle[w]++;
+        }
+
+        for (const auto& kv : oracle) {
+            EXPECT_EQ(freq_lookup(t, kv.first.c_str()),
+                      static_cast<size_t>(kv.second))
+                << "iter=" << iter << " word=" << kv.first;
+        }
+        EXPECT_EQ(freq_unique(t), oracle.size())
+            << "iter=" << iter;
+
+        freq_destroy(t);
+    }
+}
+
+// unique() растёт ровно на 1 при каждом новом слове и не растёт при повторе.
+TEST(FreqTableRand, UniqueCountMonotone) {
+    std::mt19937 rng(0xCAFE00);
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    std::set<std::string> seen;
+
+    const std::vector<std::string> words = {
+        "one", "two", "three", "four", "five",
+        "one", "two", "one",   "five", "six"
+    };
+    for (const auto& w : words) {
+        bool was_new = (seen.find(w) == seen.end());
+        seen.insert(w);
+        freq_add(t, w.c_str());
+        EXPECT_EQ(freq_unique(t), seen.size())
+            << "after adding '" << w << "' (new=" << was_new << ")";
+    }
+    freq_destroy(t);
+}
+
+// Длинные слова (> 60 символов) хешируются корректно — ловит баг 2.
+TEST(FreqTableRand, LongWordsDontCollide) {
+    FreqTable* t = freq_create();
+    ASSERT_NE(t, nullptr);
+    // Два разных длинных слова, оба > 60 символов
+    std::string w1(64, 'a');
+    std::string w2(64, 'b');
+    freq_add(t, w1.c_str());
+    freq_add(t, w1.c_str());
+    freq_add(t, w2.c_str());
+    EXPECT_EQ(freq_lookup(t, w1.c_str()), 2u);
+    EXPECT_EQ(freq_lookup(t, w2.c_str()), 1u);
+    EXPECT_EQ(freq_unique(t), 2u);
+    freq_destroy(t);
 }

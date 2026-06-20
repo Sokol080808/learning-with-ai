@@ -213,3 +213,92 @@ TEST(MutexCounter, HighContentionStress) {
             << "iter=" << iter;
     }
 }
+
+// ============================================================
+// producer_consumer — ограниченный кольцевой буфер
+// ============================================================
+
+// Последовательный оракул: все элементы вместе образуют числа
+// 1..T, где T = n_producers * items_per_producer. Их сумма по формуле
+// арифметической прогрессии — T*(T+1)/2. Любая корректная (без потерь и
+// дублей) producer-consumer обработка обязана дать ровно это число.
+static long pc_oracle(int n_producers, int items_per_producer) {
+    long T = (long)n_producers * items_per_producer;
+    return T * (T + 1) / 2;
+}
+
+// Базовый случай: 1 producer, 1 consumer, маленький буфер.
+TEST(ProducerConsumer, OneToOneSmallBuffer) {
+    EXPECT_EQ(producer_consumer(1, 1, 4, 100), pc_oracle(1, 100));
+}
+
+// Буфер ёмкостью 1 — максимально «узкое горло»: producer и consumer
+// вынуждены ходить строго по очереди через not_full/not_empty.
+TEST(ProducerConsumer, CapacityOneForcesHandoff) {
+    EXPECT_EQ(producer_consumer(2, 2, 1, 50), pc_oracle(2, 50));
+}
+
+// Много producer'ов, один consumer: проверяем, что одинокий потребитель
+// разгребает поток от нескольких источников без потерь.
+TEST(ProducerConsumer, ManyProducersOneConsumer) {
+    EXPECT_EQ(producer_consumer(8, 1, 4, 200), pc_oracle(8, 200));
+}
+
+// Один producer, много consumer'ов: лишние потребители должны корректно
+// завершиться (а не зависнуть на not_empty), даже если им «не досталось».
+TEST(ProducerConsumer, OneProducerManyConsumers) {
+    EXPECT_EQ(producer_consumer(1, 8, 4, 200), pc_oracle(1, 200));
+}
+
+// Симметричный высоконагруженный случай: N producer'ов, M consumer'ов.
+TEST(ProducerConsumer, ManyToManyContended) {
+    EXPECT_EQ(producer_consumer(4, 4, 8, 1000), pc_oracle(4, 1000));
+}
+
+// Граничный случай: 0 элементов на producer'а. Работы нет — все потоки
+// (включая consumer'ов) обязаны завершиться, а сумма равна 0. Если выход
+// сделан неверно, consumer'ы зависнут на not_empty и тест уйдёт в таймаут.
+TEST(ProducerConsumer, ZeroItemsTerminates) {
+    EXPECT_EQ(producer_consumer(3, 3, 4, 0), 0L);
+}
+
+// Буфер вместительнее, чем весь объём работы: producer'ы никогда не ждут
+// на not_full. Сумма всё равно обязана сойтись.
+TEST(ProducerConsumer, BufferLargerThanWork) {
+    EXPECT_EQ(producer_consumer(2, 3, 1000, 10), pc_oracle(2, 10));
+}
+
+// --- producer_consumer randomised (seed 0xC0FFEE, deterministic) -------
+
+// Oracle: для 200 случайных (N, M, cap, items) результат обязан совпасть
+// с последовательной формулой T*(T+1)/2. Перебираем разные перекосы:
+// узкие/широкие буферы, перевес producer'ов или consumer'ов.
+TEST(ProducerConsumer, RandomOracleVsSequential) {
+    std::mt19937 rng(0xC0FFEE ^ 7);
+    std::uniform_int_distribution<int> n_dist(1, 6);     // producers
+    std::uniform_int_distribution<int> m_dist(1, 6);     // consumers
+    std::uniform_int_distribution<int> cap_dist(1, 16);  // buffer capacity
+    std::uniform_int_distribution<int> it_dist(0, 300);  // items per producer
+
+    for (int iter = 0; iter < 200; ++iter) {
+        int n   = n_dist(rng);
+        int m   = m_dist(rng);
+        int cap = cap_dist(rng);
+        int it  = it_dist(rng);
+
+        EXPECT_EQ(producer_consumer(n, m, cap, it), pc_oracle(n, it))
+            << "iter=" << iter << " n=" << n << " m=" << m
+            << " cap=" << cap << " items=" << it;
+    }
+}
+
+// Повторяемость под нагрузкой: один и тот же тяжёлый конфиг прогоняется
+// много раз. Гонка/потеря пробуждения дала бы плавающий результат или
+// зависание — а должно быть стабильно одно и то же число.
+TEST(ProducerConsumer, RepeatabilityStress) {
+    long expected = pc_oracle(4, 500);
+    for (int iter = 0; iter < 30; ++iter) {
+        EXPECT_EQ(producer_consumer(4, 6, 2, 500), expected)
+            << "iter=" << iter;
+    }
+}

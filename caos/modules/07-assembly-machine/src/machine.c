@@ -31,3 +31,17 @@ int asm_c(int n) {
     (void)n;  // убери, когда напишешь реализацию
     return 0; // TODO: просуммировать целые от 1 до n
 }
+
+/* ---------- Задание 4: чтение локальных переменных из кадра стека ---------- */
+
+#include <string.h>   /* memcpy */
+
+// Контракт: вернуть значение слота slot из снимка кадра frame со знаковым расширением.
+// Слот описан в layout->slots[slot]: offset (от rbp) и size (1/2/4/8 байт).
+// rbp соответствует frame + frame_size; адрес слота = frame + frame_size + offset.
+int64_t frame_read_local(const FrameLayout *layout, const uint8_t *frame, int slot) {
+    (void)layout; // убери, когда напишешь реализацию
+    (void)frame;  // убери, когда напишешь реализацию
+    (void)slot;   // убери, когда напишешь реализацию
+    return 0;     // TODO: найти слот по offset/size и вернуть значение с знаковым расширением
+}

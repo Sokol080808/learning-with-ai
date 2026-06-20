@@ -54,3 +54,67 @@ size_t count_char(const char* s, char c) {
     }
     return count;
 }
+
+/* -----------------------------------------------------------------------
+ * Задание 5: хеш-таблица счётчиков частот слов.
+ *
+ * Реализация: открытое хеширование (цепочки).
+ * В коде намеренно посажены три бага — найди и почини их с помощью
+ * ASan / valgrind / gdb, чтобы тесты стали зелёными.
+ * ----------------------------------------------------------------------- */
+
+#include <stdlib.h>
+#include <string.h>
+
+#define FREQ_BUCKETS 64
+
+typedef struct FreqNode {
+    char*           key;
+    size_t          count;
+    struct FreqNode* next;
+} FreqNode;
+
+struct FreqTable {
+    FreqNode* buckets[FREQ_BUCKETS];
+    size_t    unique;
+};
+
+/* Баг 2 намеренно посажен здесь: накопитель signed int вместо unsigned. */
+static unsigned int freq_hash(const char* word) {
+    int h = 5381;                       // <-- TODO: найди переполнение
+    while (*word) {
+        h = h * 33 + (unsigned char)(*word);
+        word++;
+    }
+    return (unsigned int)(h < 0 ? -h : h) % FREQ_BUCKETS;
+}
+
+FreqTable* freq_create(void) {
+    // TODO: реализовать
+    return NULL;
+}
+
+void freq_destroy(FreqTable* t) {
+    // TODO: реализовать
+    (void)t;
+}
+
+/* Баг 3 намеренно посажен здесь: сравнение word с самим собой. */
+int freq_add(FreqTable* t, const char* word) {
+    // TODO: реализовать
+    (void)t; (void)word;
+    return -1;
+}
+
+/* Баг 1 намеренно посажен здесь: use-after-free при сравнении ключей. */
+size_t freq_lookup(const FreqTable* t, const char* word) {
+    // TODO: реализовать
+    (void)t; (void)word;
+    return 0;
+}
+
+size_t freq_unique(const FreqTable* t) {
+    // TODO: реализовать
+    (void)t;
+    return 0;
+}

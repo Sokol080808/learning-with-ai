@@ -4,6 +4,7 @@
 #include <random>
 #include <vector>
 #include <unordered_set>
+#include <unordered_map>
 #include <algorithm>
 #include <climits>
 
@@ -552,4 +553,204 @@ TEST(PageEdgeCases, MinimalPageSize) {
         EXPECT_EQ(page_number(addr, 1), addr);
         EXPECT_EQ(page_offset(addr, 1), 0u);
     }
+}
+
+// ============================================================
+//  Two-level page table simulator: pt_create / pt_map / pt_walk
+// ============================================================
+//
+// vaddr = [ L1: 10 bits | L2: 10 bits | offset: 12 bits ].
+// pt_map(v, p) stores the FRAME of p for the page of v.
+// pt_walk(v, 0) reconstructs (frame << 12) | (v & 0xFFF), or -1 if unmapped.
+// pt_walk(v, 1) lazily allocates a fresh frame if the page is unmapped.
+
+// Helpers that mirror the address layout the simulator must use.
+static uint32_t mk_vaddr(uint32_t l1, uint32_t l2, uint32_t off) {
+    return (l1 << 22) | (l2 << 12) | off;
+}
+
+TEST(PageTableWalk, MapThenWalkReturnsMappedFrame) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    // Map virtual page (l1=1, l2=2) onto physical frame 5 (paddr 5*4096).
+    uint32_t v = mk_vaddr(1, 2, 0);
+    uint32_t p = 5u << 12;  // frame 5, offset 0
+    ASSERT_EQ(pt_map(pt, v, p), 0);
+
+    // walk without alloc must find it: physical = frame5 | offset.
+    EXPECT_EQ(pt_walk(pt, v, 0), (int64_t)(5u << 12));
+    // Offset within the page is carried through unchanged.
+    EXPECT_EQ(pt_walk(pt, v | 0x123, 0), (int64_t)((5u << 12) | 0x123));
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, UnmappedReturnsMinusOne) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    // Nothing mapped yet: any walk without alloc is a "page fault" -> -1.
+    EXPECT_EQ(pt_walk(pt, 0x00000000u, 0), -1);
+    EXPECT_EQ(pt_walk(pt, 0xDEADBEEFu, 0), -1);
+
+    // Map ONE page; a *different* page in the same L2 table is still unmapped.
+    uint32_t v = mk_vaddr(3, 7, 0);
+    ASSERT_EQ(pt_map(pt, v, 9u << 12), 0);
+    EXPECT_EQ(pt_walk(pt, v, 0), (int64_t)(9u << 12));         // mapped
+    EXPECT_EQ(pt_walk(pt, mk_vaddr(3, 8, 0), 0), -1);          // neighbour in same L2
+    EXPECT_EQ(pt_walk(pt, mk_vaddr(4, 7, 0), 0), -1);          // different L1 entry
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, OffsetPreservedAcrossTranslation) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    uint32_t base = mk_vaddr(10, 20, 0);
+    ASSERT_EQ(pt_map(pt, base, 42u << 12), 0);  // page -> frame 42
+
+    // Every byte inside the page keeps its 12-bit offset, only the frame swaps.
+    for (uint32_t off = 0; off < PT_PAGE_SIZE; off += 257) {
+        int64_t got = pt_walk(pt, base | off, 0);
+        EXPECT_EQ(got, (int64_t)((42u << 12) | off)) << "offset " << off;
+    }
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, DistinctPagesMapIndependently) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    // Three different virtual pages -> three different frames; no interference.
+    struct { uint32_t l1, l2, frame; } cases[] = {
+        {0,    0,    100},
+        {0,    1,    200},   // same L2 table as above, neighbouring slot
+        {1023, 1023, 300},   // top of the address space, separate L2 table
+    };
+    for (auto &c : cases) {
+        ASSERT_EQ(pt_map(pt, mk_vaddr(c.l1, c.l2, 0), c.frame << 12), 0);
+    }
+    for (auto &c : cases) {
+        EXPECT_EQ(pt_walk(pt, mk_vaddr(c.l1, c.l2, 0), 0),
+                  (int64_t)(c.frame << 12))
+            << "l1=" << c.l1 << " l2=" << c.l2;
+    }
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, AllocCreatesFreshFrameAndIsStable) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    uint32_t v = mk_vaddr(2, 5, 0);
+    // First touch with alloc: a frame is assigned (not -1).
+    int64_t first = pt_walk(pt, v, 1);
+    ASSERT_NE(first, -1);
+    EXPECT_EQ(first & (PT_PAGE_SIZE - 1), 0);  // offset 0 stays 0
+
+    // The mapping must now be stable: walking again (even without alloc)
+    // returns the SAME physical address.
+    EXPECT_EQ(pt_walk(pt, v, 0), first);
+    EXPECT_EQ(pt_walk(pt, v, 1), first);
+
+    // The same frame, accessed at offset 0x40, just adds the offset.
+    EXPECT_EQ(pt_walk(pt, v | 0x40, 0), first | 0x40);
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, AllocGivesDistinctFramesToDistinctPages) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    // Touch several distinct virtual pages with alloc; each must get its own
+    // physical frame (distinct frame numbers -> distinct page-aligned paddrs).
+    const uint32_t vaddrs[] = {
+        mk_vaddr(0, 0, 0),
+        mk_vaddr(0, 1, 0),
+        mk_vaddr(5, 5, 0),
+        mk_vaddr(1023, 0, 0),
+    };
+    std::unordered_set<int64_t> frames;
+    for (uint32_t v : vaddrs) {
+        int64_t pa = pt_walk(pt, v, 1);
+        ASSERT_NE(pa, -1);
+        frames.insert(pa >> PT_PAGE_BITS);   // collect frame numbers
+    }
+    EXPECT_EQ(frames.size(), 4u) << "alloc handed out a frame twice";
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, MapIgnoresPhysicalOffset) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    // pt_map maps PAGES, not bytes: the low 12 bits of paddr are irrelevant.
+    uint32_t v = mk_vaddr(7, 7, 0);
+    ASSERT_EQ(pt_map(pt, v, (8u << 12) | 0xABC), 0);  // frame 8, junk offset
+
+    // Resulting frame is 8 regardless of the offset bits passed to pt_map.
+    EXPECT_EQ(pt_walk(pt, v, 0), (int64_t)(8u << 12));
+    EXPECT_EQ(pt_walk(pt, v | 0x0FF, 0), (int64_t)((8u << 12) | 0x0FF));
+
+    pt_destroy(pt);
+}
+
+TEST(PageTableWalk, RemapOverwritesMapping) {
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    uint32_t v = mk_vaddr(4, 4, 0);
+    ASSERT_EQ(pt_map(pt, v, 11u << 12), 0);
+    EXPECT_EQ(pt_walk(pt, v, 0), (int64_t)(11u << 12));
+
+    // Mapping the same page again replaces the frame.
+    ASSERT_EQ(pt_map(pt, v, 22u << 12), 0);
+    EXPECT_EQ(pt_walk(pt, v, 0), (int64_t)(22u << 12));
+
+    pt_destroy(pt);
+}
+
+// Randomized cross-check: a model std::map<page, frame> must agree with the
+// simulator for an arbitrary stream of maps and walks. Deterministic seed.
+TEST(PageTableRandom, MatchesModelMap) {
+    std::mt19937 rng(0x9A12B3);
+    PageTable *pt = pt_create();
+    ASSERT_NE(pt, nullptr);
+
+    std::unordered_map<uint32_t, uint32_t> model;  // virtual page -> frame
+    std::uniform_int_distribution<uint32_t> l1d(0, PT_ENTRIES - 1);
+    std::uniform_int_distribution<uint32_t> l2d(0, PT_ENTRIES - 1);
+    std::uniform_int_distribution<uint32_t> framed(0, 100000);
+    std::uniform_int_distribution<uint32_t> offd(0, PT_PAGE_SIZE - 1);
+
+    for (int i = 0; i < 4000; ++i) {
+        uint32_t l1 = l1d(rng), l2 = l2d(rng), off = offd(rng);
+        uint32_t vpage = (l1 << 10) | l2;            // identity of the page
+        uint32_t v = mk_vaddr(l1, l2, off);
+
+        if ((rng() & 1u) == 0u) {
+            // map operation
+            uint32_t frame = framed(rng);
+            ASSERT_EQ(pt_map(pt, v, frame << 12), 0);
+            model[vpage] = frame;
+        } else {
+            // walk without alloc: must match the model exactly
+            int64_t got = pt_walk(pt, v, 0);
+            auto it = model.find(vpage);
+            if (it == model.end()) {
+                ASSERT_EQ(got, -1) << "expected unmapped at iter " << i;
+            } else {
+                ASSERT_EQ(got, (int64_t)(((uint64_t)it->second << 12) | off))
+                    << "translation mismatch at iter " << i;
+            }
+        }
+    }
+
+    pt_destroy(pt);
 }

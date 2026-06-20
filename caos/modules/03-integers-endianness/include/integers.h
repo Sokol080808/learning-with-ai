@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stddef.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -24,6 +25,22 @@ int32_t sign_extend(uint32_t x, int bits);
 /* 1, если машина little-endian (младший байт лежит первым в памяти);
    0, если big-endian. */
 int is_little_endian(void);
+
+/* Сетевой заголовок пакета (10 байт на проводе, big-endian). */
+typedef struct {
+    uint16_t version;
+    uint16_t port;
+    uint32_t length;
+    uint32_t checksum;
+} PacketHeader;
+
+/* Кодирует *pkt в big-endian байты в buf[0..11] (12 байт).
+   Возвращает 12 при успехе; -1, если buf == NULL или buf_size < 12. */
+int packet_encode(const PacketHeader *pkt, uint8_t *buf, size_t buf_size);
+
+/* Декодирует big-endian байты из buf[0..11] (12 байт) в *out.
+   Возвращает 12 при успехе; -1, если buf == NULL, out == NULL или buf_size < 12. */
+int packet_decode(const uint8_t *buf, size_t buf_size, PacketHeader *out);
 
 #ifdef __cplusplus
 }

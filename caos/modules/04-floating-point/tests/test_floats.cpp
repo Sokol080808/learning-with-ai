@@ -367,3 +367,226 @@ TEST(IsNanRandom, SubnormalsAreNotNaN) {
             << "subnormal bits = 0x" << std::hex << u;
     }
 }
+
+// ============================================================
+// float_pack: собрать float из полей (обратно к разбору)
+// ============================================================
+
+// --- Известные значения: поля -> ожидаемый float ---
+
+TEST(FloatPack, KnownValues) {
+    // 1.0f = sign 0, biased exponent 127, mantissa 0
+    EXPECT_EQ(float_bits(float_pack(0, 127, 0)), 0x3F800000u);
+    // -1.0f = sign 1, exponent 127, mantissa 0
+    EXPECT_EQ(float_bits(float_pack(1, 127, 0)), 0xBF800000u);
+    // 2.0f = sign 0, exponent 128, mantissa 0
+    EXPECT_EQ(float_bits(float_pack(0, 128, 0)), 0x40000000u);
+    // 0.5f = sign 0, exponent 126, mantissa 0
+    EXPECT_EQ(float_bits(float_pack(0, 126, 0)), 0x3F000000u);
+}
+
+TEST(FloatPack, ProducesActualFloatValues) {
+    // Не только биты совпадают, но и численное значение читается верно.
+    EXPECT_FLOAT_EQ(float_pack(0, 127, 0),  1.0f);
+    EXPECT_FLOAT_EQ(float_pack(1, 127, 0), -1.0f);
+    EXPECT_FLOAT_EQ(float_pack(0, 128, 0),  2.0f);
+    EXPECT_FLOAT_EQ(float_pack(0, 126, 0),  0.5f);
+}
+
+// --- Краевые: ±0, ±Inf, NaN, subnormal ---
+
+TEST(FloatPack, PositiveZero) {
+    EXPECT_EQ(float_bits(float_pack(0, 0, 0)), 0x00000000u);
+}
+
+TEST(FloatPack, NegativeZero) {
+    // sign=1, всё остальное 0 — это -0.0f, бит 31 поднят
+    EXPECT_EQ(float_bits(float_pack(1, 0, 0)), 0x80000000u);
+}
+
+TEST(FloatPack, PositiveInfinity) {
+    // exponent=255, mantissa=0 => +Inf
+    float f = float_pack(0, 255, 0);
+    EXPECT_EQ(float_bits(f), 0x7F800000u);
+    EXPECT_TRUE(std::isinf(f));
+    EXPECT_GT(f, 0.0f);
+}
+
+TEST(FloatPack, NegativeInfinity) {
+    float f = float_pack(1, 255, 0);
+    EXPECT_EQ(float_bits(f), 0xFF800000u);
+    EXPECT_TRUE(std::isinf(f));
+    EXPECT_LT(f, 0.0f);
+}
+
+TEST(FloatPack, NaN) {
+    // exponent=255, mantissa!=0 => NaN
+    float f = float_pack(0, 255, 0x400000u);  // quiet NaN
+    EXPECT_EQ(my_isnan(f), 1);
+    EXPECT_TRUE(std::isnan(f));
+}
+
+TEST(FloatPack, Subnormal) {
+    // exponent=0, mantissa!=0 => субнормальное число
+    float f = float_pack(0, 0, 1u);  // наименьшее положительное субнормальное
+    EXPECT_EQ(float_bits(f), 0x00000001u);
+    EXPECT_EQ(float_raw_exponent(f), 0);
+    EXPECT_GT(f, 0.0f);            // оно положительно и не ноль
+    EXPECT_LT(f, FLT_MIN);        // но меньше наименьшего НОРМАЛЬНОГО
+}
+
+// --- Маскирование: лишние биты в аргументах не текут в чужие поля ---
+
+TEST(FloatPack, OnlyLowSignBitUsed) {
+    // sign=2 (бит 1, не бит 0) => знаковый бит должен остаться 0
+    EXPECT_EQ(float_bits(float_pack(2, 127, 0)), 0x3F800000u);
+    // sign=3 (биты 0 и 1) => младший бит 1 => знак выставлен
+    EXPECT_EQ(float_bits(float_pack(3, 127, 0)), 0xBF800000u);
+}
+
+TEST(FloatPack, ExponentMaskedToEightBits) {
+    // 0x1FF = 511, но в поле уходят только младшие 8 бит => 0xFF = 255
+    float f = float_pack(0, 0x1FF, 0);
+    EXPECT_EQ(float_raw_exponent(f), 255);
+}
+
+TEST(FloatPack, MantissaMaskedTo23Bits) {
+    // Биты мантиссы сверх 23 не должны залезть в поле экспоненты.
+    float f = float_pack(0, 100, 0xFFFFFFFFu);
+    EXPECT_EQ(float_raw_exponent(f), 100);            // экспонента не испорчена
+    EXPECT_EQ(float_bits(f) & 0x7FFFFFu, 0x7FFFFFu);  // мантисса = младшие 23 бита
+}
+
+// --- Round-trip: разобрать любой float и собрать обратно ---
+//
+// Свойство: float_pack(sign, exp, bits) восстанавливает исходные биты
+// для ЛЮБОГО шаблона. Берём sign/exp из аккуратных функций, а полные биты
+// как мантиссу — маски внутри float_pack обрежут лишнее по полям.
+
+TEST(FloatPackRandom, RoundTripAllPatterns) {
+    std::mt19937 rng(0x50FA1234u);  // фиксированный seed => детерминизм
+    std::uniform_int_distribution<uint32_t> dist(0, 0xFFFFFFFFu);
+
+    for (int i = 0; i < 2000; ++i) {
+        uint32_t u = dist(rng);
+        float f = from_bits(u);
+        int sign = float_sign(f);
+        int exp  = float_raw_exponent(f);
+        uint32_t mant = float_bits(f) & 0x7FFFFFu;
+        // Собираем заново из «честно разобранных» полей — должны получить те же биты.
+        float g = float_pack(sign, exp, mant);
+        EXPECT_EQ(float_bits(g), u) << "bits = 0x" << std::hex << u;
+    }
+}
+
+TEST(FloatPackRandom, RoundTripFiniteValues) {
+    // Для конечных значений собранный float побитово равен исходному,
+    // а значит и численно равен (NaN исключаем — у него != сам себе).
+    std::mt19937 rng(0xA5A5F00Du);
+    std::uniform_real_distribution<float> dist(-1e30f, 1e30f);
+
+    for (int i = 0; i < 1000; ++i) {
+        float f = dist(rng);
+        int sign = float_sign(f);
+        int exp  = float_raw_exponent(f);
+        uint32_t mant = float_bits(f) & 0x7FFFFFu;
+        float g = float_pack(sign, exp, mant);
+        EXPECT_EQ(float_bits(g), float_bits(f)) << "f = " << f;
+        EXPECT_FLOAT_EQ(g, f) << "f = " << f;
+    }
+}
+
+// ============================================================
+// round_half_to_even: округление к чётному (режим IEEE по умолчанию)
+// ============================================================
+
+TEST(RoundHalfToEven, ExactHalvesGoToEven) {
+    // Классические половинки: тай уходит к ЧЁТНОМУ соседу
+    EXPECT_EQ(round_half_to_even(0.5),  0.0);
+    EXPECT_EQ(round_half_to_even(1.5),  2.0);
+    EXPECT_EQ(round_half_to_even(2.5),  2.0);
+    EXPECT_EQ(round_half_to_even(3.5),  4.0);
+    EXPECT_EQ(round_half_to_even(4.5),  4.0);
+    EXPECT_EQ(round_half_to_even(-0.5), 0.0);   // значение −0.0 == 0.0
+    EXPECT_EQ(round_half_to_even(-1.5), -2.0);
+    EXPECT_EQ(round_half_to_even(-2.5), -2.0);
+    EXPECT_EQ(round_half_to_even(-3.5), -4.0);
+}
+
+TEST(RoundHalfToEven, NonHalvesRoundToNearest) {
+    EXPECT_EQ(round_half_to_even(0.4),  0.0);
+    EXPECT_EQ(round_half_to_even(0.6),  1.0);
+    EXPECT_EQ(round_half_to_even(2.3),  2.0);
+    EXPECT_EQ(round_half_to_even(2.7),  3.0);
+    EXPECT_EQ(round_half_to_even(-0.4), 0.0);
+    EXPECT_EQ(round_half_to_even(-0.6), -1.0);
+    EXPECT_EQ(round_half_to_even(-2.7), -3.0);
+}
+
+TEST(RoundHalfToEven, AlreadyInteger) {
+    EXPECT_EQ(round_half_to_even(0.0),   0.0);
+    EXPECT_EQ(round_half_to_even(5.0),   5.0);
+    EXPECT_EQ(round_half_to_even(-5.0), -5.0);
+    EXPECT_EQ(round_half_to_even(100.0), 100.0);
+}
+
+TEST(RoundHalfToEven, NegativeHalfKeepsSignedZero) {
+    // -0.5 округляется к 0, но это должен быть ЗНАКОВЫЙ ноль -0.0
+    double r = round_half_to_even(-0.5);
+    EXPECT_EQ(r, 0.0);                 // численно ноль
+    EXPECT_TRUE(std::signbit(r));      // но знаковый бит поднят => -0.0
+}
+
+TEST(RoundHalfToEven, SpecialValuesPassThrough) {
+    EXPECT_TRUE(std::isnan(round_half_to_even(std::nan(""))));
+    EXPECT_TRUE(std::isinf(round_half_to_even(INFINITY)));
+    EXPECT_GT(round_half_to_even(INFINITY), 0.0);
+    EXPECT_LT(round_half_to_even(-INFINITY), 0.0);
+    // ±0 проходят насквозь с сохранением знака
+    EXPECT_FALSE(std::signbit(round_half_to_even(0.0)));
+    EXPECT_TRUE(std::signbit(round_half_to_even(-0.0)));
+}
+
+TEST(RoundHalfToEven, LargeIntegersUnchanged) {
+    // Большие числа без дробной части возвращаются как есть
+    EXPECT_EQ(round_half_to_even(1e15),  1e15);
+    EXPECT_EQ(round_half_to_even(-1e15), -1e15);
+}
+
+// Оракул, не вызывающий round_half_to_even: округление к чётному «вручную».
+static double ref_round_even(double x) {
+    if (std::isnan(x) || std::isinf(x) || x == 0.0) return x;
+    double lo = std::floor(x);
+    double diff = x - lo;
+    double res;
+    if (diff < 0.5)      res = lo;
+    else if (diff > 0.5) res = lo + 1.0;
+    else                 res = (std::fmod(lo, 2.0) == 0.0) ? lo : lo + 1.0;
+    return res;
+}
+
+TEST(RoundHalfToEvenRandom, AgainstOracle) {
+    std::mt19937 rng(0x0DDE7E11u);  // fixed seed => deterministic
+    // Диапазон с дробями; значения вида k и k.5 встречаются естественно редко,
+    // но обычные дроби покрывают «к ближайшему» обильно.
+    std::uniform_real_distribution<double> dist(-1000.0, 1000.0);
+
+    for (int i = 0; i < 5000; ++i) {
+        double x = dist(rng);
+        EXPECT_EQ(round_half_to_even(x), ref_round_even(x))
+            << "x = " << x;
+    }
+}
+
+TEST(RoundHalfToEvenRandom, ExactHalvesAgainstOracle) {
+    // Прицельно по половинкам k + 0.5 (они точно представимы в double):
+    // оба соседа целые, тай-брейк к чётному должен совпасть с оракулом.
+    for (int k = -50; k <= 50; ++k) {
+        double x = static_cast<double>(k) + 0.5;
+        double got = round_half_to_even(x);
+        double want = ref_round_even(x);
+        EXPECT_EQ(got, want) << "x = " << x;
+        // И прямая проверка чётности результата.
+        EXPECT_EQ(std::fmod(got, 2.0), 0.0) << "x = " << x << " got = " << got;
+    }
+}

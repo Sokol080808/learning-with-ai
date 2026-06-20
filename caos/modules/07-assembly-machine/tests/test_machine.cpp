@@ -241,3 +241,252 @@ TEST(AsmC, EdgeCases) {
     EXPECT_EQ(asm_c(-1), 0);
     EXPECT_EQ(asm_c(INT_MIN), 0);
 }
+
+// ============================================================
+// Задание 4: frame_read_local — чтение локальных переменных
+// из снимка кадра стека с корректным знаковым расширением.
+// ============================================================
+
+// Вспомогательный builder: заполняет байты нужного слота в снимке.
+// frame_size байт, слот по offset от rbp (отрицательный) размером size.
+static void write_slot(uint8_t *buf, int frame_size, int offset, int size,
+                        int64_t value) {
+    // rbp = buf + frame_size; слот начинается по buf + frame_size + offset
+    uint8_t *ptr = buf + frame_size + offset;
+    memcpy(ptr, &value, (size_t)size);
+}
+
+// --- 8-байтный слот (int64_t) ---
+
+TEST(FrameReadLocal, Size8Positive) {
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-8, 8}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -8, 8, (int64_t)0x0123456789ABCDEFLL);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)0x0123456789ABCDEFLL);
+}
+
+TEST(FrameReadLocal, Size8Negative) {
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-8, 8}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -8, 8, (int64_t)-42LL);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-42LL);
+}
+
+// --- 4-байтный слот (int32_t), знаковое расширение до int64_t ---
+
+TEST(FrameReadLocal, Size4Positive) {
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-4, 4}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -4, 4, (int64_t)123456);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)123456);
+}
+
+TEST(FrameReadLocal, Size4NegativeSignExtended) {
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-4, 4}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    // -1 как int32_t = 0xFFFFFFFF; после расширения должно быть -1LL (0xFFFFFFFFFFFFFFFF)
+    write_slot(frame, FSIZE, -4, 4, (int64_t)(int32_t)-1);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-1LL);
+}
+
+TEST(FrameReadLocal, Size4MinInt) {
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-4, 4}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -4, 4, (int64_t)INT32_MIN);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)INT32_MIN);
+}
+
+// --- 2-байтный слот (int16_t), знаковое расширение ---
+
+TEST(FrameReadLocal, Size2Positive) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-2, 2}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -2, 2, (int64_t)1000);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)1000LL);
+}
+
+TEST(FrameReadLocal, Size2NegativeSignExtended) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-2, 2}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    // 0xFF00 в виде int16_t = -256; расширяется до -256LL
+    write_slot(frame, FSIZE, -2, 2, (int64_t)(int16_t)-256);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-256LL);
+}
+
+// --- 1-байтный слот (int8_t), знаковое расширение ---
+
+TEST(FrameReadLocal, Size1Positive) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-1, 1}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -1, 1, (int64_t)100);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)100LL);
+}
+
+TEST(FrameReadLocal, Size1NegativeSignExtended) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-1, 1}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    // 0xFF как int8_t = -1; должно расшириться до -1LL, не до 255LL
+    write_slot(frame, FSIZE, -1, 1, (int64_t)(int8_t)-1);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-1LL);
+}
+
+TEST(FrameReadLocal, Size1MinusTwenty) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-1, 1}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -1, 1, (int64_t)(int8_t)-20);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-20LL);
+}
+
+// --- Несколько слотов в одном кадре ---
+
+TEST(FrameReadLocal, MultipleSlots) {
+    // Кадр: int64_t a @ [rbp-8], int32_t b @ [rbp-12], int8_t c @ [rbp-13]
+    const int FSIZE = 32;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {
+        {-8,  8},   // slot 0: int64_t
+        {-12, 4},   // slot 1: int32_t
+        {-13, 1},   // slot 2: int8_t
+    };
+    FrameLayout layout = {FSIZE, 3, slots};
+
+    write_slot(frame, FSIZE, -8,  8, (int64_t)9000000000LL);
+    write_slot(frame, FSIZE, -12, 4, (int64_t)(int32_t)-7);
+    write_slot(frame, FSIZE, -13, 1, (int64_t)(int8_t)42);
+
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)9000000000LL);
+    EXPECT_EQ(frame_read_local(&layout, frame, 1), (int64_t)-7LL);
+    EXPECT_EQ(frame_read_local(&layout, frame, 2), (int64_t)42LL);
+}
+
+// --- Граничные значения типов ---
+
+TEST(FrameReadLocal, BoundaryInt8) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-1, 1}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -1, 1, (int64_t)INT8_MAX);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)127LL);
+
+    write_slot(frame, FSIZE, -1, 1, (int64_t)(int8_t)INT8_MIN);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-128LL);
+}
+
+TEST(FrameReadLocal, BoundaryInt16) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-2, 2}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -2, 2, (int64_t)INT16_MAX);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)32767LL);
+
+    write_slot(frame, FSIZE, -2, 2, (int64_t)(int16_t)INT16_MIN);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)-32768LL);
+}
+
+TEST(FrameReadLocal, BoundaryInt32) {
+    const int FSIZE = 16;
+    uint8_t frame[FSIZE] = {};
+    SlotInfo slots[] = {{-4, 4}};
+    FrameLayout layout = {FSIZE, 1, slots};
+
+    write_slot(frame, FSIZE, -4, 4, (int64_t)INT32_MAX);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)INT32_MAX);
+
+    write_slot(frame, FSIZE, -4, 4, (int64_t)INT32_MIN);
+    EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)INT32_MIN);
+}
+
+// --- Рандомизированный тест: знаковое расширение для всех четырёх размеров ---
+
+TEST(FrameReadLocal, RandomizedSignExtension) {
+    std::mt19937_64 rng(0xC0DEC4050700ULL);
+    std::uniform_int_distribution<int64_t> dist64(INT64_MIN, INT64_MAX);
+
+    const int FSIZE = 64;
+    uint8_t frame[FSIZE];
+
+    // size=8
+    {
+        SlotInfo s = {-8, 8};
+        FrameLayout layout = {FSIZE, 1, &s};
+        for (int i = 0; i < 200; ++i) {
+            int64_t val = dist64(rng);
+            memset(frame, 0, FSIZE);
+            write_slot(frame, FSIZE, -8, 8, val);
+            EXPECT_EQ(frame_read_local(&layout, frame, 0), val) << "size=8 val=" << val;
+        }
+    }
+    // size=4
+    {
+        SlotInfo s = {-4, 4};
+        FrameLayout layout = {FSIZE, 1, &s};
+        std::uniform_int_distribution<int32_t> d32(INT32_MIN, INT32_MAX);
+        for (int i = 0; i < 200; ++i) {
+            int32_t val = d32(rng);
+            memset(frame, 0, FSIZE);
+            write_slot(frame, FSIZE, -4, 4, (int64_t)val);
+            EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)val)
+                << "size=4 val=" << val;
+        }
+    }
+    // size=2
+    {
+        SlotInfo s = {-2, 2};
+        FrameLayout layout = {FSIZE, 1, &s};
+        std::uniform_int_distribution<int16_t> d16(INT16_MIN, INT16_MAX);
+        for (int i = 0; i < 200; ++i) {
+            int16_t val = d16(rng);
+            memset(frame, 0, FSIZE);
+            write_slot(frame, FSIZE, -2, 2, (int64_t)val);
+            EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)val)
+                << "size=2 val=" << val;
+        }
+    }
+    // size=1
+    {
+        SlotInfo s = {-1, 1};
+        FrameLayout layout = {FSIZE, 1, &s};
+        std::uniform_int_distribution<int16_t> d8(-128, 127);
+        for (int i = 0; i < 200; ++i) {
+            int8_t val = (int8_t)d8(rng);
+            memset(frame, 0, FSIZE);
+            write_slot(frame, FSIZE, -1, 1, (int64_t)val);
+            EXPECT_EQ(frame_read_local(&layout, frame, 0), (int64_t)val)
+                << "size=1 val=" << (int)val;
+        }
+    }
+}
