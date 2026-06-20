@@ -31,9 +31,7 @@ def conv_output_size(in_size: int, kernel: int, stride: int, pad: int) -> int:
         conv_output_size(8, 2, 2, 0) -> 4     # как MaxPool 2x2: (8-2)//2 + 1
         conv_output_size(8, 3, 1, 1) -> 8     # pad=1 сохраняет размер
     """
-    raise NotImplementedError(
-        "TODO: верни (in_size + 2*pad - kernel) // stride + 1"
-    )
+    return (in_size + 2 * pad - kernel) // stride + 1
 
 
 class SmallCNN(nn.Module):
@@ -60,9 +58,13 @@ class SmallCNN(nn.Module):
 
     def __init__(self, num_classes: int = 2) -> None:
         super().__init__()
-        raise NotImplementedError(
-            "TODO: создай слои Conv2d, ReLU, MaxPool2d, Linear (см. таблицу форм)"
-        )
+        # (N, 1, 8, 8) -> Conv2d -> (N, 4, 6, 6)
+        self.conv = nn.Conv2d(1, 4, kernel_size=3)
+        self.relu = nn.ReLU()
+        # (N, 4, 6, 6) -> MaxPool2d(2) -> (N, 4, 3, 3)
+        self.pool = nn.MaxPool2d(2)
+        # flatten -> (N, 36) -> Linear -> (N, num_classes)
+        self.fc = nn.Linear(4 * 3 * 3, num_classes)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Прямой проход: (N, 1, 8, 8) -> логиты (N, num_classes).
@@ -71,9 +73,12 @@ class SmallCNN(nn.Module):
         Не забудь «расплющить» перед Linear: x.flatten(1) превращает
         (N, 4, 3, 3) в (N, 36), не трогая ось батча N.
         """
-        raise NotImplementedError(
-            "TODO: прогони x через conv -> relu -> pool -> flatten(1) -> linear"
-        )
+        x = self.conv(x)
+        x = self.relu(x)
+        x = self.pool(x)
+        x = x.flatten(1)
+        x = self.fc(x)
+        return x
 
 
 def train_step(
@@ -96,6 +101,9 @@ def train_step(
     ПОЧЕМУ zero_grad первым: в PyTorch .grad накапливается (+=), а не
     перезаписывается; без обнуления градиенты этого шага сложатся с прошлыми.
     """
-    raise NotImplementedError(
-        "TODO: zero_grad -> forward -> loss -> backward -> step -> верни loss.item()"
-    )
+    optimizer.zero_grad()
+    pred = model(X)
+    loss = loss_fn(pred, y)
+    loss.backward()
+    optimizer.step()
+    return loss.item()

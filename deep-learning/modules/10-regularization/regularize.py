@@ -29,7 +29,13 @@ def train_val_split(
     Зачем: модель оценивают на данных, которых она НЕ видела при обучении. Если мерить
     качество на тех же примерах, что учили, — обманешь сам себя (см. README, Идея 2).
     """
-    raise NotImplementedError("TODO: перемешай индексы через rng(seed) и отрежь n_val строк в валидацию")
+    N = X.shape[0]
+    rng = np.random.default_rng(seed)
+    idx = rng.permutation(N)
+    n_val = int(round(N * val_frac))
+    val_idx = idx[:n_val]
+    tr_idx = idx[n_val:]
+    return X[tr_idx], y[tr_idx], X[val_idx], y[val_idx]
 
 
 def l2_penalty(weights: np.ndarray, lam: float) -> float:
@@ -43,7 +49,7 @@ def l2_penalty(weights: np.ndarray, lam: float) -> float:
     Зачем: добавляя этот штраф к loss, мы «наказываем» модель за крупные веса и
     подталкиваем её к более гладким, простым решениям (см. README, Идея 3).
     """
-    raise NotImplementedError("TODO: верни lam * сумму квадратов весов как float")
+    return float(lam * np.sum(weights ** 2))
 
 
 def dropout_mask(shape: Tuple[int, ...], p: float, seed: int) -> np.ndarray:
@@ -60,7 +66,9 @@ def dropout_mask(shape: Tuple[int, ...], p: float, seed: int) -> np.ndarray:
     Масштаб 1/(1-p) — это «inverted dropout»: он держит средний масштаб активаций
     неизменным, поэтому на инференсе маску можно просто не применять (см. README, Идея 4).
     """
-    raise NotImplementedError("TODO: keep = rng.random(shape) >= p; верни keep / (1 - p) как float")
+    rng = np.random.default_rng(seed)
+    keep = rng.random(shape) >= p
+    return keep.astype(float) / (1.0 - p)
 
 
 def should_early_stop(val_losses: list, patience: int) -> bool:
@@ -77,4 +85,8 @@ def should_early_stop(val_losses: list, patience: int) -> bool:
     Пример: val_losses = [1.0, 0.8, 0.9, 0.95], patience = 2.
       Лучший (0.8) — на индексе 1. После него прошло 2 эпохи без улучшения → True.
     """
-    raise NotImplementedError("TODO: найди индекс минимума; если он дальше patience от конца — True")
+    if len(val_losses) < patience + 1:
+        return False
+    best = int(np.argmin(val_losses))
+    epochs_without_improvement = len(val_losses) - 1 - best
+    return epochs_without_improvement >= patience

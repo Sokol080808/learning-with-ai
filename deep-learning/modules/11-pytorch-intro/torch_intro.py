@@ -25,7 +25,7 @@ def to_tensor(x) -> torch.Tensor:
         to_tensor([1, 2, 3]).dtype  -> torch.float32
         to_tensor([1, 2, 3])        -> tensor([1., 2., 3.])
     """
-    raise NotImplementedError("TODO: верни torch.Tensor типа float32 из x")
+    return torch.as_tensor(x, dtype=torch.float32)
 
 
 def grad_of(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor) -> torch.Tensor:
@@ -43,7 +43,10 @@ def grad_of(f: Callable[[torch.Tensor], torch.Tensor], x: torch.Tensor) -> torch
         x = torch.tensor([1.0, 2.0, 3.0])
         grad_of(lambda t: (t ** 2).sum(), x)  -> tensor([2., 4., 6.])
     """
-    raise NotImplementedError("TODO: посчитай df/dx через requires_grad + .backward()")
+    xr = x.clone().detach().requires_grad_(True)
+    y = f(xr)
+    y.backward()
+    return xr.grad
 
 
 def linear_forward(x: torch.Tensor, W: torch.Tensor, b: torch.Tensor) -> torch.Tensor:
@@ -58,7 +61,7 @@ def linear_forward(x: torch.Tensor, W: torch.Tensor, b: torch.Tensor) -> torch.T
     Пример:
         x: (2, 3), W: (3, 4), b: (4,)  -> результат (2, 4)
     """
-    raise NotImplementedError("TODO: верни x @ W + b")
+    return x @ W + b
 
 
 def mse_torch(pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
@@ -72,4 +75,4 @@ def mse_torch(pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         pred = [1.0, 2.0, 3.0], y = [1.0, 2.0, 5.0]
         разности: [0, 0, -2]; квадраты: [0, 0, 4]; среднее: 4/3 ≈ 1.333
     """
-    raise NotImplementedError("TODO: верни mean((pred - y) ** 2) как скаляр")
+    return torch.mean((pred - y) ** 2)

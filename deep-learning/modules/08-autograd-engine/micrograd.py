@@ -51,7 +51,11 @@ class Value:
           self._op = _op
           self._backward = lambda: None   # по умолчанию — ничего (для листьев графа)
         """
-        raise NotImplementedError("TODO: сохрани data/grad/_prev/_op/_backward")
+        self.data = float(data)
+        self.grad = 0.0
+        self._prev: Set["Value"] = set(_children)
+        self._op = _op
+        self._backward: Callable[[], None] = lambda: None
 
     def __add__(self, other: Union["Value", Number]) -> "Value":
         """Сложение: out = self + other. Вернуть НОВЫЙ Value.
@@ -62,7 +66,15 @@ class Value:
             self.grad  += 1.0 * out.grad
             other.grad += 1.0 * out.grad
         """
-        raise NotImplementedError("TODO: реализуй __add__ и его _backward")
+        other = other if isinstance(other, Value) else Value(other)
+        out = Value(self.data + other.data, (self, other), "+")
+
+        def _backward() -> None:
+            self.grad += 1.0 * out.grad
+            other.grad += 1.0 * out.grad
+
+        out._backward = _backward
+        return out
 
     def __mul__(self, other: Union["Value", Number]) -> "Value":
         """Умножение: out = self * other. Вернуть НОВЫЙ Value.
@@ -75,7 +87,15 @@ class Value:
             self.grad  += other.data * out.grad
             other.grad += self.data  * out.grad
         """
-        raise NotImplementedError("TODO: реализуй __mul__ и его _backward")
+        other = other if isinstance(other, Value) else Value(other)
+        out = Value(self.data * other.data, (self, other), "*")
+
+        def _backward() -> None:
+            self.grad += other.data * out.grad
+            other.grad += self.data * out.grad
+
+        out._backward = _backward
+        return out
 
     def tanh(self) -> "Value":
         """Гиперболический тангенс: out = tanh(self). Вернуть НОВЫЙ Value.
@@ -85,7 +105,14 @@ class Value:
         Поэтому _backward:
             self.grad += (1 - t**2) * out.grad
         """
-        raise NotImplementedError("TODO: реализуй tanh и его _backward")
+        t = math.tanh(self.data)
+        out = Value(t, (self,), "tanh")
+
+        def _backward() -> None:
+            self.grad += (1 - t**2) * out.grad
+
+        out._backward = _backward
+        return out
 
     def relu(self) -> "Value":
         """ReLU: out = max(0, self). Вернуть НОВЫЙ Value.
@@ -96,7 +123,13 @@ class Value:
         Поэтому _backward:
             self.grad += (1.0 if out.data > 0 else 0.0) * out.grad
         """
-        raise NotImplementedError("TODO: реализуй relu и его _backward")
+        out = Value(self.data if self.data > 0 else 0.0, (self,), "relu")
+
+        def _backward() -> None:
+            self.grad += (1.0 if out.data > 0 else 0.0) * out.grad
+
+        out._backward = _backward
+        return out
 
     def backward(self) -> None:
         """Запустить обратный проход ОТ ЭТОГО узла (обычно от loss).
@@ -112,7 +145,21 @@ class Value:
         После вызова у каждого узла графа поле .grad содержит d(self)/d(этот узел).
         Замечание: метод НИЧЕГО не возвращает — он только заполняет .grad на месте.
         """
-        raise NotImplementedError("TODO: топологическая сортировка + обратный проход")
+        topo: list["Value"] = []
+        visited: Set["Value"] = set()
+
+        def build(v: "Value") -> None:
+            if v not in visited:
+                visited.add(v)
+                for parent in v._prev:
+                    build(parent)
+                topo.append(v)
+
+        build(self)
+
+        self.grad = 1.0
+        for node in reversed(topo):
+            node._backward()
 
     # --- Удобные обёртки: чтобы работали выражения вида (2 * a), (b - 1), (-x). ---
     # Эти методы УЖЕ написаны через __add__/__mul__ — отдельные _backward им не нужны.

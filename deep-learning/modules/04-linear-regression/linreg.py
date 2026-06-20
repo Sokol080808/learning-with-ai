@@ -32,7 +32,7 @@ def predict(X: np.ndarray, w: np.ndarray, b: float) -> np.ndarray:
           затем прибавь скаляр b ко всем элементам.
         - Никаких циклов по объектам не нужно — это одна строка на numpy.
     """
-    raise NotImplementedError("TODO: верни X @ w + b")
+    return X @ w + b
 
 
 def mse_loss(y_pred: np.ndarray, y: np.ndarray) -> float:
@@ -50,7 +50,7 @@ def mse_loss(y_pred: np.ndarray, y: np.ndarray) -> float:
         - Результат — обычный python-float (приведи через float(...)), а не 0-мерный массив.
         - Loss >= 0 всегда; равен 0 только при идеальном совпадении.
     """
-    raise NotImplementedError("TODO: верни float(mean((y_pred - y) ** 2))")
+    return float(np.mean((y_pred - y) ** 2))
 
 
 def gradients(
@@ -78,7 +78,11 @@ def gradients(
         - Сначала получи предсказания через predict (переиспользуй свою функцию).
         - db верни обычным float.
     """
-    raise NotImplementedError("TODO: посчитай e = predict(...) - y, затем dw и db по формулам")
+    N = X.shape[0]
+    e = predict(X, w, b) - y
+    dw = (2.0 / N) * (X.T @ e)
+    db = float((2.0 / N) * np.sum(e))
+    return dw, db
 
 
 def gd_step(
@@ -102,4 +106,4 @@ def gd_step(
         - Знак МИНУС обязателен: градиент указывает в сторону РОСТА loss, а нам нужно вниз.
         - b_new верни обычным float.
     """
-    raise NotImplementedError("TODO: верни (w - lr * dw, b - lr * db)")
+    return w - lr * dw, float(b - lr * db)

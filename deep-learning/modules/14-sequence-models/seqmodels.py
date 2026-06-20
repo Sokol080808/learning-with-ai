@@ -40,18 +40,22 @@ class CharRNN(nn.Module):
         У nn.RNN обязательно batch_first=True — тогда формы будут (B, T, ...).
         """
         super().__init__()
-        raise NotImplementedError(
-            "TODO: создай self.embed, self.rnn (batch_first=True), self.fc"
-        )
+        self.vocab_size = vocab_size
+        self.embed_dim = embed_dim
+        self.hidden_size = hidden_size
+        self.embed = nn.Embedding(vocab_size, embed_dim)
+        self.rnn = nn.RNN(embed_dim, hidden_size, batch_first=True)
+        self.fc = nn.Linear(hidden_size, vocab_size)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         """Прямой проход: индексы (B, T) -> логиты (B, T, vocab_size).
 
         Шаги: embed(x) -> rnn(...) (возьми только out, h_n в "_") -> fc(out).
         """
-        raise NotImplementedError(
-            "TODO: embed -> rnn -> fc; верни логиты формы (B, T, vocab_size)"
-        )
+        e = self.embed(x)          # (B, T) -> (B, T, embed_dim)
+        out, _ = self.rnn(e)       # (B, T, embed_dim) -> (B, T, hidden_size)
+        logits = self.fc(out)      # (B, T, hidden_size) -> (B, T, vocab_size)
+        return logits
 
 
 def train_step(
@@ -79,6 +83,10 @@ def train_step(
       5) optimizer.step()           — оптимизатор сделает шаг.
     Верни loss.item() (число), посчитанный в шаге 3.
     """
-    raise NotImplementedError(
-        "TODO: zero_grad -> forward -> loss_fn(reshape) -> backward -> step; верни loss.item()"
-    )
+    optimizer.zero_grad()
+    logits = model(X)                                          # (B, T, vocab)
+    vocab_size = logits.size(-1)
+    loss = loss_fn(logits.reshape(-1, vocab_size), Y.reshape(-1))  # (B*T, vocab), (B*T,)
+    loss.backward()
+    optimizer.step()
+    return loss.item()

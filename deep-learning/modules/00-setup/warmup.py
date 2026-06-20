@@ -18,7 +18,7 @@ def vector_add(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     Пример: vector_add([1, 2, 3], [10, 20, 30]) -> [11, 22, 33].
     Формы: (D,) + (D,) -> (D,).
     """
-    raise NotImplementedError("TODO: верни поэлементную сумму a и b средствами numpy")
+    return a + b
 
 
 def mean(xs: np.ndarray) -> float:
@@ -32,4 +32,4 @@ def mean(xs: np.ndarray) -> float:
     Пример: mean([2, 4, 6]) -> 4.0.
     Формы: (N,) -> () (массив схлопывается в одно число).
     """
-    raise NotImplementedError("TODO: верни среднее по xs как обычный float")
+    return float(np.mean(xs))

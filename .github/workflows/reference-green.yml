@@ -7,8 +7,9 @@
 # by design (courses-ci.yml проверяет main иначе — что скелет лишь компилируется/собирается).
 #
 # Заполнены эталонами: Python (все модули + капстоун), C++ (все 23 модуля; капстоун MiniDB —
-# отдельный заход, поэтому исключён) и Rust (все 15 модулей + капстоун minidb). По мере появления
-# эталонов deep-learning/caos сюда добавляются их шаги.
+# отдельный заход, поэтому исключён), Rust (все 15 модулей + капстоун minidb) и Deep Learning
+# (18 модулей + капстоун nano-LM, numpy + torch CPU). По мере появления эталонов caos сюда
+# добавляется его шаг.
 name: Reference green
 
 on:
@@ -55,3 +56,18 @@ jobs:
         run: cargo --version && rustc --version
       - name: Весь воркспейс должен пройти на эталонном решении
         run: cargo test --workspace --manifest-path rust/Cargo.toml
+
+  deep-learning:
+    name: Deep Learning (эталон — 18 модулей + капстоун зелёные)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Установка (numpy/pytest с PyPI, torch — из CPU-индекса)
+        run: |
+          python -m pip install -U pip numpy pytest
+          python -m pip install -U torch --index-url https://download.pytorch.org/whl/cpu
+      - name: Все тесты должны пройти на эталонном решении
+        run: python -m pytest deep-learning -p no:cacheprovider -q

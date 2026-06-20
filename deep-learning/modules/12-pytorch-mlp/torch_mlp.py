@@ -30,15 +30,12 @@ class MLP(nn.Module):
     """
 
     def __init__(self, in_dim: int, hidden: int, out_dim: int) -> None:
-        raise NotImplementedError(
-            "TODO: super().__init__(); создай self.fc1 = nn.Linear(in_dim, hidden) "
-            "и self.fc2 = nn.Linear(hidden, out_dim)"
-        )
+        super().__init__()
+        self.fc1 = nn.Linear(in_dim, hidden)
+        self.fc2 = nn.Linear(hidden, out_dim)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError(
-            "TODO: верни логиты: fc2(relu(fc1(x))), форма (N, out_dim), БЕЗ softmax"
-        )
+        return self.fc2(torch.relu(self.fc1(x)))
 
 
 def train_step(
@@ -67,9 +64,12 @@ def train_step(
     пойдёт не туда. ПОЧЕМУ возвращаем .item(): отвязываем число от графа, чтобы по нему
     нельзя было случайно продолжить backprop и чтобы не держать лишнюю память.
     """
-    raise NotImplementedError(
-        "TODO: zero_grad -> forward -> loss -> backward -> step; верни loss.item()"
-    )
+    optimizer.zero_grad()
+    logits = model(X)
+    loss = loss_fn(logits, y)
+    loss.backward()
+    optimizer.step()
+    return loss.item()
 
 
 def accuracy(model: nn.Module, X: torch.Tensor, y: torch.Tensor) -> float:
@@ -91,6 +91,8 @@ def accuracy(model: nn.Module, X: torch.Tensor, y: torch.Tensor) -> float:
     в нашем простом MLP это no-op, но это правильная привычка; no_grad не строит граф,
     что быстрее и экономнее по памяти при простом замере качества.
     """
-    raise NotImplementedError(
-        "TODO: eval() + no_grad(); preds = logits.argmax(dim=1); верни долю (preds == y)"
-    )
+    model.eval()
+    with torch.no_grad():
+        logits = model(X)
+        preds = logits.argmax(dim=1)
+    return (preds == y).float().mean().item()

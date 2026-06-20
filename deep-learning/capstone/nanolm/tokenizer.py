@@ -43,31 +43,30 @@ class CharTokenizer:
     """
 
     def __init__(self) -> None:
-        # Подсказка: заведи поля для алфавита и отображений (например chars, stoi, itos).
-        # Пока токенизатор не построен (build не вызван), encode/decode работать не обязаны.
-        raise NotImplementedError(
-            "TODO: инициализируй поля токенизатора (алфавит, stoi, itos). "
-            "Алфавит заполнится в build(text)."
-        )
+        # Пока build не вызван — пустой алфавит и пустые отображения.
+        self.chars: List[str] = []
+        self.stoi: dict = {}
+        self.itos: dict = {}
 
     def build(self, text: str) -> "CharTokenizer":
         """Построить алфавит и отображения по тексту. Верни self (для чейнинга).
 
         chars = sorted(set(text)); stoi = {ch: i ...}; itos = обратное.
         """
-        raise NotImplementedError(
-            "TODO: chars = sorted(set(text)); построй stoi (ch->i) и itos (i->ch); верни self"
-        )
+        self.chars = sorted(set(text))
+        self.stoi = {ch: i for i, ch in enumerate(self.chars)}
+        self.itos = {i: ch for i, ch in enumerate(self.chars)}
+        return self
 
     def encode(self, text: str) -> List[int]:
         """Текст -> список индексов (по одному индексу на символ)."""
-        raise NotImplementedError("TODO: верни [self.stoi[ch] for ch in text]")
+        return [self.stoi[ch] for ch in text]
 
     def decode(self, ids: List[int]) -> str:
         """Список индексов -> текст (склей символы)."""
-        raise NotImplementedError("TODO: верни ''.join(self.itos[i] for i in ids)")
+        return "".join(self.itos[int(i)] for i in ids)
 
     @property
     def vocab_size(self) -> int:
         """Размер алфавита (число уникальных символов)."""
-        raise NotImplementedError("TODO: верни число символов в алфавите")
+        return len(self.chars)

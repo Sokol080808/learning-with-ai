@@ -41,7 +41,14 @@ def sigmoid(z: np.ndarray) -> np.ndarray:
     эквивалентную форму e^{z}/(1+e^{z}). В обеих ветках под экспонентой стоит число <= 0,
     поэтому exp не переполняется. Ветки можно собрать через np.where или булевы маски.
     """
-    raise NotImplementedError("TODO: реализуй численно стабильную sigmoid(z)")
+    z = np.asarray(z, dtype=float)
+    result = np.empty_like(z)
+    pos = z >= 0
+    neg = ~pos
+    result[pos] = 1.0 / (1.0 + np.exp(-z[pos]))
+    ez = np.exp(z[neg])
+    result[neg] = ez / (1.0 + ez)
+    return result
 
 
 def bce_loss(p: np.ndarray, y: np.ndarray) -> float:
@@ -59,7 +66,9 @@ def bce_loss(p: np.ndarray, y: np.ndarray) -> float:
         [eps, 1-eps] (например eps = 1e-12) через np.clip — иначе при p=0 или p=1
         получишь log(0) = -inf и весь loss станет nan.
     """
-    raise NotImplementedError("TODO: реализуй bce_loss(p, y) с защитой от log(0)")
+    eps = 1e-12
+    p = np.clip(p, eps, 1.0 - eps)
+    return float(np.mean(-(y * np.log(p) + (1.0 - y) * np.log(1.0 - p))))
 
 
 def predict_proba(X: np.ndarray, w: np.ndarray, b: float) -> np.ndarray:
@@ -75,7 +84,7 @@ def predict_proba(X: np.ndarray, w: np.ndarray, b: float) -> np.ndarray:
       - Возвращает np.ndarray формы (N,) со значениями в (0, 1).
       - Используй уже написанную тобой sigmoid (стабильность достанется бесплатно).
     """
-    raise NotImplementedError("TODO: реализуй predict_proba(X, w, b)")
+    return sigmoid(X @ w + b)
 
 
 def accuracy(p: np.ndarray, y: np.ndarray, thr: float = 0.5) -> float:
@@ -89,7 +98,8 @@ def accuracy(p: np.ndarray, y: np.ndarray, thr: float = 0.5) -> float:
       - Возвращает python float в [0.0, 1.0]: (число верных) / N.
       - Сравнение «p >= thr» (не строгое), чтобы p ровно на пороге шло в класс 1.
     """
-    raise NotImplementedError("TODO: реализуй accuracy(p, y, thr)")
+    preds = (p >= thr).astype(float)
+    return float(np.mean(preds == y))
 
 
 def logreg_gradients(
@@ -115,4 +125,9 @@ def logreg_gradients(
       - Возвращает кортеж (dw, db): dw — np.ndarray формы (D,), db — python float.
       - Внутри посчитай p через predict_proba (не дублируй формулу сигмоиды).
     """
-    raise NotImplementedError("TODO: реализуй logreg_gradients(X, y, w, b) -> (dw, db)")
+    N = X.shape[0]
+    p = predict_proba(X, w, b)  # (N,)
+    err = p - y                  # (N,)
+    dw = (X.T @ err) / N        # (D,)
+    db = float(np.sum(err) / N)
+    return dw, db

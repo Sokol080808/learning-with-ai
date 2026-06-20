@@ -36,9 +36,10 @@ def layernorm(
     Пример (строка x = [1, 2, 3], gamma=1, beta=0):
         mu = 2; var = (1+0+1)/3 ≈ 0.667; xhat ≈ [-1.225, 0, 1.225]
     """
-    raise NotImplementedError(
-        "TODO: нормируй x по последней оси (смещённая дисперсия), затем * gamma + beta"
-    )
+    mu = x.mean(dim=-1, keepdim=True)
+    var = x.var(dim=-1, unbiased=False, keepdim=True)
+    xhat = (x - mu) / torch.sqrt(var + eps)
+    return xhat * gamma + beta
 
 
 def init_scale(fan_in: int) -> float:
@@ -56,7 +57,7 @@ def init_scale(fan_in: int) -> float:
         init_scale(100) -> 0.1
         init_scale(4)   -> 0.5
     """
-    raise NotImplementedError("TODO: верни 1 / sqrt(fan_in) как float")
+    return 1.0 / math.sqrt(fan_in)
 
 
 def lr_at_step(
@@ -92,6 +93,16 @@ def lr_at_step(
         lr_at_step(0.1, 10,  10, 100) -> 0.1     # пик
         lr_at_step(0.1, 100, 10, 100) -> 0.0     # конец
     """
-    raise NotImplementedError(
-        "TODO: реализуй warmup (растущая прямая), затем спад linear/cosine до нуля"
-    )
+    if step >= total:
+        return 0.0
+    if warmup > 0 and step < warmup:
+        return base_lr * step / warmup
+    # decay phase
+    if total == warmup:
+        # edge case: no decay region
+        return base_lr
+    progress = (step - warmup) / (total - warmup)
+    if schedule == "linear":
+        return base_lr * (1.0 - progress)
+    else:  # cosine
+        return base_lr * 0.5 * (1.0 + math.cos(math.pi * progress))

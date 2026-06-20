@@ -29,7 +29,9 @@ def set_seed(seed: int) -> None:
         set_seed(0); b = torch.randn(4)
         # тогда torch.allclose(a, b) == True
     """
-    raise NotImplementedError("TODO: засидируй random, numpy и torch одним вызовом")
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
 
 
 def count_parameters(model: torch.nn.Module) -> int:
@@ -47,7 +49,7 @@ def count_parameters(model: torch.nn.Module) -> int:
     Пример:
         count_parameters(torch.nn.Linear(4, 3))  -> 15
     """
-    raise NotImplementedError("TODO: верни сумму numel() по обучаемым параметрам")
+    return sum(p.numel() for p in model.parameters() if p.requires_grad)
 
 
 def save_model(model: torch.nn.Module, path: str) -> None:
@@ -63,7 +65,7 @@ def save_model(model: torch.nn.Module, path: str) -> None:
     Пример:
         save_model(model, "model.pt")   # на диске появится файл с весами
     """
-    raise NotImplementedError("TODO: torch.save(model.state_dict(), path)")
+    torch.save(model.state_dict(), path)
 
 
 def load_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
@@ -81,4 +83,6 @@ def load_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
         m2 = SomeNet()                  # пустой каркас, веса случайные
         load_model(m2, "model.pt")      # веса m2 стали такими же, как у сохранённой
     """
-    raise NotImplementedError("TODO: загрузи state_dict из path в model и верни model")
+    state = torch.load(path, weights_only=True)
+    model.load_state_dict(state)
+    return model

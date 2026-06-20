@@ -33,7 +33,7 @@ def relu(z: np.ndarray) -> np.ndarray:
     Контракт: возвращает массив той же формы, где отрицательные элементы заменены нулём,
     а неотрицательные оставлены как есть.
     """
-    raise NotImplementedError("TODO: relu(z) = максимум из 0 и z, поэлементно")
+    return np.maximum(0.0, z)
 
 
 def softmax(z: np.ndarray) -> np.ndarray:
@@ -45,7 +45,9 @@ def softmax(z: np.ndarray) -> np.ndarray:
     максимум (z - max по axis=-1, keepdims=True). Это не меняет результат softmax
     математически, но спасает от переполнения exp. Затем нормируй на сумму exp по строке.
     """
-    raise NotImplementedError("TODO: устойчивый softmax по строкам (вычесть max, exp, нормировать)")
+    z_shifted = z - np.max(z, axis=-1, keepdims=True)
+    exp = np.exp(z_shifted)
+    return exp / np.sum(exp, axis=-1, keepdims=True)
 
 
 def cross_entropy(p: np.ndarray, y: np.ndarray) -> float:
@@ -57,7 +59,9 @@ def cross_entropy(p: np.ndarray, y: np.ndarray) -> float:
     Контракт: бери лог только у вероятности ПРАВИЛЬНОГО класса каждого объекта
     (p[i, y[i]]). Для устойчивости логарифма можно прибавить крошечную eps (например 1e-12).
     """
-    raise NotImplementedError("TODO: средняя -log(вероятность правильного класса)")
+    N = y.shape[0]
+    correct = p[np.arange(N), y]
+    return float(-np.mean(np.log(correct + 1e-12)))
 
 
 def forward2(
@@ -79,7 +83,11 @@ def forward2(
 
     Формы: x (N, D); W1 (D, H); b1 (H,); W2 (H, C); b2 (C,); y (N,). Возврат: float.
     """
-    raise NotImplementedError("TODO: прямой проход и возврат cross_entropy(p, y)")
+    z1 = x @ W1 + b1
+    a1 = relu(z1)
+    z2 = a1 @ W2 + b2
+    p = softmax(z2)
+    return cross_entropy(p, y)
 
 
 def backward2(
@@ -123,7 +131,32 @@ def backward2(
       - Используй relu/softmax из этого же файла, чтобы forward внутри backward2 совпадал
         с forward2.
     """
-    raise NotImplementedError("TODO: посчитай dz2=(p-onehot)/N и протолкни градиент назад до dW1/db1")
+    N, C = x.shape[0], W2.shape[1]
+
+    # Прямой проход — сохраняем промежуточные z1, a1, p для обратного.
+    z1 = x @ W1 + b1
+    a1 = relu(z1)
+    z2 = a1 @ W2 + b2
+    p = softmax(z2)
+
+    # Градиент по логитам: красивый результат softmax + cross-entropy.
+    oh = np.zeros((N, C))
+    oh[np.arange(N), y] = 1.0
+    dz2 = (p - oh) / N                # (N, C)
+
+    # Второй (выходной) линейный слой.
+    dW2 = a1.T @ dz2                  # (H, C)
+    db2 = dz2.sum(axis=0)            # (C,)
+    da1 = dz2 @ W2.T                 # (N, H)
+
+    # Сквозь ReLU.
+    dz1 = da1 * (z1 > 0)            # (N, H)
+
+    # Первый линейный слой.
+    dW1 = x.T @ dz1                  # (D, H)
+    db1 = dz1.sum(axis=0)           # (H,)
+
+    return {"dW1": dW1, "db1": db1, "dW2": dW2, "db2": db2}
 
 
 def numerical_gradient(f, param: np.ndarray, eps: float = 1e-5) -> np.ndarray:
@@ -142,4 +175,16 @@ def numerical_gradient(f, param: np.ndarray, eps: float = 1e-5) -> np.ndarray:
             param[i] = old           # ОБЯЗАТЕЛЬНО восстанови значение!
     Подсказка по обходу всех элементов: np.nditer(param, flags=["multi_index"], op_flags=["readwrite"]).
     """
-    raise NotImplementedError("TODO: центральная разность (f(+eps)-f(-eps))/(2*eps) по каждому элементу")
+    grad = np.zeros_like(param)
+    it = np.nditer(param, flags=["multi_index"], op_flags=["readwrite"])
+    while not it.finished:
+        i = it.multi_index
+        old = param[i]
+        param[i] = old + eps
+        f_plus = f()
+        param[i] = old - eps
+        f_minus = f()
+        grad[i] = (f_plus - f_minus) / (2 * eps)
+        param[i] = old           # восстановить значение!
+        it.iternext()
+    return grad

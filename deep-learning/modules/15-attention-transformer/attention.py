@@ -7,6 +7,7 @@
 # кирпичики torch, чтобы ты понимал КАЖДУЮ строчку.
 # Весь модуль — на CPU, всё во float32.
 
+import math
 from typing import Optional, Tuple
 
 import torch
@@ -51,10 +52,13 @@ def scaled_dot_product_attention(
 
     Маленький пример формы: q,k,v: (1, 3, 4) -> out: (1, 3, 4), attn: (1, 3, 3).
     """
-    raise NotImplementedError(
-        "TODO: scores = q @ k.transpose(-2,-1)/sqrt(d_k); mask -> -inf; "
-        "softmax(dim=-1); out = attn @ v; верни (out, attn)"
-    )
+    d_k = q.shape[-1]
+    scores = (q @ k.transpose(-2, -1)) / math.sqrt(d_k)
+    if mask is not None:
+        scores = scores.masked_fill(mask, float("-inf"))
+    attn = torch.softmax(scores, dim=-1)
+    out = attn @ v
+    return out, attn
 
 
 def causal_mask(T: int) -> torch.Tensor:
@@ -80,9 +84,7 @@ def causal_mask(T: int) -> torch.Tensor:
     приведённый к bool. Маска должна состыковываться с scaled_dot_product_attention,
     где True = запрет.
     """
-    raise NotImplementedError(
-        "TODO: верни булев тензор (T, T), True выше главной диагонали (j > i)"
-    )
+    return torch.triu(torch.ones(T, T), diagonal=1).bool()
 
 
 class MultiHeadAttention(nn.Module):
@@ -120,16 +122,30 @@ class MultiHeadAttention(nn.Module):
 
     def __init__(self, d_model: int, n_heads: int) -> None:
         super().__init__()
-        raise NotImplementedError(
-            "TODO: сохрани d_model/n_heads, посчитай d_head, создай "
-            "self.w_q/w_k/w_v/w_o = nn.Linear(d_model, d_model)"
-        )
+        assert d_model % n_heads == 0, "d_model должен делиться на n_heads нацело"
+        self.d_model = d_model
+        self.n_heads = n_heads
+        self.d_head = d_model // n_heads
+        self.w_q = nn.Linear(d_model, d_model)
+        self.w_k = nn.Linear(d_model, d_model)
+        self.w_v = nn.Linear(d_model, d_model)
+        self.w_o = nn.Linear(d_model, d_model)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError(
-            "TODO: проекции -> разбей на головы (B,H,T,d_head) -> causal_mask -> "
-            "scaled_dot_product_attention -> склей головы -> w_o"
-        )
+        B, T, _ = x.shape
+
+        # Проекции и резка на головы -> (B, n_heads, T, d_head).
+        q = self.w_q(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        k = self.w_k(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+        v = self.w_v(x).view(B, T, self.n_heads, self.d_head).transpose(1, 2)
+
+        # Причинная маска (T, T) броадкастится на оси (B, n_heads).
+        mask = causal_mask(T).to(x.device)
+        out, _ = scaled_dot_product_attention(q, k, v, mask)
+
+        # Склейка голов обратно -> (B, T, d_model) и выходная проекция.
+        out = out.transpose(1, 2).reshape(B, T, self.d_model)
+        return self.w_o(out)
 
 
 class TransformerBlock(nn.Module):
@@ -162,12 +178,18 @@ class TransformerBlock(nn.Module):
 
     def __init__(self, d_model: int, n_heads: int, d_ff: Optional[int] = None) -> None:
         super().__init__()
-        raise NotImplementedError(
-            "TODO: ln1, ln2 = nn.LayerNorm(d_model); attn = MultiHeadAttention(...); "
-            "mlp = Linear(d_model,d_ff)->GELU->Linear(d_ff,d_model), d_ff=4*d_model по умолчанию"
+        if d_ff is None:
+            d_ff = 4 * d_model
+        self.ln1 = nn.LayerNorm(d_model)
+        self.ln2 = nn.LayerNorm(d_model)
+        self.attn = MultiHeadAttention(d_model, n_heads)
+        self.mlp = nn.Sequential(
+            nn.Linear(d_model, d_ff),
+            nn.GELU(),
+            nn.Linear(d_ff, d_model),
         )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError(
-            "TODO: x = x + attn(ln1(x)); x = x + mlp(ln2(x)); верни x"
-        )
+        x = x + self.attn(self.ln1(x))
+        x = x + self.mlp(self.ln2(x))
+        return x

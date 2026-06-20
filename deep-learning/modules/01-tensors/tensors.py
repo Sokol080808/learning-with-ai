@@ -21,7 +21,7 @@ def scale(x: np.ndarray, k: float) -> np.ndarray:
 
     Пример: scale(np.array([1., 2., 3.]), 2.0) -> array([2., 4., 6.]).
     """
-    raise NotImplementedError("TODO: верни x, умноженный на скаляр k (Идея 2)")
+    return x * k
 
 
 def row_normalize(x: np.ndarray) -> np.ndarray:
@@ -36,9 +36,7 @@ def row_normalize(x: np.ndarray) -> np.ndarray:
 
     Пример: для строки [1., 3.] (сумма 4) результат [0.25, 0.75].
     """
-    raise NotImplementedError(
-        "TODO: подели x на построчную сумму через axis=1, keepdims=True (Идеи 1, 3)"
-    )
+    return x / x.sum(axis=1, keepdims=True)
 
 
 def add_bias(x: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -52,7 +50,7 @@ def add_bias(x: np.ndarray, b: np.ndarray) -> np.ndarray:
 
     Пример: x=[[1,2],[3,4]], b=[10,20] -> [[11,22],[13,24]].
     """
-    raise NotImplementedError("TODO: верни x + b через broadcasting (Идея 3)")
+    return x + b
 
 
 def relu_np(x: np.ndarray) -> np.ndarray:
@@ -67,4 +65,4 @@ def relu_np(x: np.ndarray) -> np.ndarray:
 
     Пример: relu_np(np.array([-2., 0., 3.])) -> array([0., 0., 3.]).
     """
-    raise NotImplementedError("TODO: верни поэлементный max(0, x) (Идея 4)")
+    return np.maximum(x, 0.0)

@@ -37,7 +37,17 @@ def numerical_gradient(
           (работай с копиями, приведёнными к float).
         - Делить нужно на (2·eps), а не на eps — это и есть «центральная» разность.
     """
-    raise NotImplementedError("TODO: реализуй центральную разность по каждой координате")
+    grad = np.zeros_like(x, dtype=float)
+    x_work = x.astype(float).copy()
+    for idx in np.ndindex(x.shape):
+        orig = x_work[idx]
+        x_work[idx] = orig + eps
+        fp = f(x_work)
+        x_work[idx] = orig - eps
+        fm = f(x_work)
+        x_work[idx] = orig
+        grad[idx] = (fp - fm) / (2.0 * eps)
+    return grad
 
 
 def grad_sum_squares(x: np.ndarray) -> np.ndarray:
@@ -53,7 +63,7 @@ def grad_sum_squares(x: np.ndarray) -> np.ndarray:
         - Форма результата совпадает с формой `x`.
         - Результат — float-массив; исходный `x` не меняем.
     """
-    raise NotImplementedError("TODO: верни 2 * x")
+    return 2.0 * x.astype(float)
 
 
 def grad_of_affine(x: np.ndarray, w: np.ndarray) -> np.ndarray:
@@ -70,4 +80,4 @@ def grad_of_affine(x: np.ndarray, w: np.ndarray) -> np.ndarray:
         - Форма результата совпадает с формой `x` и `w`.
         - Верни именно копию `w` (не тот же самый объект, что пришёл), float.
     """
-    raise NotImplementedError("TODO: градиент dot(w, x) по x равен w")
+    return w.astype(float).copy()

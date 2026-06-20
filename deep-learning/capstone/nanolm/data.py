@@ -48,9 +48,11 @@ def get_batch(
     x: (4, 8), y: (4, 8); каждая строка y — соответствующая строка x, сдвинутая
     на один символ.
     """
-    raise NotImplementedError(
-        "TODO: g = torch.Generator().manual_seed(seed); выбери B стартов "
-        "ix = torch.randint(0, len(data) - block_size, (batch_size,), generator=g); "
-        "собери x из data[i:i+block_size] и y из data[i+1:i+block_size+1]; "
-        "верни (x, y) формы (batch_size, block_size)"
-    )
+    g = torch.Generator().manual_seed(seed)
+    # Стартовые позиции i: из data[i:i+block_size] И ещё один символ для сдвига.
+    # Допустимый диапазон i — [0, L - block_size - 1], то есть randint с верхней
+    # (исключительной) границей L - block_size.
+    ix = torch.randint(0, len(data) - block_size, (batch_size,), generator=g)
+    x = torch.stack([data[i : i + block_size] for i in ix])
+    y = torch.stack([data[i + 1 : i + block_size + 1] for i in ix])
+    return x, y

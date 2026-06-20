@@ -14,7 +14,7 @@ def relu(x: np.ndarray) -> np.ndarray:
         заменён на 0, а неотрицательные — без изменений.
       - Исходный x НЕ меняется (верни новый массив).
     """
-    raise NotImplementedError("TODO: реализуй relu через np.maximum(0, x)")
+    return np.maximum(0, x)
 
 
 def softmax(x: np.ndarray) -> np.ndarray:
@@ -28,7 +28,9 @@ def softmax(x: np.ndarray) -> np.ndarray:
       - Численная стабильность ОБЯЗАТЕЛЬНА: вычти максимум по последней оси
         (keepdims=True) перед exp, иначе большие логиты дадут inf.
     """
-    raise NotImplementedError("TODO: реализуй стабильный softmax по оси -1")
+    m = x.max(axis=-1, keepdims=True)
+    e = np.exp(x - m)
+    return e / e.sum(axis=-1, keepdims=True)
 
 
 def linear(x: np.ndarray, W: np.ndarray, b: np.ndarray) -> np.ndarray:
@@ -40,7 +42,7 @@ def linear(x: np.ndarray, W: np.ndarray, b: np.ndarray) -> np.ndarray:
       - b: (out,)   — вектор сдвига, прибавляется к каждой строке (broadcasting).
       - Возвращает (N, out).
     """
-    raise NotImplementedError("TODO: реализуй x @ W + b")
+    return x @ W + b
 
 
 def forward2(
@@ -63,7 +65,8 @@ def forward2(
       - Возвращает логиты формы (N, C). На выходе нелинейности НЕТ.
       - Используй уже написанные linear и relu, не дублируй матричное умножение.
     """
-    raise NotImplementedError("TODO: relu(linear(...)) затем linear(...)")
+    h = relu(linear(x, W1, b1))
+    return linear(h, W2, b2)
 
 
 def cross_entropy(logits: np.ndarray, y: np.ndarray) -> float:
@@ -81,4 +84,8 @@ def cross_entropy(logits: np.ndarray, y: np.ndarray) -> float:
       - Считай через log-sum-exp со сдвигом на максимум по строке, НЕ через
         log(softmax(...)) напрямую — иначе log(0) даст -inf.
     """
-    raise NotImplementedError("TODO: средняя cross-entropy через log-sum-exp")
+    N = logits.shape[0]
+    m = logits.max(axis=1, keepdims=True)
+    lse = m.ravel() + np.log(np.exp(logits - m).sum(axis=1))
+    correct = logits[np.arange(N), y]
+    return float(np.mean(lse - correct))

@@ -33,7 +33,7 @@ def sgd_step(params: np.ndarray, grads: np.ndarray, lr: float) -> np.ndarray:
         Новый массив params (той же формы). Не обязан изменять вход на месте —
         достаточно вернуть результат.
     """
-    raise NotImplementedError("TODO: верни params - lr * grads")
+    return params - lr * grads
 
 
 def momentum_step(
@@ -65,10 +65,9 @@ def momentum_step(
         Кортеж (params_new, velocity_new), оба той же формы, что и params.
         velocity_new нужно вернуть, чтобы передать его в СЛЕДУЮЩИЙ вызов.
     """
-    raise NotImplementedError(
-        "TODO: velocity_new = beta*velocity + (1-beta)*grads; "
-        "params_new = params - lr*velocity_new; верни (params_new, velocity_new)"
-    )
+    velocity_new = beta * velocity + (1 - beta) * grads
+    params_new = params - lr * velocity_new
+    return params_new, velocity_new
 
 
 def adam_step(
@@ -118,7 +117,9 @@ def adam_step(
         ВАЖНО: возвращай НЕпоправленные m_new и v_new (без bias correction);
         поправку используем только для вычисления шага этого вызова.
     """
-    raise NotImplementedError(
-        "TODO: обнови m_new и v_new, посчитай m_hat и v_hat с поправкой на смещение, "
-        "сделай шаг params - lr*m_hat/(sqrt(v_hat)+eps); верни (params_new, m_new, v_new)"
-    )
+    m_new = b1 * m + (1 - b1) * grads
+    v_new = b2 * v + (1 - b2) * (grads ** 2)
+    m_hat = m_new / (1 - b1 ** t)
+    v_hat = v_new / (1 - b2 ** t)
+    params_new = params - lr * m_hat / (np.sqrt(v_hat) + eps)
+    return params_new, m_new, v_new

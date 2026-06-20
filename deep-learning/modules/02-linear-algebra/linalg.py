@@ -22,7 +22,11 @@ def dot(a: np.ndarray, b: np.ndarray) -> float:
 
     Реализуй БЕЗ np.dot.
     """
-    raise NotImplementedError("TODO: реализуй скалярное произведение (без np.dot)")
+    if a.shape[0] != b.shape[0]:
+        raise ValueError(
+            f"Vectors must have equal length, got {a.shape[0]} and {b.shape[0]}"
+        )
+    return float(np.sum(a * b))
 
 
 def matmul(A: np.ndarray, B: np.ndarray) -> np.ndarray:
@@ -38,7 +42,17 @@ def matmul(A: np.ndarray, B: np.ndarray) -> np.ndarray:
 
     Реализуй БЕЗ np.matmul и без оператора @.
     """
-    raise NotImplementedError("TODO: реализуй матричное умножение (без np.matmul и @)")
+    n, k = A.shape
+    k2, m = B.shape
+    if k != k2:
+        raise ValueError(
+            f"Shape mismatch: A has {k} columns but B has {k2} rows"
+        )
+    C = np.zeros((n, m))
+    for i in range(n):
+        for j in range(m):
+            C[i, j] = dot(A[i, :], B[:, j])
+    return C
 
 
 def l2_norm(v: np.ndarray) -> float:
@@ -50,7 +64,7 @@ def l2_norm(v: np.ndarray) -> float:
 
     Реализуй БЕЗ np.linalg.norm.
     """
-    raise NotImplementedError("TODO: реализуй L2-норму (без np.linalg.norm)")
+    return float(np.sqrt(dot(v, v)))
 
 
 def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
@@ -64,4 +78,12 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
       Если хотя бы один вектор нулевой (его L2-норма == 0) — поднять ValueError
       (делить на ноль нельзя).
     """
-    raise NotImplementedError("TODO: реализуй косинусную близость")
+    if a.shape[0] != b.shape[0]:
+        raise ValueError(
+            f"Vectors must have equal length, got {a.shape[0]} and {b.shape[0]}"
+        )
+    na = l2_norm(a)
+    nb = l2_norm(b)
+    if na == 0.0 or nb == 0.0:
+        raise ValueError("Cannot compute cosine similarity with a zero vector (norm == 0)")
+    return float(dot(a, b) / (na * nb))
