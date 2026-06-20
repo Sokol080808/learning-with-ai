@@ -72,3 +72,21 @@ int binary_search(const std::vector<int>& v, int target) {
     }
     return -1;
 }
+
+// Задание 9 — print_box: перегрузка + default args.
+// Прямоугольная версия: w столбцов, h строк, символ fill.
+std::string print_box(int w, int h, char fill) {
+    std::string result;
+    for (int row = 0; row < h; ++row) {
+        for (int col = 0; col < w; ++col)
+            result += fill;
+        if (row < h - 1)
+            result += '\n';
+    }
+    return result;
+}
+
+// Квадратная версия делегирует прямоугольной — одна точка логики.
+std::string print_box(int side, char fill) {
+    return print_box(side, side, fill);
+}

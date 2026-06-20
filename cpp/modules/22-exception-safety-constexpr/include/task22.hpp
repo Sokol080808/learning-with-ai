@@ -4,6 +4,7 @@
 #include <cstddef>
 #include <stdexcept>
 #include <functional>
+#include <type_traits>
 
 // =============================================================================
 // Модуль 22 — Гарантии исключений и вычисления на этапе компиляции.
@@ -269,4 +270,56 @@ constexpr Array<T, N> reversed(const Array<T, N>& in) {
         out[i] = in[N - 1 - i];
     }
     return out;
+}
+
+// -----------------------------------------------------------------------------
+// Задание 6. my_swap — обобщённый swap с корректным условным noexcept.
+//
+// Контракт:
+//   my_swap(a, b) — обменять два значения через move.
+//   noexcept(my_swap(a, b)) == true  iff  T — noexcept-move-constructible &&
+//                                          noexcept-move-assignable.
+//
+// Ключевая идея: спецификатор noexcept(EXPR) принимает compile-time bool;
+// std::is_nothrow_move_constructible_v<T> и std::is_nothrow_move_assignable_v<T>
+// дают нужные трейты. Тело — стандартные три move-хода.
+//
+// Вспомогательный тип NoexceptWrapper<T>: форсирует noexcept-move у любого T,
+// оборачивая его move-конструктор в явный noexcept. Нужен в тестах, чтобы
+// контролировать ветку «noexcept-движение разрешено».
+// -----------------------------------------------------------------------------
+
+// Обёртка: делает move noexcept независимо от внутреннего типа.
+// Хранит T по значению; все операции делегируются, move явно noexcept.
+template <class T>
+struct NoexceptWrapper {
+    T value;
+
+    NoexceptWrapper() = default;
+    explicit NoexceptWrapper(T v) : value(std::move(v)) {}
+
+    // Принудительно noexcept move — это и есть цель обёртки.
+    NoexceptWrapper(NoexceptWrapper&& other) noexcept
+        : value(std::move(other.value)) {}
+    NoexceptWrapper& operator=(NoexceptWrapper&& other) noexcept {
+        value = std::move(other.value);
+        return *this;
+    }
+
+    // Копирование разрешено через T.
+    NoexceptWrapper(const NoexceptWrapper&) = default;
+    NoexceptWrapper& operator=(const NoexceptWrapper&) = default;
+};
+
+// Обобщённый swap через move с корректным условным noexcept.
+// Reference answer key: условие совпадает со стандартным std::swap (C++11).
+template <class T>
+void my_swap(T& a, T& b)
+    noexcept(std::is_nothrow_move_constructible_v<T> &&
+             std::is_nothrow_move_assignable_v<T>)
+{
+    // Reference answer key: три move-хода — стандартная реализация swap.
+    T tmp(std::move(a));
+    a = std::move(b);
+    b = std::move(tmp);
 }

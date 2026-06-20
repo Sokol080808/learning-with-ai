@@ -448,6 +448,71 @@ TEST(ScopeGuardProps, EdgeThrowAndDismissAll) {
     EXPECT_EQ(none, 0);
 }
 
+// --- Задание 9: safe_divide (optional) ---
+
+TEST(Modern, SafeDivideBasic) {
+    auto r = safe_divide(6, 3);
+    ASSERT_TRUE(r.has_value());
+    EXPECT_EQ(*r, 2);
+}
+
+TEST(Modern, SafeDivideZeroDivisor) {
+    EXPECT_FALSE(safe_divide(7, 0).has_value());
+    EXPECT_EQ(safe_divide(7, 0), std::nullopt);
+}
+
+TEST(Modern, SafeDivideNegative) {
+    auto r1 = safe_divide(-7, 2);
+    ASSERT_TRUE(r1.has_value());
+    EXPECT_EQ(*r1, -3);   // truncation toward zero
+
+    auto r2 = safe_divide(7, -2);
+    ASSERT_TRUE(r2.has_value());
+    EXPECT_EQ(*r2, -3);
+
+    auto r3 = safe_divide(0, 5);
+    ASSERT_TRUE(r3.has_value());
+    EXPECT_EQ(*r3, 0);
+}
+
+TEST(Modern, SafeDivideEdge) {
+    // Точное деление без остатка
+    auto exact = safe_divide(100, 4);
+    ASSERT_TRUE(exact.has_value());
+    EXPECT_EQ(*exact, 25);
+
+    // b==0 независимо от a
+    EXPECT_EQ(safe_divide(0, 0), std::nullopt);
+    EXPECT_EQ(safe_divide(-100, 0), std::nullopt);
+    EXPECT_EQ(safe_divide(std::numeric_limits<int>::max(), 0), std::nullopt);
+}
+
+// Seeded property: для b!=0 — has_value() и *value == a/b; для b==0 — nullopt.
+TEST(SafeDivideProps, PropertySeeded) {
+    std::mt19937 rng(0xDECAFu);
+    std::uniform_int_distribution<int> aval(-100000, 100000);
+    std::uniform_int_distribution<int> bval(-1000, 1000);
+
+    for (int iter = 0; iter < 600; ++iter) {
+        int a = aval(rng);
+        int b = bval(rng);
+
+        auto result = safe_divide(a, b);
+
+        if (b == 0) {
+            // Инвариант: при нулевом делителе — nullopt
+            EXPECT_FALSE(result.has_value()) << "a=" << a << " b=" << b;
+            EXPECT_EQ(result, std::nullopt);
+        } else {
+            // Инвариант: при b!=0 — has_value() и совпадает с оракулом a/b
+            ASSERT_TRUE(result.has_value()) << "a=" << a << " b=" << b;
+            EXPECT_EQ(*result, a / b) << "a=" << a << " b=" << b;
+            // Дополнительно: тождество деления (безостаточная часть)
+            EXPECT_EQ(*result * b + (a % b), a) << "a=" << a << " b=" << b;
+        }
+    }
+}
+
 // --- divmod: тождество q*b + r == a, знак остатка, исключение ---
 
 TEST(DivmodProps, EuclidIdentityAndSign) {

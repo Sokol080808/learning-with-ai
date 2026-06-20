@@ -2,6 +2,7 @@
 // Эталонное решение (answer key) — не входит в материалы для учащихся.
 #include <algorithm>
 #include <iterator>
+#include <ranges>
 #include <sstream>
 #include <cctype>
 
@@ -71,4 +72,17 @@ std::size_t drop_below(std::vector<int>& v, int threshold) {
     std::size_t removed = static_cast<std::size_t>(std::distance(new_end, v.end()));
     v.erase(new_end, v.end());
     return removed;
+}
+
+std::vector<int> evens_squared(const std::vector<int>& xs) {
+    // Ленивый конвейер: сначала отфильтровать чётные, затем возвести в квадрат.
+    // views::filter и views::transform ничего не вычисляют сразу — элементы
+    // обрабатываются поэлементно при материализации через ranges::copy.
+    auto pipe = xs
+        | std::views::filter([](int x) { return x % 2 == 0; })
+        | std::views::transform([](int x) { return x * x; });
+
+    std::vector<int> out;
+    std::ranges::copy(pipe, std::back_inserter(out));
+    return out;
 }

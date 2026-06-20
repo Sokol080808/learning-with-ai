@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <string_view>
 
 // Перевод температуры из градусов Цельсия в градусы Фаренгейта.
 double to_fahrenheit(double c);
@@ -38,3 +39,9 @@ bool get_bit(unsigned int value, int pos);
 // --- Задание 8 ---
 // Меняет местами значения a и b через ссылки. БЕЗ std::swap.
 void swap_ints(int& a, int& b);
+
+// --- Задание 9 ---
+// Возвращает вид на первое «слово» в строке s (всё до первого пробела ' ').
+// Если строка пустая или состоит только из пробелов — возвращает пустой string_view.
+// Результат указывает ВНУТРЬ исходной строки (zero-copy, без аллокации).
+std::string_view first_word(std::string_view s);

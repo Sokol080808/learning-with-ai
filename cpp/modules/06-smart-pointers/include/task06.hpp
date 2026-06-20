@@ -3,9 +3,15 @@
 #include <vector>
 #include <string>
 #include <cstddef>
+#include <optional>
 
 // Вернуть unique_ptr, владеющий int со значением v.
 std::unique_ptr<int> make_unique_int(int v);
+
+// Задание 6. Безопасный доступ к элементу вектора через optional.
+// Возвращает v[i], если i < v.size(); иначе std::nullopt.
+// Иллюстрирует std::optional как nullable value без кучи (Идея 11).
+std::optional<int> maybe_at(const std::vector<int>& v, std::size_t i);
 
 // Односвязный список, владеющий узлами через unique_ptr (правило нуля в действии).
 class IntList {

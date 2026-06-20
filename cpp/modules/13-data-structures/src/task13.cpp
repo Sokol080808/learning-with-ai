@@ -46,6 +46,43 @@ std::optional<std::pair<int, int>> two_sum(const std::vector<int>& v, int target
     return std::nullopt;
 }
 
+// ── Задание 9. Merge sort — divide-and-conquer, O(n log n) ────────────────
+// Рекуррентность: T(n) = 2T(n/2) + O(n) → O(n log n) по теореме Мастера.
+// Пространство: O(n) — буфер для слияния (две половины копируются в tmp).
+
+static void merge(std::vector<int>& v, std::size_t lo, std::size_t mid, std::size_t hi) {
+    // Копируем обе половины во временный буфер
+    std::vector<int> left(v.begin() + static_cast<std::ptrdiff_t>(lo),
+                          v.begin() + static_cast<std::ptrdiff_t>(mid));
+    std::vector<int> right(v.begin() + static_cast<std::ptrdiff_t>(mid),
+                           v.begin() + static_cast<std::ptrdiff_t>(hi));
+    std::size_t i = 0, j = 0, k = lo;
+    // Слияние двух отсортированных половин
+    while (i < left.size() && j < right.size()) {
+        if (left[i] <= right[j]) {
+            v[k++] = left[i++];
+        } else {
+            v[k++] = right[j++];
+        }
+    }
+    while (i < left.size())  v[k++] = left[i++];
+    while (j < right.size()) v[k++] = right[j++];
+}
+
+static void merge_sort_impl(std::vector<int>& v, std::size_t lo, std::size_t hi) {
+    if (hi - lo <= 1) return;  // базовый случай: 0 или 1 элемент
+    std::size_t mid = lo + (hi - lo) / 2;
+    merge_sort_impl(v, lo, mid);   // рекурсия на левой половине
+    merge_sort_impl(v, mid, hi);   // рекурсия на правой половине
+    merge(v, lo, mid, hi);         // слияние двух отсортированных половин
+}
+
+std::vector<int> merge_sort(std::vector<int> v) {
+    if (v.size() > 1)
+        merge_sort_impl(v, 0, v.size());
+    return v;
+}
+
 // ── Задание 7. BST ─────────────────────────────────────────────────────────
 // Это эталонный ответ (answer key) — не отгружается ученикам.
 

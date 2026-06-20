@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <string>
 #include <vector>
+#include <deque>
 #include <stdexcept>
 #include <random>
 #include <algorithm>
@@ -530,4 +531,209 @@ TEST(BSTProps, ExtremeValues) {
     EXPECT_TRUE(t.contains(lo));
     EXPECT_TRUE(t.contains(hi));
     EXPECT_FALSE(t.contains(1));
+}
+
+// ===== Задание 8. Queue<T> на кольцевом буфере ================================
+
+TEST(Queue, EmptyOnStart) {
+    Queue<int> q;
+    EXPECT_TRUE(q.empty());
+    EXPECT_EQ(q.size(), 0u);
+}
+
+TEST(Queue, FifoRoundTrip) {
+    // FIFO: первым вошёл — первым вышел
+    Queue<int> q;
+    q.enqueue(1);
+    q.enqueue(2);
+    q.enqueue(3);
+    EXPECT_EQ(q.size(), 3u);
+    EXPECT_EQ(q.front(), 1);
+    q.dequeue();
+    EXPECT_EQ(q.front(), 2);
+    EXPECT_EQ(q.size(), 2u);
+    q.dequeue();
+    EXPECT_EQ(q.front(), 3);
+    q.dequeue();
+    EXPECT_TRUE(q.empty());
+}
+
+TEST(Queue, DequeueOnEmptyThrows) {
+    Queue<int> q;
+    EXPECT_THROW(q.dequeue(), std::underflow_error);
+}
+
+TEST(Queue, FrontOnEmptyThrows) {
+    Queue<int> q;
+    EXPECT_THROW(q.front(), std::underflow_error);
+}
+
+TEST(Queue, ThrowsAfterDraining) {
+    Queue<int> q;
+    q.enqueue(42);
+    q.dequeue();
+    EXPECT_THROW(q.front(), std::underflow_error);
+    EXPECT_THROW(q.dequeue(), std::underflow_error);
+}
+
+TEST(Queue, OverflowThrows) {
+    // CAPACITY=4 для этого теста, чтобы не ждать 64 вставки
+    Queue<int, 4> q;
+    q.enqueue(1);
+    q.enqueue(2);
+    q.enqueue(3);
+    q.enqueue(4);
+    EXPECT_THROW(q.enqueue(5), std::overflow_error);
+}
+
+TEST(Queue, WrapAroundRingBuffer) {
+    // Проверяем «обёртку» кольца: enqueue/dequeue чередуем, чтобы
+    // индексы перевалили за конец массива и завернулись на начало.
+    Queue<int, 4> q;
+    q.enqueue(10);
+    q.enqueue(20);
+    q.dequeue();   // head_ сдвинулся на 1
+    q.enqueue(30);
+    q.enqueue(40); // tail_ теперь = 3
+    q.dequeue();   // head_ = 2
+    q.enqueue(50); // tail_ обернётся на 0 (= 4 % 4)
+    // Теперь в очереди: 30, 40, 50
+    EXPECT_EQ(q.size(), 3u);
+    EXPECT_EQ(q.front(), 30);
+    q.dequeue();
+    EXPECT_EQ(q.front(), 40);
+    q.dequeue();
+    EXPECT_EQ(q.front(), 50);
+    q.dequeue();
+    EXPECT_TRUE(q.empty());
+}
+
+TEST(Queue, WorksForStrings) {
+    Queue<std::string> q;
+    q.enqueue("hello");
+    q.enqueue("world");
+    EXPECT_EQ(q.front(), "hello");
+    q.dequeue();
+    EXPECT_EQ(q.front(), "world");
+}
+
+// ── Queue: seeded property — FIFO enqueue/dequeue порядок ─────────────────
+// Инвариант: серия enqueue, затем серия dequeue возвращает элементы в том
+// же порядке (FIFO), size трекается точно; front всегда == первому вставленному.
+TEST(QueueProps, FifoOrderAndSizeTracking) {
+    std::mt19937 rng(0xC0FFEEu);
+    // Используем маленькую ёмкость, чтобы проверить границы кольца
+    constexpr std::size_t CAP = 32;
+    std::uniform_int_distribution<int> len(0, static_cast<int>(CAP));
+    std::uniform_int_distribution<int> val(-500, 500);
+    for (int iter = 0; iter < 400; ++iter) {
+        int n = len(rng);
+        std::vector<int> pushed(n);
+        for (int& x : pushed) x = val(rng);
+
+        Queue<int, CAP> q;
+        for (int x : pushed) q.enqueue(x);
+        ASSERT_EQ(q.size(), static_cast<std::size_t>(n));
+        EXPECT_EQ(q.empty(), pushed.empty());
+
+        // front должен указывать на первый вставленный элемент
+        if (!pushed.empty())
+            EXPECT_EQ(q.front(), pushed[0]);
+
+        // dequeue по очереди — должен вернуть исходный порядок
+        std::vector<int> got;
+        while (!q.empty()) {
+            got.push_back(q.front());
+            q.dequeue();
+        }
+        EXPECT_EQ(got, pushed);  // FIFO: порядок сохранён
+        EXPECT_TRUE(q.empty());
+        EXPECT_EQ(q.size(), 0u);
+    }
+}
+
+// ── Queue: property — interleaved enqueue/dequeue (имитирует «скользящее окно») ──
+// Проверяем, что кольцо корректно работает при многократном wrap-around.
+TEST(QueueProps, InterleavedEnqueueDequeueWithWrapAround) {
+    std::mt19937 rng(0xDEADBEEFu);
+    std::uniform_int_distribution<int> val(-200, 200);
+    constexpr std::size_t CAP = 8;
+    Queue<int, CAP> q;
+    std::deque<int> oracle;
+
+    for (int step = 0; step < 2000; ++step) {
+        // Если очередь полна — только dequeue; если пуста — только enqueue;
+        // иначе случайный выбор.
+        bool do_enqueue;
+        if (q.size() == CAP) {
+            do_enqueue = false;
+        } else if (q.empty()) {
+            do_enqueue = true;
+        } else {
+            do_enqueue = (rng() % 2 == 0);
+        }
+
+        if (do_enqueue) {
+            int v = val(rng);
+            q.enqueue(v);
+            oracle.push_back(v);
+        } else {
+            EXPECT_EQ(q.front(), oracle.front());
+            q.dequeue();
+            oracle.pop_front();
+        }
+        EXPECT_EQ(q.size(), oracle.size());
+        if (!oracle.empty())
+            EXPECT_EQ(q.front(), oracle.front());
+    }
+}
+
+// ===== Задание 9. merge_sort ===================================================
+
+TEST(MergeSort, BasicCases) {
+    EXPECT_EQ(merge_sort({}), (std::vector<int>{}));
+    EXPECT_EQ(merge_sort({42}), (std::vector<int>{42}));
+    EXPECT_EQ(merge_sort({2, 1}), (std::vector<int>{1, 2}));
+    EXPECT_EQ(merge_sort({3, 1, 4, 1, 5, 9, 2, 6}),
+              (std::vector<int>{1, 1, 2, 3, 4, 5, 6, 9}));
+    EXPECT_EQ(merge_sort({5, 4, 3, 2, 1}), (std::vector<int>{1, 2, 3, 4, 5}));
+    EXPECT_EQ(merge_sort({1, 2, 3, 4, 5}), (std::vector<int>{1, 2, 3, 4, 5}));
+}
+
+TEST(MergeSort, AllEqual) {
+    EXPECT_EQ(merge_sort({7, 7, 7, 7}), (std::vector<int>{7, 7, 7, 7}));
+}
+
+TEST(MergeSort, NegativesAndExtremes) {
+    const int lo = std::numeric_limits<int>::min();
+    const int hi = std::numeric_limits<int>::max();
+    EXPECT_EQ(merge_sort({hi, lo, 0}), (std::vector<int>{lo, 0, hi}));
+    EXPECT_EQ(merge_sort({-5, -1, -3, -2}), (std::vector<int>{-5, -3, -2, -1}));
+}
+
+// ── merge_sort: seeded property — сортированность + перестановка + == std::sort ──
+// Инварианты: результат отсортирован, является перестановкой входа,
+// совпадает с оракулом std::sort, идемпотентен.
+TEST(MergeSortProps, MatchesStdSortIsPermutationAndOrdered) {
+    std::mt19937 rng(0xABCDEF42u);
+    std::uniform_int_distribution<int> len(0, 200);
+    std::uniform_int_distribution<int> val(-100, 100);  // узкий → дубликаты
+    for (int iter = 0; iter < 500; ++iter) {
+        std::vector<int> in(len(rng));
+        for (int& x : in) x = val(rng);
+
+        std::vector<int> got = merge_sort(in);
+
+        ASSERT_EQ(got.size(), in.size());
+        // 1) отсортирован
+        EXPECT_TRUE(std::is_sorted(got.begin(), got.end()));
+        // 2) перестановка
+        EXPECT_TRUE(std::is_permutation(got.begin(), got.end(), in.begin()));
+        // 3) совпадает с оракулом
+        std::vector<int> oracle = in;
+        std::sort(oracle.begin(), oracle.end());
+        EXPECT_EQ(got, oracle);
+        // 4) идемпотентность
+        EXPECT_EQ(merge_sort(got), got);
+    }
 }

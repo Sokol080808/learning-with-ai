@@ -1,6 +1,7 @@
 #include "task06.hpp"
 #include <utility>   // std::move
 #include <stdexcept> // std::logic_error
+#include <optional>  // std::optional, std::nullopt
 
 // Это эталонный ключ ответов (reference answer key) — не отправляется учащимся.
 
@@ -38,6 +39,14 @@ std::vector<int> IntList::to_vector() const {
         result.push_back(p->value);
     }
     return result;
+}
+
+// ---------------------------------------------------------------------------
+// Задание 6. maybe_at — безопасный доступ через optional.
+
+std::optional<int> maybe_at(const std::vector<int>& v, std::size_t i) {
+    if (i < v.size()) return v[i];
+    return std::nullopt;
 }
 
 // ---------------------------------------------------------------------------

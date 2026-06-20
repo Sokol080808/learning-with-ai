@@ -110,6 +110,30 @@ void DynArray::fill(int value) {
     }
 }
 
+// ── Задание 9: DynArray — правило трёх (глубокое копирование) ───────────────────
+
+DynArray::DynArray(const DynArray& other)
+    : data_(other.size_ > 0 ? new int[other.size_] : nullptr),
+      size_(other.size_) {
+    // Копируем значения поэлементно — глубокая копия.
+    for (int i = 0; i < size_; ++i) {
+        data_[i] = other.data_[i];
+    }
+}
+
+DynArray& DynArray::operator=(const DynArray& other) {
+    if (this == &other) {
+        return *this;  // (1) самоприсваивание: ничего не делаем
+    }
+    delete[] data_;    // (2) освобождаем свой старый буфер
+    size_ = other.size_;
+    data_ = size_ > 0 ? new int[size_] : nullptr;  // (3) новый буфер
+    for (int i = 0; i < size_; ++i) {              // (4) копируем значения
+        data_[i] = other.data_[i];
+    }
+    return *this;      // (5) возвращаем *this по соглашению
+}
+
 // ── Задание 8: OwnedInt (глубокое vs поверхностное копирование) ───────────────
 OwnedInt::OwnedInt(int value) : ptr_(new int(value)) {
     // Конструктор уже корректен: один int на куче.

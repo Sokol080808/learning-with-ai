@@ -5,6 +5,7 @@
 #include <condition_variable>
 #include <queue>
 #include <optional>
+#include <future>
 
 // Сумма элементов, посчитанная параллельно в num_threads потоках (num_threads >= 1).
 long parallel_sum(const std::vector<long>& v, unsigned num_threads);
@@ -76,6 +77,17 @@ private:
 // забранных значений (должна совпасть с суммой всего, что положили).
 long producer_consumer_sum(unsigned num_producers, unsigned num_consumers,
                            unsigned items_per_producer);
+
+// -------------------------------------------------------------------------
+// Задание 7. Параллельная сумма через std::async / std::future.
+//
+// Делит xs на parts примерно равных частей (аналог balanced-разбиения),
+// запускает каждую часть через std::async(std::launch::async, ...) и собирает
+// результат через future::get(). Показывает паттерн «задача → результат» без
+// ручного управления потоками и мьютексами.
+//   parts >= 1; корректно работает при parts > xs.size() и на пустом векторе.
+//   Результат совпадает с std::accumulate.
+long parallel_sum_async(const std::vector<long>& xs, int parts);
 
 // -------------------------------------------------------------------------
 // Задание 6. Параллельная сумма с балансировкой остатка.

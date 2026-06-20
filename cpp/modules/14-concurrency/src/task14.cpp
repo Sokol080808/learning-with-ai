@@ -4,6 +4,8 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <future>
+#include <numeric>
 
 long parallel_sum(const std::vector<long>& v, unsigned num_threads) {
     if (num_threads == 0) num_threads = 1;
@@ -143,6 +145,44 @@ long producer_consumer_sum(unsigned num_producers, unsigned num_consumers,
 
     long total = 0;
     for (long s : partials) total += s;
+    return total;
+}
+
+// ---------------------------- Задание 7 ----------------------------------
+// Параллельная сумма через std::async + std::future.
+// Каждая задача принимает указатели на начало и конец диапазона по значению,
+// чтобы лямбда не захватывала итераторы, чей стек-фрейм мог бы устареть.
+// Ни мьютексов, ни общих переменных — канал future/promise сам заботится об
+// happens-before между вычислителем и f.get().
+
+long parallel_sum_async(const std::vector<long>& xs, int parts) {
+    if (parts <= 0) parts = 1;
+    const std::size_t n = xs.size();
+
+    // Balanced-разбиение: первые rem кусков на 1 элемент длиннее.
+    const auto P = static_cast<std::size_t>(parts);
+    const std::size_t base = n / P;
+    const std::size_t rem  = n % P;
+
+    std::vector<std::future<long>> futures;
+    futures.reserve(P);
+
+    const long* data = xs.data();   // сырой указатель — захватываем по значению
+    std::size_t begin = 0;
+    for (std::size_t k = 0; k < P; ++k) {
+        const std::size_t len = base + (k < rem ? 1u : 0u);
+        const std::size_t end = begin + len;
+        // Захватываем data, begin, end по значению — поток будет жить дольше итерации.
+        futures.push_back(
+            std::async(std::launch::async,
+                [data, begin, end]() -> long {
+                    return std::accumulate(data + begin, data + end, 0L);
+                }));
+        begin = end;
+    }
+
+    long total = 0;
+    for (auto& f : futures) total += f.get();
     return total;
 }
 

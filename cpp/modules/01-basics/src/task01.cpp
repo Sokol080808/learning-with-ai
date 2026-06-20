@@ -1,6 +1,7 @@
 #include "task01.hpp"
 
 #include <limits>
+#include <string_view>
 
 // Эталонный ключ ответов (reference answer key) — не поставляется учащимся.
 
@@ -60,4 +61,17 @@ void swap_ints(int& a, int& b) {
     int tmp = a;
     a = b;
     b = tmp;
+}
+
+std::string_view first_word(std::string_view s) {
+    // Находим первый пробел; find возвращает npos, если пробела нет.
+    const auto pos = s.find(' ');
+    if (pos == std::string_view::npos) {
+        // Пробела нет — вся строка является единственным словом.
+        // Если строка пустая — s.substr(0) тоже вернёт пустой view, что корректно.
+        return s;
+    }
+    // substr(0, pos) — view на символы [0, pos), без копирования.
+    // Когда pos == 0 (строка начинается с пробела) — возвращаем пустой view.
+    return s.substr(0, pos);
 }

@@ -386,6 +386,66 @@ TEST(BlockingQueueProps, SingleThreadRoundTripPreservesOrder) {
     }
 }
 
+// ===== ЗАДАНИЕ 7: parallel_sum_async =====
+
+// --- Фиксированные краевые случаи ---
+
+TEST(AsyncParallelSum, MatchesSequential) {
+    std::vector<long> v(1000);
+    std::iota(v.begin(), v.end(), 1);       // 1..1000
+    const long expected = 1000L * 1001L / 2; // 500500
+    EXPECT_EQ(parallel_sum_async(v, 1), expected);
+    EXPECT_EQ(parallel_sum_async(v, 4), expected);
+    EXPECT_EQ(parallel_sum_async(v, 8), expected);
+}
+
+// parts == 1: единственная future должна вернуть всю сумму.
+TEST(AsyncParallelSum, SinglePart) {
+    std::vector<long> v{10, 20, 30, 40};
+    EXPECT_EQ(parallel_sum_async(v, 1), 100L);
+}
+
+// parts > size: лишние futures получают пустые диапазоны, возвращают 0.
+TEST(AsyncParallelSum, MorePartsThanSize) {
+    std::vector<long> v{1, 2, 3};
+    EXPECT_EQ(parallel_sum_async(v, 10), 6L);
+}
+
+// Пустой вектор: все futures дают 0, итого 0.
+TEST(AsyncParallelSum, EmptyVector) {
+    std::vector<long> empty;
+    EXPECT_EQ(parallel_sum_async(empty, 1), 0L);
+    EXPECT_EQ(parallel_sum_async(empty, 4), 0L);
+}
+
+// Отрицательные значения — сумма правильная.
+TEST(AsyncParallelSum, NegativeValues) {
+    std::vector<long> v{-5, 3, -2, 10, -1, -1};  // сумма = 4
+    EXPECT_EQ(parallel_sum_async(v, 3), 4L);
+}
+
+// --- Seeded property-тест ---
+//
+// Инвариант: parallel_sum_async == std::accumulate для любого вектора и любого parts.
+// Генератор детерминирован (фикс. сид), поэтому CI не «мигает».
+TEST(AsyncParallelSumProps, EqualsAccumulate) {
+    std::mt19937 rng(0xA5A5CA5Eu);  // фиксированный сид
+    std::uniform_int_distribution<long> val(-1'000'000L, 1'000'000L);
+    std::uniform_int_distribution<int> parts_dist(1, 64);
+    std::uniform_int_distribution<int> sz_dist(0, 500);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        const int n = sz_dist(rng);
+        std::vector<long> v(static_cast<std::size_t>(n));
+        for (long& x : v) x = val(rng);
+
+        const long oracle = std::accumulate(v.begin(), v.end(), 0L);
+        const int P = parts_dist(rng);  // может быть больше n (проверяем robustness)
+        EXPECT_EQ(parallel_sum_async(v, P), oracle)
+            << "n=" << n << " parts=" << P;
+    }
+}
+
 // Перестановочный инвариант при многих consumer'ах: значения могут достаться
 // разным потокам в произвольном порядке, но МУЛЬТИМНОЖЕСТВО забранного совпадает
 // с мультимножеством положенного (ничего не потеряно и не продублировано).

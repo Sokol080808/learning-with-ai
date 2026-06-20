@@ -131,3 +131,30 @@ struct Pow<Base, 0> {
 // Удобный псевдоним-переменная (variable template).
 template <long long Base, unsigned Exp>
 inline constexpr long long pow_v = Pow<Base, Exp>::value;
+
+// ============================================================================
+//  Задание 9. Собственный концепт Addable, sum_all, variadic sum_args.
+// ============================================================================
+
+// Концепт: тип T должен поддерживать оператор +, результат которого конвертируем к T.
+template <class T>
+concept Addable = requires(T a, T b) {
+    { a + b } -> std::convertible_to<T>;
+};
+
+// sum_all — сумма элементов контейнера. Ограничена концептом Addable на тип элемента.
+// Для пустого вектора возвращает T{} (нулевой элемент типа T).
+template <Addable T>
+T sum_all(const std::vector<T>& v) {
+    T total{};
+    for (const T& x : v) total = total + x;
+    return total;
+}
+
+// sum_args — variadic сумма через fold expression (C++17).
+// Принимает один и более аргументов любых типов с operator+.
+// Пустой пакет не поддерживается (unary fold требует минимум один элемент).
+template <class... Args>
+auto sum_args(Args... args) {
+    return (args + ...);
+}

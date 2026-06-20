@@ -5,6 +5,7 @@
 #include <string_view>
 #include <utility>
 #include <functional>
+#include <optional>
 
 // Пара {минимум, максимум} для непустого вектора.
 std::pair<int, int> minmax_of(const std::vector<int>& v);
@@ -76,3 +77,8 @@ inline ScopeGuard make_scope_guard(std::function<void()> fn) {
 // (иначе деление было бы зря). Возвращает пару {частное, остаток} для b != 0.
 // При b == 0 бросает std::invalid_argument.
 [[nodiscard]] std::pair<int, int> divmod(int a, int b);
+
+// Задание 9. Безопасное деление через optional: a/b или nullopt при b==0.
+// Альтернативный стиль обработки ошибок по сравнению с divmod (задание 8):
+// вместо исключения возвращаем «пустое значение» — nullopt.
+[[nodiscard]] std::optional<int> safe_divide(int a, int b);

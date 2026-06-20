@@ -16,49 +16,55 @@ namespace minidb {
 
 Value::Value(Storage data) : data_(std::move(data)) {}
 
-// TODO: собрать Value со строкой внутри. Стаб возвращает ПУСТУЮ строку независимо от s.
-Value Value::make_string(std::string /*s*/) {
-    return Value(Storage{std::string{}});
+// Фабрики оборачивают нужную альтернативу variant. Аргумент s принят ПО ЗНАЧЕНИЮ
+// и перемещён внутрь (модуль 05): один move вместо копии — данные «утекают» в variant
+// без лишнего выделения памяти.
+Value Value::make_string(std::string s) {
+    return Value(Storage{std::move(s)});
 }
 
-// TODO: собрать Value с пустым списком. (Стаб уже почти верен — но не полагайся на это, проверь тестом.)
 Value Value::make_list() {
     return Value(Storage{ListData{}});
 }
 
-// TODO: собрать Value с пустым хешем.
 Value Value::make_hash() {
     return Value(Storage{HashData{}});
 }
 
-// TODO: вернуть реальный тип по содержимому variant. Стаб ВСЕГДА говорит String — неверно для list/hash.
+// index() variant — это номер активной альтернативы (String=0, List=1, Hash=2).
+// Порядок в Storage намеренно совпадает с enum Type, поэтому отображение прямое.
 Type Value::type() const {
-    return Type::String;
+    return static_cast<Type>(data_.index());
 }
 
-// TODO: вернуть ссылку на строку или бросить runtime_error, если внутри не строка.
-// Стаб бросает всегда — даже когда внутри действительно строка.
+// «Бросающие аксессоры» (модуль 09). std::get_if<T>(&data_) вернёт указатель на T,
+// если активна именно эта альтернатива, иначе nullptr — тогда бросаем runtime_error
+// с понятным сообщением (полезнее, чем стандартное std::bad_variant_access от std::get).
 std::string& Value::as_string() {
-    throw std::runtime_error("Value::as_string не реализован (стаб)");
+    if (auto* p = std::get_if<std::string>(&data_)) return *p;
+    throw std::runtime_error("Value::as_string: value is not a string");
 }
 const std::string& Value::as_string() const {
-    throw std::runtime_error("Value::as_string не реализован (стаб)");
+    if (auto* p = std::get_if<std::string>(&data_)) return *p;
+    throw std::runtime_error("Value::as_string: value is not a string");
 }
 
-// TODO: вернуть ссылку на список или бросить runtime_error при неверном типе.
 ListData& Value::as_list() {
-    throw std::runtime_error("Value::as_list не реализован (стаб)");
+    if (auto* p = std::get_if<ListData>(&data_)) return *p;
+    throw std::runtime_error("Value::as_list: value is not a list");
 }
 const ListData& Value::as_list() const {
-    throw std::runtime_error("Value::as_list не реализован (стаб)");
+    if (auto* p = std::get_if<ListData>(&data_)) return *p;
+    throw std::runtime_error("Value::as_list: value is not a list");
 }
 
-// TODO: вернуть ссылку на хеш или бросить runtime_error при неверном типе.
 HashData& Value::as_hash() {
-    throw std::runtime_error("Value::as_hash не реализован (стаб)");
+    if (auto* p = std::get_if<HashData>(&data_)) return *p;
+    throw std::runtime_error("Value::as_hash: value is not a hash");
 }
 const HashData& Value::as_hash() const {
-    throw std::runtime_error("Value::as_hash не реализован (стаб)");
+    if (auto* p = std::get_if<HashData>(&data_)) return *p;
+    throw std::runtime_error("Value::as_hash: value is not a hash");
 }
 
 }  // namespace minidb

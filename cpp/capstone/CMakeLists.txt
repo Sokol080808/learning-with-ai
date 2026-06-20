@@ -33,6 +33,7 @@ add_executable(minidb_tests
   tests/test_database.cpp
   tests/test_command.cpp
   tests/test_concurrency.cpp
+  tests/test_cache.cpp        # СТРЕТЧ: header-only LRU Cache<K,V> (include/cache.hpp)
 )
 target_link_libraries(minidb_tests PRIVATE
   minidb_lib            # тестируемый код

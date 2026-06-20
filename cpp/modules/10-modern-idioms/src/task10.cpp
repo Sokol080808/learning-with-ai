@@ -60,3 +60,10 @@ std::pair<int, int> divmod(int a, int b) {
     }
     return {a / b, a % b};
 }
+
+std::optional<int> safe_divide(int a, int b) {
+    if (b == 0) {
+        return std::nullopt;
+    }
+    return a / b;
+}

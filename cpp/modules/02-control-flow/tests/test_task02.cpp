@@ -280,3 +280,70 @@ TEST(ControlFlowProps, BinarySearchRoundTrip) {
     EXPECT_EQ(binary_search({42}, 42), 0);         // один элемент — найден
     EXPECT_EQ(binary_search({42}, 7), -1);         // один элемент — нет
 }
+
+// ===== Задание 9: print_box =====
+
+// --- Фиксированные тесты ---
+
+TEST(ControlFlow, PrintBoxFixed) {
+    // Квадрат 2×2 с дефолтным fill
+    EXPECT_EQ(print_box(2), "**\n**");
+    // Квадрат 2×2 явно через перегрузку
+    EXPECT_EQ(print_box(2, '*'), "**\n**");
+    // Прямоугольник 3×1 — одна строка, нет '\n'
+    EXPECT_EQ(print_box(3, 1), "***");
+    // Прямоугольник 1×3 — три строки по одному символу
+    EXPECT_EQ(print_box(1, 3), "*\n*\n*");
+    // Дефолтный fill символ — звёздочка
+    EXPECT_EQ(print_box(2, 2), "**\n**");
+    // Не-дефолтный fill
+    EXPECT_EQ(print_box(3, 2, '#'), "###\n###");
+    // Одноаргументный вызов берёт перегрузку-квадрат:
+    // print_box(3) должна совпадать с print_box(3, 3)
+    EXPECT_EQ(print_box(3), print_box(3, 3));
+    EXPECT_EQ(print_box(4), print_box(4, 4));
+    // Квадрат 1×1
+    EXPECT_EQ(print_box(1), "*");
+}
+
+// --- Property-тест: инварианты строки для случайных w и h в [1..8] ---
+// Инвариант 1: число '\n' == h - 1
+// Инвариант 2: общая длина строки == w * h + (h - 1)
+// Инвариант 3: каждый символ либо fill, либо '\n'
+TEST(ControlFlowProps, PrintBoxInvariants) {
+    std::mt19937 rng(0xB0B1DEAu);
+    std::uniform_int_distribution<int> dim_dist(1, 8);
+    // Несколько fill-символов для разнообразия
+    const std::string fills = "*#@+";
+    std::uniform_int_distribution<int> fill_dist(0, static_cast<int>(fills.size()) - 1);
+
+    for (int iter = 0; iter < 300; ++iter) {
+        int w = dim_dist(rng);
+        int h = dim_dist(rng);
+        char fill = fills[static_cast<std::size_t>(fill_dist(rng))];
+
+        std::string s = print_box(w, h, fill);
+
+        // Инвариант 1: количество '\n' == h - 1
+        int newline_count = 0;
+        for (char c : s)
+            if (c == '\n') ++newline_count;
+        EXPECT_EQ(newline_count, h - 1)
+            << "w=" << w << " h=" << h << " fill=" << fill;
+
+        // Инвариант 2: полная длина == w*h + (h-1)
+        EXPECT_EQ(static_cast<int>(s.size()), w * h + (h - 1))
+            << "w=" << w << " h=" << h << " fill=" << fill;
+
+        // Инвариант 3: каждый символ — либо fill, либо '\n'
+        for (char c : s) {
+            EXPECT_TRUE(c == fill || c == '\n')
+                << "unexpected char '" << c << "' w=" << w << " h=" << h;
+        }
+
+        // Инвариант 4: одноаргументный вызов совпадает с квадратом
+        std::string sq = print_box(w);
+        std::string sq2 = print_box(w, w, '*');
+        EXPECT_EQ(sq, sq2) << "square overload mismatch w=" << w;
+    }
+}

@@ -180,4 +180,19 @@ std::ptrdiff_t distance_dispatch(It begin, It end) {
         typename std::iterator_traits<It>::iterator_category{});
 }
 
+// =====================================================================
+// Задание 6. all_of fold.
+//   all_of_pred(p, xs...) -> bool
+//   Возвращает true, если предикат p истинен для ВСЕХ аргументов.
+//   Пустой пакет -> true (vacuous truth).
+//   Реализация: fold-выражение по &&.
+// =====================================================================
+
+template <class Pred, class... Ts>
+bool all_of_pred(Pred p, Ts... xs) {
+    // Правая свёртка по &&: p(x0) && p(x1) && ... && p(xN).
+    // Пустой пакет: унарный && даёт true (нейтральный элемент конъюнкции).
+    return (p(xs) && ...);
+}
+
 }  // namespace adv

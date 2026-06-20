@@ -36,3 +36,13 @@ std::vector<int> top_k(std::vector<int> v, int k);
 // меньшие threshold. Возвращает количество УДАЛЁННЫХ элементов.
 // Подсказка: идиома erase-remove (std::remove_if + v.erase).
 std::size_t drop_below(std::vector<int>& v, int threshold);
+
+// --- Задание на C++20 Ranges (Идея 8) ---
+
+// Возвращает квадраты чётных элементов xs в исходном порядке.
+// Реализовать ЧЕРЕЗ ОДНУ ranges-цепочку:
+//   xs | views::filter(чётность) | views::transform(квадрат)
+// и материализовать результат в вектор через std::ranges::copy + back_inserter.
+// Промежуточные std::vector создавать НЕЛЬЗЯ.
+// Пример: evens_squared({1,2,3,4,5,6}) -> {4,16,36}
+std::vector<int> evens_squared(const std::vector<int>& xs);

@@ -126,4 +126,33 @@ std::vector<Value> take_n(const R& range, std::size_t n) {
     return out;
 }
 
+// ---------------------------------------------------------------------
+// Задание 6. Проекции: sort_by_age и youngest_name
+//   Демонстрируют std::ranges-алгоритмы с projection-аргументом на
+//   структуре Person{name, age}.
+//
+//   sort_by_age(people) — принимает вектор по значению, сортирует на
+//   месте по полю age (std::ranges::sort с &Person::age), возвращает.
+//
+//   youngest_name(people) — возвращает имя Person с минимальным age
+//   (std::ranges::min_element с &Person::age). Для пустого вектора — "".
+// ---------------------------------------------------------------------
+
+struct Person {
+    std::string name;
+    int age = 0;
+    friend bool operator==(const Person&, const Person&) = default;
+};
+
+inline std::vector<Person> sort_by_age(std::vector<Person> people) {
+    std::ranges::sort(people, {}, &Person::age);
+    return people;
+}
+
+inline std::string youngest_name(const std::vector<Person>& people) {
+    if (people.empty()) return "";
+    auto it = std::ranges::min_element(people, {}, &Person::age);
+    return it->name;
+}
+
 }  // namespace m17

@@ -48,11 +48,68 @@ public:
         clear_and_free();
     }
 
-    // Запрещаем копирование/перемещение по умолчанию, пока ты не реализуешь
-    // их сам (иначе компилятор сгенерировал бы поверхностные версии,
-    // которые двойным free сломали бы ручное управление памятью).
-    Vector(const Vector&)            = delete;
-    Vector& operator=(const Vector&) = delete;
+    // Rule of 5: класс владеет сырой памятью вручную, поэтому ВСЕ пять
+    // спецметодов должны быть согласованы. Дефолтные версии сделали бы
+    // поверхностную (побайтовую) копию указателя data_ — два объекта стали бы
+    // владеть одним блоком и оба позвали бы ::operator delete (double free).
+    //
+    // Copy-конструктор: ГЛУБОКАЯ копия — выделяем свежий блок ровно под
+    // size() элементов и копируем каждый объект. Базовая гарантия: если
+    // T-конструктор бросит, откатываем уже построенные и освобождаем блок.
+    Vector(const Vector& other) {
+        if (other.size_ == 0) return;                      // нечего копировать
+        T* raw = static_cast<T*>(::operator new(other.size_ * sizeof(T)));
+        size_type i = 0;
+        try {
+            for (; i < other.size_; ++i)
+                new (raw + i) T(other.data_[i]);           // copy-construct
+        } catch (...) {
+            for (size_type j = 0; j < i; ++j) raw[j].~T();  // откат
+            ::operator delete(raw);
+            throw;
+        }
+        data_ = raw;
+        size_ = cap_ = other.size_;
+    }
+
+    // Move-конструктор: КРАЖА указателя — переносим владение блоком и
+    // обнуляем источник, оставляя его в валидном пустом состоянии (size==0,
+    // cap==0, data==nullptr). Ничего не выделяем => помечаем noexcept,
+    // чтобы std::vector и наш собственный reserve могли применять move
+    // через move-if-noexcept (см. Идею 2).
+    Vector(Vector&& other) noexcept
+        : data_(other.data_), size_(other.size_), cap_(other.cap_) {
+        other.data_ = nullptr;
+        other.size_ = 0;
+        other.cap_  = 0;
+    }
+
+    // Copy-присваивание через copy-and-swap: строим временную копию (та же
+    // строгая логика, что и copy-ctor), затем обмениваемся с ней полями —
+    // обмен не бросает, поэтому даём строгую гарантию. Самоприсваивание
+    // безопасно: tmp — независимая копия.
+    Vector& operator=(const Vector& other) {
+        Vector tmp(other);
+        swap(tmp);
+        return *this;
+    }
+
+    // Move-присваивание: освобождаем своё, забираем чужое, обнуляем источник.
+    // Через swap с временным move-конструированным объектом — он же и
+    // освободит наши старые данные в своём деструкторе. noexcept по тем же
+    // причинам, что и move-ctor.
+    Vector& operator=(Vector&& other) noexcept {
+        Vector tmp(std::move(other));
+        swap(tmp);
+        return *this;
+    }
+
+    // noexcept-обмен полей — фундамент copy-and-swap.
+    void swap(Vector& other) noexcept {
+        std::swap(data_, other.data_);
+        std::swap(size_, other.size_);
+        std::swap(cap_,  other.cap_);
+    }
 
     void push_back(const T& value) {
         if (size_ == cap_)
@@ -212,9 +269,60 @@ class IntrusiveList {
 public:
     using size_type = std::size_t;
 
+    // -----------------------------------------------------------------
+    // Forward-итератор. «Forward» = умеет только шагать вперёд (++),
+    // сравниваться и разыменовываться, причём диапазон можно обойти
+    // многократно (multi-pass). Чтобы стандартные алгоритмы (std::distance,
+    // range-for) понимали возможности итератора, он публикует пять вложенных
+    // typedef-ов — это и есть «трейты», которые std::iterator_traits читает
+    // прямо из самого итератора:
+    //   iterator_category — тег (forward => std::forward_iterator_tag);
+    //   value_type        — тип хранимого значения;
+    //   difference_type   — знаковый тип для расстояния между итераторами;
+    //   pointer/reference — что возвращают operator->/operator*.
+    // -----------------------------------------------------------------
+    class iterator {
+    public:
+        using iterator_category = std::forward_iterator_tag;
+        using value_type        = T;
+        using difference_type   = std::ptrdiff_t;
+        using pointer           = T*;
+        using reference         = T&;
+
+        iterator() = default;
+        explicit iterator(Node<T>* node) : node_(node) {}
+
+        reference operator*()  const { return node_->value; }
+        pointer   operator->() const { return &node_->value; }
+
+        // Префиксный ++ : шагнули на следующий узел.
+        iterator& operator++() {
+            node_ = node_->next;
+            return *this;
+        }
+        // Постфиксный ++ : вернули копию «до шага».
+        iterator operator++(int) {
+            iterator tmp = *this;
+            node_ = node_->next;
+            return tmp;
+        }
+
+        bool operator==(const iterator& other) const { return node_ == other.node_; }
+        bool operator!=(const iterator& other) const { return node_ != other.node_; }
+
+    private:
+        Node<T>* node_ = nullptr;
+    };
+
     IntrusiveList() = default;
     IntrusiveList(const IntrusiveList&)            = delete;
     IntrusiveList& operator=(const IntrusiveList&) = delete;
+
+    // begin() — на голову, end() — «за хвостом» (nullptr-итератор).
+    // Хвостовой next_ узла равен nullptr, поэтому ++ от последнего узла
+    // естественно приходит в end().
+    iterator begin() { return iterator(head_); }
+    iterator end()   { return iterator(nullptr); }
 
     void push_back(Node<T>* node) {
         node->next = nullptr;

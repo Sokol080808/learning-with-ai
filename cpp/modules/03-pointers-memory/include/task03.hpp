@@ -50,6 +50,12 @@ public:
     // Установить ВСЕ элементы в value.
     void fill(int value);
 
+    // ── Задание 9: правило трёх ───────────────────────────────────────────────
+    // Глубокое копирование: новый объект получает СВОЙ буфер с теми же значениями.
+    // Два DynArray после копирования независимы: изменение одного не трогает другой.
+    DynArray(const DynArray& other);
+    DynArray& operator=(const DynArray& other);
+
 private:
     int* data_;
     int  size_;

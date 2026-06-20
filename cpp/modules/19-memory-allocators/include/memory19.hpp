@@ -78,6 +78,98 @@ private:
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Задание 6. ArenaAllocator<T> — std::allocator-совместимый аллокатор поверх арены.
+//
+// Это самый сложный пункт модуля: нужно обернуть наш BumpAllocator в шаблон,
+// удовлетворяющий *Allocator named requirement* из стандарта, чтобы его можно
+// было подставить в любой allocator-aware контейнер:
+//
+//     m19::BumpAllocator arena(buffer, capacity);
+//     std::vector<int, m19::ArenaAllocator<int>> v{ m19::ArenaAllocator<int>(arena) };
+//     v.push_back(1);  // память берётся из arena, а не из глобальной кучи
+//
+// Что требует стандарт от типа-аллокатора A = ArenaAllocator<T> (минимум для C++20):
+//   * вложенный тип `value_type` == T;
+//   * T* allocate(std::size_t n)   — выдать сырую (непостроенную) память под n
+//     объектов T, выровненную под alignof(T); при нехватке бросить (у нас —
+//     std::bad_alloc, ровно как BumpAllocator);
+//   * void deallocate(T* p, std::size_t n) — вернуть память (для bump-арены это
+//     no-op: освобождение по одному не поддерживается, всё живёт до reset арены);
+//   * шаблонный «конвертирующий» конструктор из ArenaAllocator<U> (rebind): когда
+//     std::vector<T,A> внутри хочет аллокатор для другого типа (узла, служебной
+//     структуры), он берёт allocator_traits<A>::rebind_alloc<U> и строит его из
+//     нашего A. Поэтому ArenaAllocator<U> должен уметь сконструироваться из
+//     ArenaAllocator<T> — и оба обязаны делить одну и ту же арену;
+//   * operator== / operator!=: два аллокатора РАВНЫ, если память, выданную одним,
+//     можно вернуть через другой. Для нас это «указывают на одну и ту же арену».
+//     От равенства зависит корректность move/swap контейнеров.
+//
+// Заметь, чего здесь НЕТ: construct/destroy и rebind-член мы не пишем — за нас их
+// предоставит std::allocator_traits<ArenaAllocator<T>> по умолчанию (construct —
+// через placement new, destroy — через явный деструктор, rebind_alloc<U> — через
+// «переподстановку» шаблонного параметра ArenaAllocator<T> → ArenaAllocator<U>).
+// Минимальный аллокатор = value_type + allocate + deallocate + конвертирующий
+// конструктор + сравнение; всё остальное даёт allocator_traits.
+//
+// Контракт:
+//   * using value_type = T;
+//   * explicit ArenaAllocator(BumpAllocator& arena) noexcept — привязка к арене.
+//   * template<class U> ArenaAllocator(const ArenaAllocator<U>&) noexcept — rebind.
+//   * T* allocate(std::size_t n)         — n*sizeof(T) байт из арены, align = alignof(T).
+//   * void deallocate(T*, std::size_t) noexcept — no-op (bump-арена).
+//   * operator== / operator!= — равны, если одна и та же арена.
+// ─────────────────────────────────────────────────────────────────────────────
+template <class T>
+class ArenaAllocator {
+public:
+    using value_type = T;
+
+    // Привязка к конкретной арене. Аллокатор НЕ владеет ареной — лишь ссылается
+    // на неё; время жизни арены должно перекрывать время жизни контейнера.
+    explicit ArenaAllocator(BumpAllocator& arena) noexcept : arena_(&arena) {}
+
+    // Конвертирующий (rebind) конструктор: ArenaAllocator<U> → ArenaAllocator<T>.
+    // Делит ту же арену — это и делает rebind-аллокаторы «равными» исходному.
+    template <class U>
+    ArenaAllocator(const ArenaAllocator<U>& other) noexcept : arena_(other.arena_) {}
+
+    // Выдать сырую память под n объектов T, выровненную под alignof(T).
+    // n == 0 — допустимо (стандарт это разрешает); вернём ненулевой адрес из арены.
+    T* allocate(std::size_t n) {
+        void* raw = arena_->allocate(n * sizeof(T), alignof(T));
+        return static_cast<T*>(raw);
+    }
+
+    // Для bump-арены освобождение по одному не поддерживается — память живёт до
+    // reset() арены. Поэтому здесь делать нечего (но метод обязан существовать).
+    void deallocate(T* /*p*/, std::size_t /*n*/) noexcept {
+        // no-op: вся память арены освобождается одним arena.reset().
+    }
+
+    // Доступ к арене для сравнения и для rebind-конструктора другого T.
+    const BumpAllocator* arena() const noexcept { return arena_; }
+
+private:
+    BumpAllocator* arena_;
+
+    // Чтобы конвертирующий конструктор ArenaAllocator<U> мог читать arena_ у
+    // ArenaAllocator<T> и наоборот.
+    template <class U>
+    friend class ArenaAllocator;
+};
+
+// Два аллокатора равны ⇔ работают с одной ареной: память, выданную одним, можно
+// «вернуть» (no-op) через другой. Сравнение разрешено между разными T и U.
+template <class T, class U>
+bool operator==(const ArenaAllocator<T>& a, const ArenaAllocator<U>& b) noexcept {
+    return a.arena() == b.arena();
+}
+template <class T, class U>
+bool operator!=(const ArenaAllocator<T>& a, const ArenaAllocator<U>& b) noexcept {
+    return !(a == b);
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Задание 2. UniquePtr<T> — единоличное владение, move-only.
 //
 // Упрощённый аналог std::unique_ptr (без удалителей и без T[]). Владеет сырым
