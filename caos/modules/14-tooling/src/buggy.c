@@ -16,7 +16,7 @@
 int sum_first_n(const int* a, int n) {
     int sum = 0;
     // Идём по индексам цикла и складываем элементы.
-    for (int i = 0; i < n - 1; i++) {   // <-- посмотри на условие очень внимательно
+    for (int i = 0; i < n; i++) {
         sum += a[i];
     }
     return sum;
@@ -24,7 +24,7 @@ int sum_first_n(const int* a, int n) {
 
 // Максимум среди первых n элементов (n >= 1).
 int max_in(const int* a, int n) {
-    int best = 0;                       // <-- с чего начинать поиск максимума?
+    int best = a[0];
     for (int i = 0; i < n; i++) {
         if (a[i] > best) {
             best = a[i];
@@ -36,8 +36,8 @@ int max_in(const int* a, int n) {
 // Развернуть первые n элементов массива на месте: {1,2,3,4} -> {4,3,2,1}.
 void reverse_array(int* a, int n) {
     // Меняем местами симметричные элементы, сходясь от краёв к центру.
-    for (int i = 0; i <= n / 2; i++) {  // <-- сколько обменов нужно и какой парный индекс?
-        int j = n - i;                  // <-- индекс «зеркального» элемента
+    for (int i = 0; i < n / 2; i++) {
+        int j = n - 1 - i;
         int tmp = a[i];
         a[i] = a[j];
         a[j] = tmp;
@@ -49,7 +49,7 @@ size_t count_char(const char* s, char c) {
     size_t count = 0;
     for (size_t i = 0; s[i] != '\0'; i++) {
         if (s[i] == c) {
-            count = 1;                  // <-- мы СЧИТАЕМ или просто ставим флажок?
+            count++;
         }
     }
     return count;

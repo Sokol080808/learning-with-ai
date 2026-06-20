@@ -14,49 +14,84 @@
 #include "lrucache.h"
 #include <stdlib.h>   // malloc, free
 
-// Определение структуры кэша. В заголовке тип объявлен «непрозрачным»
-// (только имя), а настоящие поля живут здесь — так тест не зависит от твоей
-// внутренней раскладки. Поля ниже — ОДИН из возможных вариантов; меняй как
-// удобно под свою реализацию.
+// Одна запись в кэше.
+typedef struct {
+    int key;
+    int value;
+    unsigned long used_at; // время последнего использования
+} LruEntry;
+
+// Определение структуры кэша.
 struct LruCache {
-    size_t capacity;   // сколько записей максимум
-    size_t size;       // сколько записей сейчас занято
-    // TODO: добавь массив записей. Каждая запись — это (key, value) и
-    //       «время» последнего использования. Удобно завести отдельную
-    //       структуру-запись и указатель на массив таких записей,
-    //       выделенный через malloc(capacity * sizeof(...)).
-    unsigned long clock; // глобальные «часы»: увеличивай при каждом доступе
+    size_t capacity;      // сколько записей максимум
+    size_t size;          // сколько записей сейчас занято
+    LruEntry *arr;        // массив записей, выделенный через malloc
+    unsigned long clock;  // глобальные «часы»: увеличивается при каждом доступе
 };
 
-// Контракт: создать пустой кэш на capacity записей; при нехватке памяти NULL.
+// Создать пустой кэш на capacity записей; при нехватке памяти NULL.
 LruCache* lru_create(size_t capacity) {
-    (void)capacity;
-    return NULL; // TODO: malloc структуры + массива записей; инициализируй поля.
+    LruCache *c = (LruCache *)malloc(sizeof(LruCache));
+    if (c == NULL) return NULL;
+
+    c->arr = (LruEntry *)malloc(capacity * sizeof(LruEntry));
+    if (c->arr == NULL) {
+        free(c);
+        return NULL;
+    }
+
+    c->capacity = capacity;
+    c->size = 0;
+    c->clock = 0;
+    return c;
 }
 
-// Контракт: вернуть значение по ключу и пометить запись «свежей»; иначе -1.
+// Вернуть значение по ключу и пометить запись «свежей»; иначе -1.
 int lru_get(LruCache* c, int key) {
-    (void)c;
-    (void)key;
-    return -1; // TODO: найди ключ, обнови время использования, верни значение.
+    for (size_t i = 0; i < c->size; i++) {
+        if (c->arr[i].key == key) {
+            c->arr[i].used_at = ++c->clock;
+            return c->arr[i].value;
+        }
+    }
+    return -1;
 }
 
-// Контракт: вставить/обновить (key, value); при переполнении вытеснить LRU.
+// Вставить/обновить (key, value); при переполнении вытеснить LRU.
 void lru_put(LruCache* c, int key, int value) {
-    (void)c;
-    (void)key;
-    (void)value;
-    // TODO:
-    //  1) если key уже есть — обнови value и время использования, выходи;
-    //  2) если есть место — добавь новую запись;
-    //  3) иначе найди запись с минимальным временем использования (LRU)
-    //     и перезапиши её новой парой (key, value).
-    //  Не забудь обновить «часы» (clock) и время использования записи.
+    // 1) Ключ уже есть — обновить value и время использования.
+    for (size_t i = 0; i < c->size; i++) {
+        if (c->arr[i].key == key) {
+            c->arr[i].value = value;
+            c->arr[i].used_at = ++c->clock;
+            return;
+        }
+    }
+
+    // 2) Есть свободное место — добавить новую запись.
+    if (c->size < c->capacity) {
+        c->arr[c->size].key = key;
+        c->arr[c->size].value = value;
+        c->arr[c->size].used_at = ++c->clock;
+        c->size++;
+        return;
+    }
+
+    // 3) Мест нет — найти LRU запись (с минимальным used_at) и перезаписать.
+    size_t victim = 0;
+    for (size_t i = 1; i < c->size; i++) {
+        if (c->arr[i].used_at < c->arr[victim].used_at) {
+            victim = i;
+        }
+    }
+    c->arr[victim].key = key;
+    c->arr[victim].value = value;
+    c->arr[victim].used_at = ++c->clock;
 }
 
-// Контракт: освободить кэш и его внутреннюю память. lru_free(NULL) безопасен.
+// Освободить кэш и всю его внутреннюю память. lru_free(NULL) безопасен.
 void lru_free(LruCache* c) {
-    (void)c;
-    // TODO: освободи массив записей (если выделял), затем сам кэш через free.
-    //       Помни про случай c == NULL — тогда просто ничего не делай.
+    if (c == NULL) return;
+    free(c->arr);
+    free(c);
 }

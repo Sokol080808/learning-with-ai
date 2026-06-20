@@ -9,27 +9,47 @@
 // Контракт: строка из символов '0'/'1' -> беззнаковое число.
 // Пример: "1011" -> 11. Пустая строка -> 0.
 uint32_t parse_binary(const char* s) {
-    (void)s; // TODO: убери, когда начнёшь использовать s
-    return 0; // TODO: реализуй разбор двоичной строки
+    uint32_t acc = 0;
+    for (; *s != '\0'; s++) {
+        acc = (acc << 1) | (uint32_t)(*s - '0');
+    }
+    return acc;
 }
 
 // Контракт: записать bits символов ('0'/'1') младших разрядов x, потом '\0'.
 // Старший бит — слева. Пример: x=5, bits=8 -> "00000101".
 void format_binary(uint32_t x, int bits, char* out) {
-    (void)x;    // TODO
-    (void)bits; // TODO
-    (void)out;  // TODO: реализуй запись битов в out
+    for (int i = bits - 1; i >= 0; i--) {
+        *out++ = (char)('0' + ((x >> i) & 1u));
+    }
+    *out = '\0';
 }
 
 // Контракт: число единичных битов в x. Пример: 11 (1011) -> 3.
 int count_set_bits(uint32_t x) {
-    (void)x; // TODO
-    return 0; // TODO: посчитай единичные биты
+    int count = 0;
+    while (x) {
+        count += (int)(x & 1u);
+        x >>= 1;
+    }
+    return count;
 }
 
 // Контракт: шестнадцатеричная строка -> беззнаковое число (регистр не важен).
 // Пример: "1A" -> 26. Пустая строка -> 0.
 uint32_t parse_hex(const char* s) {
-    (void)s; // TODO
-    return 0; // TODO: реализуй разбор hex-строки
+    uint32_t acc = 0;
+    for (; *s != '\0'; s++) {
+        char c = *s;
+        uint32_t digit;
+        if (c >= '0' && c <= '9') {
+            digit = (uint32_t)(c - '0');
+        } else if (c >= 'a' && c <= 'f') {
+            digit = (uint32_t)(c - 'a') + 10u;
+        } else {
+            digit = (uint32_t)(c - 'A') + 10u;
+        }
+        acc = (acc << 4) | digit;
+    }
+    return acc;
 }

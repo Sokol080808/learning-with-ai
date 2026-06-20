@@ -6,32 +6,50 @@
 
 #include "arena.h"
 
+// Выравнивание блоков: каждый выданный адрес кратен 8 (покрывает double и
+// указатели на 64-битной машине).
+#define ARENA_ALIGN ((size_t)8)
+
+// Округлить смещение вверх до кратного ARENA_ALIGN.
+// Для степени двойки: (x + (A-1)) & ~(A-1).
+static size_t align_up(size_t x) {
+    return (x + (ARENA_ALIGN - 1)) & ~(ARENA_ALIGN - 1);
+}
+
 // Привязать арену к буферу [buffer, buffer+size). used обнуляется.
 void arena_init(Arena *a, void *buffer, size_t size) {
-    // TODO: запомни в полях a, где буфер, какого он размера, и что выдано 0 байт.
-    (void)a;
-    (void)buffer;
-    (void)size;
+    a->buf = (unsigned char *)buffer;
+    a->size = size;
+    a->used = 0;
 }
 
 // Выдать блок размером n байт, выровненный по 8, или NULL, если не помещается.
 void *arena_alloc(Arena *a, size_t n) {
-    // TODO: округли текущую «голову» вверх до кратного 8, проверь, что блок n байт
-    //       умещается до конца буфера, сдвинь голову и верни адрес начала блока.
-    (void)a;
-    (void)n;
-    return NULL;  // заглушка: всегда «нет памяти»
+    // Начало блока — текущая «голова», округлённая вверх до кратного 8.
+    size_t start = align_up(a->used);
+
+    // Само выравнивание уже могло вылезти за конец буфера — тогда места нет.
+    if (start > a->size) {
+        return NULL;
+    }
+
+    // Проверка «помещается» без сложения start + n, чтобы не переполнить size_t
+    // на гигантских n: эквивалентно start + n <= size при start <= size.
+    if (n > a->size - start) {
+        return NULL;
+    }
+
+    // Сдвигаем голову на конец выданного блока и возвращаем его начало.
+    a->used = start + n;
+    return a->buf + start;
 }
 
 // Сколько байт ещё можно выдать.
 size_t arena_remaining(const Arena *a) {
-    // TODO: это size - used.
-    (void)a;
-    return 0;  // заглушка: будто свободного места нет
+    return a->size - a->used;
 }
 
 // Отдать всё разом: следующая выдача снова начнётся с начала буфера.
 void arena_reset(Arena *a) {
-    // TODO: обнули счётчик выданных байт.
-    (void)a;
+    a->used = 0;
 }

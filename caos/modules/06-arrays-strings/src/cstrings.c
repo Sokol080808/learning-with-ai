@@ -12,29 +12,52 @@
 
 // Длина строки: число символов до завершающего '\0' (сам '\0' не считается).
 size_t my_strlen(const char* s) {
-    (void)s;       // убери, когда начнёшь использовать s
-    return 0;      // TODO: посчитай символы, идя по строке до '\0'
+    size_t len = 0;
+    while (s[len] != '\0') {
+        len++;
+    }
+    return len;
 }
 
 // Безопасное копирование. dst — буфер на cap байт. Скопируй не более cap-1
 // символов из src, затем обязательно поставь '\0' (если cap > 0).
 // Верни длину src (сколько символов в src на самом деле).
 size_t safe_copy(char* dst, size_t cap, const char* src) {
-    (void)dst;     // убери, когда начнёшь писать в dst
-    (void)cap;     // убери, когда начнёшь учитывать размер буфера
-    (void)src;     // убери, когда начнёшь читать src
-    return 0;      // TODO: копируй в границах cap, всегда завершай '\0', верни длину src
+    size_t src_len = my_strlen(src);
+    if (cap == 0) {
+        return src_len;
+    }
+    size_t written = 0;
+    while (src[written] != '\0' && written < cap - 1) {
+        dst[written] = src[written];
+        written++;
+    }
+    dst[written] = '\0';
+    return src_len;
 }
 
 // Развернуть строку на месте: "abc" -> "cba". Завершающий '\0' не трогаем.
 void reverse_string(char* s) {
-    (void)s;       // убери, когда начнёшь менять s
-    // TODO: меняй местами символы с двух концов, сходясь к середине
+    size_t n = my_strlen(s);
+    if (n == 0) {
+        return;
+    }
+    size_t i = 0;
+    size_t j = n - 1;
+    while (i < j) {
+        char tmp = s[i];
+        s[i] = s[j];
+        s[j] = tmp;
+        i++;
+        j--;
+    }
 }
 
 // Сравнение строк, как strcmp: отрицательное / 0 / положительное.
 int my_strcmp(const char* a, const char* b) {
-    (void)a;       // убери, когда начнёшь сравнивать
-    (void)b;       // убери, когда начнёшь сравнивать
-    return 0;      // TODO: сравнивай посимвольно; верни разность на первом отличии
+    size_t i = 0;
+    while (a[i] != '\0' && a[i] == b[i]) {
+        i++;
+    }
+    return (int)(unsigned char)a[i] - (int)(unsigned char)b[i];
 }

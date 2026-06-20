@@ -6,10 +6,9 @@
 # В ветке main этого файла НЕТ намеренно: там стабы не заполнены, и «всё зелёное» недостижимо
 # by design (courses-ci.yml проверяет main иначе — что скелет лишь компилируется/собирается).
 #
-# Заполнены эталонами: Python (все модули + капстоун), C++ (все 23 модуля; капстоун MiniDB —
-# отдельный заход, поэтому исключён), Rust (все 15 модулей + капстоун minidb) и Deep Learning
-# (18 модулей + капстоун nano-LM, numpy + torch CPU). По мере появления эталонов caos сюда
-# добавляется его шаг.
+# Заполнены эталонами ВСЕ 5 треков: Python (все модули + капстоун), C++ (все 23 модуля; капстоун
+# MiniDB — отдельный заход, поэтому исключён), Rust (все 15 модулей + капстоун minidb), Deep Learning
+# (18 модулей + капстоун nano-LM, numpy + torch CPU) и CAOS (15 модулей + капстоун Tiny VM, C11/CMake).
 name: Reference green
 
 on:
@@ -71,3 +70,16 @@ jobs:
           python -m pip install -U torch --index-url https://download.pytorch.org/whl/cpu
       - name: Все тесты должны пройти на эталонном решении
         run: python -m pytest deep-learning -p no:cacheprovider -q
+
+  caos:
+    name: CAOS (эталон — 15 модулей + капстоун Tiny VM зелёные)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Инструменты
+        run: sudo apt-get update && sudo apt-get install -y cmake g++
+      - name: Сборка + все тесты (включая капстоун) должны пройти на эталоне
+        run: |
+          cmake -S caos -B caos/build
+          cmake --build caos/build -j"$(nproc)"
+          ctest --test-dir caos/build --output-on-failure -j"$(nproc)"

@@ -28,32 +28,55 @@
 
 #include "syncbuf.h"
 
+#include <stdlib.h>
+
 // Инициализировать буфер ёмкостью capacity. Выдели массив data на capacity
 // элементов, обнули head/tail/count, инициализируй мьютекс и обе cond.
 void bb_init(BoundedBuffer *b, int capacity) {
-    (void)b;
-    (void)capacity;
-    // TODO: malloc(data), обнули индексы/счётчик, pthread_mutex_init +
-    //       pthread_cond_init для not_full и not_empty.
+    b->data     = malloc(sizeof(int) * (size_t)capacity);
+    b->capacity = capacity;
+    b->head     = 0;
+    b->tail     = 0;
+    b->count    = 0;
+    pthread_mutex_init(&b->mutex, NULL);
+    pthread_cond_init(&b->not_full, NULL);
+    pthread_cond_init(&b->not_empty, NULL);
 }
 
 // Положить item. Под мьютексом: пока count == capacity — ждать not_full;
 // записать в tail, сдвинуть tail по кругу, count++, signal not_empty.
 void bb_put(BoundedBuffer *b, int item) {
-    (void)b;
-    (void)item;
-    // TODO: lock -> (while полон: wait not_full) -> положить -> signal not_empty -> unlock
+    pthread_mutex_lock(&b->mutex);
+    while (b->count == b->capacity) {
+        pthread_cond_wait(&b->not_full, &b->mutex);
+    }
+    b->data[b->tail] = item;
+    b->tail = (b->tail + 1) % b->capacity;
+    b->count++;
+    pthread_cond_signal(&b->not_empty);
+    pthread_mutex_unlock(&b->mutex);
 }
 
 // Забрать элемент (FIFO). Под мьютексом: пока count == 0 — ждать not_empty;
 // прочитать из head, сдвинуть head по кругу, count--, signal not_full, вернуть.
 int bb_get(BoundedBuffer *b) {
-    (void)b;
-    return 0; // TODO: lock -> (while пуст: wait not_empty) -> взять -> signal not_full -> unlock
+    pthread_mutex_lock(&b->mutex);
+    while (b->count == 0) {
+        pthread_cond_wait(&b->not_empty, &b->mutex);
+    }
+    int item = b->data[b->head];
+    b->head = (b->head + 1) % b->capacity;
+    b->count--;
+    pthread_cond_signal(&b->not_full);
+    pthread_mutex_unlock(&b->mutex);
+    return item;
 }
 
 // Освободить ресурсы: free(data), pthread_mutex_destroy, pthread_cond_destroy x2.
 void bb_destroy(BoundedBuffer *b) {
-    (void)b;
-    // TODO: освободи память и уничтожь мьютекс и обе условные переменные.
+    free(b->data);
+    b->data = NULL;
+    pthread_mutex_destroy(&b->mutex);
+    pthread_cond_destroy(&b->not_full);
+    pthread_cond_destroy(&b->not_empty);
 }
