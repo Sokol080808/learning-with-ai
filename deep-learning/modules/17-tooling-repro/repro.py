@@ -82,3 +82,58 @@ def load_model(model: torch.nn.Module, path: str) -> torch.nn.Module:
         load_model(m2, "model.pt")      # веса m2 стали такими же, как у сохранённой
     """
     raise NotImplementedError("TODO: загрузи state_dict из path в model и верни model")
+
+
+def set_mode(model: torch.nn.Module, train: bool) -> torch.nn.Module:
+    """Переключить модель в режим обучения или инференса.
+
+    Контракт:
+      - train=True  → model.train()  (dropout активен, BN по батчу);
+      - train=False → model.eval()   (dropout выкл, BN по накопленному среднему);
+      - вернуть ту же самую model (для удобства цепочки вызовов);
+      - после вызова model.training обязан быть равен аргументу train.
+
+    ПОЧЕМУ это важно: классическая ошибка — мерить качество, забыв model.eval(),
+    тогда dropout режет активации и метрики прыгают. И зеркальная — обучать, забыв
+    вернуть model.train() после валидации.
+
+    Пример:
+        set_mode(model, True)   # → model.training is True
+        set_mode(model, False)  # → model.training is False
+    """
+    raise NotImplementedError("TODO: переключи model в train/eval по флагу train и верни model")
+
+
+def run_reproducible_experiment(
+    seed: int,
+    n_features: int = 8,
+    hidden: int = 16,
+    n_steps: int = 5,
+    lr: float = 0.01,
+) -> dict:
+    """Полный воспроизводимый эксперимент: сид → детерминированные метрики.
+
+    Контракт:
+      - зафиксировать ВСЕ три источника случайности через set_seed(seed);
+      - построить крошечную двухслойную сеть (n_features → hidden → 1);
+      - сгенерировать случайный батч (16 примеров × n_features признаков);
+      - обучить модель n_steps шагов SGD (lr=lr, MSELoss) в режиме train;
+      - после тренировки перевести в eval-режим и посчитать итоговый loss
+        (forward без градиентов, тот же батч x/y);
+      - вернуть словарь с ключами:
+            "final_loss"     : float — финальный MSE-loss после n_steps шагов,
+            "n_params"       : int   — число обучаемых параметров сети,
+            "training_mode"  : bool  — model.training после завершения
+                                      (должно быть False — eval);
+      - ДЕТЕРМИНИЗМ: два вызова с одинаковым seed ОБЯЗАНЫ вернуть одинаковые
+        числа (включая final_loss до последнего бита);
+      - РАЗЛИЧИМОСТЬ: два вызова с разными seed С ВЫСОКОЙ ВЕРОЯТНОСТЬЮ дают
+        разный final_loss (разная инициализация → разная траектория).
+
+    Пример:
+        r1 = run_reproducible_experiment(0)
+        r2 = run_reproducible_experiment(0)
+        assert r1["final_loss"] == r2["final_loss"]   # детерминизм
+        assert r1["training_mode"] == False            # eval после завершения
+    """
+    raise NotImplementedError("TODO: засидируй, построй сеть, обучи n_steps шагов, верни {final_loss, n_params, training_mode}")
