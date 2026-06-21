@@ -13,6 +13,8 @@ from funcs import (
     compose,
     sort_by_length,
     memoize,
+    make_counter,
+    compose_many,
 )
 
 
@@ -177,3 +179,90 @@ def test_memoize_preserves_name():
 
     # functools.wraps должен сохранить имя оригинальной функции.
     assert my_func.__name__ == "my_func"
+
+
+# ---------- make_counter ----------
+
+def test_make_counter_returns_callable():
+    c = make_counter()
+    assert callable(c)
+
+
+def test_make_counter_increments():
+    c = make_counter()
+    assert c() == 1
+    assert c() == 2
+    assert c() == 3
+
+
+def test_make_counter_default_start_zero():
+    c = make_counter()
+    assert c() == 1  # первый вызов: 0 + 1
+
+
+def test_make_counter_custom_start():
+    c = make_counter(10)
+    assert c() == 11
+    assert c() == 12
+
+
+def test_make_counter_independent_closures():
+    # Два счётчика полностью независимы — nonlocal-переменная у каждого своя.
+    c1 = make_counter()
+    c2 = make_counter()
+    c1()          # c1 → 1
+    c1()          # c1 → 2
+    c2()          # c2 → 1  (не 3!)
+    assert c1() == 3   # c1 продолжает с того, где остановился
+    assert c2() == 2   # c2 не знает о c1
+
+
+def test_make_counter_does_not_share_state_with_start():
+    # Один и тот же start не означает общего состояния.
+    a = make_counter(5)
+    b = make_counter(5)
+    a()   # a → 6
+    assert b() == 6   # b начинает независимо
+
+
+# ---------- compose_many ----------
+
+def test_compose_many_empty_is_identity():
+    f = compose_many()
+    assert f(42) == 42
+    assert f("hello") == "hello"
+
+
+def test_compose_many_single_function():
+    inc = lambda x: x + 1
+    assert compose_many(inc)(5) == 6
+
+
+def test_compose_many_two_functions_order():
+    # compose_many(f, g)(x) == f(g(x)): сначала g, потом f
+    inc = lambda x: x + 1
+    dbl = lambda x: x * 2
+    assert compose_many(inc, dbl)(5) == 11   # dbl(5)=10, inc(10)=11
+    assert compose_many(dbl, inc)(5) == 12   # inc(5)=6, dbl(6)=12
+
+
+def test_compose_many_three_functions():
+    add1 = lambda x: x + 1
+    dbl  = lambda x: x * 2
+    neg  = lambda x: -x
+    # neg(3)=-3 → dbl(-3)=-6 → add1(-6)=-5
+    assert compose_many(add1, dbl, neg)(3) == -5
+
+
+def test_compose_many_consistent_with_compose():
+    # Двуместный вариант обязан давать тот же результат.
+    f = lambda x: x + 1
+    g = lambda x: x * 2
+    assert compose_many(f, g)(7) == compose(f, g)(7)
+
+
+def test_compose_many_mixed_types():
+    # g: int → str, f: str → str
+    f = lambda s: s + "!"
+    g = lambda n: str(n)
+    assert compose_many(f, g)(42) == "42!"

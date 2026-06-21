@@ -11,6 +11,7 @@ from basics import (
     min_of_three,
     average3,
     greet,
+    parse_number,
 )
 
 
@@ -144,3 +145,64 @@ def test_greet_returns_str():
 def test_greet_empty_name():
     # Контракт прямой: имя подставляется как есть
     assert greet("") == "Привет, !"
+
+
+# --- parse_number: фиксированные краевые случаи ---
+
+def test_parse_number_positive_int():
+    assert parse_number("42") == 42
+    assert isinstance(parse_number("42"), int)
+
+
+def test_parse_number_negative_int():
+    assert parse_number("-7") == -7
+    assert isinstance(parse_number("-7"), int)
+
+
+def test_parse_number_zero_int():
+    assert parse_number("0") == 0
+    assert isinstance(parse_number("0"), int)
+
+
+def test_parse_number_positive_float():
+    result = parse_number("3.14")
+    assert result == pytest.approx(3.14)
+    assert isinstance(result, float)
+
+
+def test_parse_number_negative_float():
+    result = parse_number("-0.5")
+    assert result == pytest.approx(-0.5)
+    assert isinstance(result, float)
+
+
+def test_parse_number_scientific_notation():
+    # "1e3" — это 1000.0: float с экспонентой
+    result = parse_number("1e3")
+    assert result == pytest.approx(1000.0)
+    assert isinstance(result, float)
+
+
+def test_parse_number_with_whitespace():
+    # Пробелы по краям — допустимо игнорировать
+    assert parse_number("  42  ") == 42
+    assert isinstance(parse_number("  42  "), int)
+
+
+def test_parse_number_garbage_returns_none():
+    assert parse_number("abc") is None
+
+
+def test_parse_number_empty_string_returns_none():
+    assert parse_number("") is None
+
+
+def test_parse_number_mixed_garbage_returns_none():
+    assert parse_number("12abc") is None
+    assert parse_number("3.1.4") is None
+
+
+def test_parse_number_int_string_not_float():
+    # "42" должен давать int, а не float
+    result = parse_number("42")
+    assert type(result) is int, f"ожидали int, получили {type(result)}"

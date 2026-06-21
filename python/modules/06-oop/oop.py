@@ -55,9 +55,54 @@ class Fraction:
         """
         raise NotImplementedError("TODO: сравни по содержимому, с чужим типом верни NotImplemented (подсказка 4)")
 
+    def __hash__(self) -> int:
+        """Хеш, согласованный с __eq__.
+
+        Равные дроби (одинаковые num и den после нормализации) обязаны иметь
+        одинаковый хеш. Определение __eq__ без __hash__ делает класс
+        нехешируемым (Python ставит __hash__ = None); явно определяем,
+        чтобы Fraction можно было класть в set и использовать как ключ dict.
+        """
+        raise NotImplementedError("TODO: верни хеш, согласованный с __eq__ — подсказка: делегируй кортежу (num, den)")
+
+    def __add__(self, other: object) -> "Fraction":
+        """Сложение через оператор +.
+
+        a/b + c/d = (a*d + c*b) / (b*d). Для чужого типа вернуть NotImplemented,
+        чтобы Python мог попробовать __radd__ правого операнда.
+        """
+        raise NotImplementedError("TODO: реализуй оператор + через логику метода add; для чужого типа — NotImplemented")
+
+    def __mul__(self, other: object) -> "Fraction":
+        """Умножение через оператор *.
+
+        a/b * c/d = (a*c) / (b*d). Для чужого типа вернуть NotImplemented.
+        """
+        raise NotImplementedError("TODO: реализуй оператор * через логику метода mul; для чужого типа — NotImplemented")
+
     def __repr__(self) -> str:
-        """Строковое представление вида 'a/b' (например, '-1/2', '3/1')."""
+        """Технический вид объекта для разработчика (REPL, pytest, отладчик).
+
+        Формат: 'Fraction(num, den)' — например, 'Fraction(1, 2)', 'Fraction(-1, 3)'.
+        """
+        raise NotImplementedError("TODO: верни f-строку вида 'Fraction(num, den)' (подсказка 5)")
+
+    def __str__(self) -> str:
+        """Человекочитаемое представление: 'num/den' (например, '1/2', '-1/3', '0/1').
+
+        __str__ используется print() и f-строками. Если __str__ не определён,
+        Python как запасной вариант использует __repr__.
+        """
         raise NotImplementedError("TODO: верни f-строку вида 'num/den' (подсказка 5)")
+
+    @classmethod
+    def from_int(cls, n: int) -> "Fraction":
+        """Альтернативный конструктор: целое число n → дробь n/1.
+
+        Пример: Fraction.from_int(3) == Fraction(3, 1).
+        Используем cls вместо Fraction, чтобы подклассы могли корректно наследовать.
+        """
+        raise NotImplementedError("TODO: создай дробь n/1 через cls(...) — почему cls, а не Fraction?")
 
     @property
     def value(self) -> float:

@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Protocol, runtime_checkable
 
 
@@ -218,3 +219,53 @@ def describe_canvas(shapes: list[Drawable]) -> list[str]:
         ['Rect(2.0x3.0): area=6.0', 'Disk(r=1.0): area=3.1416']
     """
     raise NotImplementedError("TODO: отсортируй shapes по убыванию area() и собери строки")
+
+
+# ---------------------------------------------------------------------------
+# Задание (существенное 2): Money — frozen + order + __post_init__
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True, order=True)
+class Money:
+    """Денежная сумма с валютой и необязательными метками.
+
+    Демонстрирует три новые идеи одновременно:
+    - frozen=True: иммутабельность и хешируемость (можно класть в set/dict).
+    - order=True: сравнение и сортировка по (amount, currency, tags).
+    - __post_init__: валидация инвариантов после автогенерированного __init__.
+    - field(default=()): безопасный иммутабельный дефолт для кортежа тегов.
+
+    Поля:
+        amount: Decimal — сумма >= 0; Decimal даёт точную арифметику (без float-погрешности).
+        currency: str — код валюты ровно из 3 заглавных латинских букв (напр. "USD").
+        tags: tuple[str, ...] — метки; иммутабельны (frozen требует хешируемых полей).
+    """
+
+    amount: Decimal
+    currency: str
+    tags: tuple[str, ...] = field(default=())
+
+    def __post_init__(self) -> None:
+        """Проверяет инварианты сразу после автогенерированного __init__.
+
+        Бросает ValueError, если:
+        - amount < 0
+        - currency не состоит ровно из 3 заглавных латинских букв
+        """
+        raise NotImplementedError(
+            "TODO: проверь amount >= 0 и что currency — ровно 3 заглавные латинские буквы; "
+            "бросай ValueError с понятным сообщением"
+        )
+
+    def convert(self, rate: Decimal, target_currency: str) -> "Money":
+        """Конвертирует сумму по указанному курсу в другую валюту.
+
+        Возвращает новый Money (оригинал не изменяется — frozen).
+        Результирующая сумма округляется до 2 знаков (ROUND_HALF_UP).
+        Теги не переносятся (новый объект получает пустой кортеж).
+        """
+        raise NotImplementedError(
+            "TODO: умножь amount на rate, округли до 2 знаков (ROUND_HALF_UP), "
+            "верни новый Money с target_currency и пустыми тегами"
+        )

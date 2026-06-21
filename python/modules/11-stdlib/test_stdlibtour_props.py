@@ -9,16 +9,19 @@
 import json
 from collections import Counter
 from datetime import date, timedelta
+from itertools import accumulate
 
 import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
 from stdlibtour import (
+    chunk,
     days_between,
     from_json_str,
     group_by_first_letter,
     most_common_word,
+    running_totals,
     to_json_str,
 )
 
@@ -186,3 +189,90 @@ def test_days_between_rejects_non_iso_format():
     # fromisoformat строгий — не-ISO формат должен поднимать ValueError.
     with pytest.raises(ValueError):
         days_between("31/12/2024", "2024-12-31")
+
+
+# --- running_totals: оракул из itertools.accumulate + функциональные инварианты ---
+
+float_lists = st.lists(
+    st.floats(min_value=-1e6, max_value=1e6, allow_nan=False, allow_infinity=False),
+    max_size=50,
+)
+
+
+@given(xs=float_lists)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_running_totals_agrees_with_accumulate_oracle(xs):
+    """Результат должен точно совпадать с эталоном из itertools.accumulate."""
+    expected = list(accumulate(xs))
+    result = running_totals(xs)
+    assert len(result) == len(expected)
+    for r, e in zip(result, expected):
+        assert r == pytest.approx(e, rel=1e-9, abs=1e-12)
+
+
+@given(xs=float_lists)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_running_totals_length_equals_input(xs):
+    """Длина результата всегда равна длине входа."""
+    assert len(running_totals(xs)) == len(xs)
+
+
+@given(xs=float_lists)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_running_totals_last_element_equals_sum(xs):
+    """Последний элемент — это sum(xs)."""
+    if xs:
+        result = running_totals(xs)
+        assert result[-1] == pytest.approx(sum(xs), rel=1e-9, abs=1e-12)
+
+
+@given(xs=float_lists)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_running_totals_differences_recover_input(xs):
+    """Разность соседних элементов восстанавливает исходный список (кроме первого)."""
+    result = running_totals(xs)
+    for i in range(1, len(xs)):
+        assert result[i] - result[i - 1] == pytest.approx(xs[i], abs=1e-9)
+
+
+# --- chunk: инварианты количества, размера и порядка элементов ---
+
+int_lists = st.lists(st.integers(min_value=-100, max_value=100), max_size=60)
+positive_n = st.integers(min_value=1, max_value=20)
+
+
+@given(xs=int_lists, n=positive_n)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_chunk_concatenation_recovers_input(xs, n):
+    """Конкатенация всех блоков даёт исходный список."""
+    blocks = chunk(xs, n)
+    flat = [elem for block in blocks for elem in block]
+    assert flat == xs
+
+
+@given(xs=int_lists, n=positive_n)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_chunk_all_blocks_except_last_have_size_n(xs, n):
+    """Все блоки кроме последнего имеют ровно n элементов."""
+    blocks = chunk(xs, n)
+    for block in blocks[:-1]:
+        assert len(block) == n
+
+
+@given(xs=int_lists, n=positive_n)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_chunk_last_block_size_at_most_n(xs, n):
+    """Последний блок имеет от 1 до n элементов."""
+    blocks = chunk(xs, n)
+    if blocks:
+        assert 1 <= len(blocks[-1]) <= n
+
+
+@given(xs=int_lists, n=positive_n)
+@settings(max_examples=300, deadline=None, derandomize=True)
+def test_chunk_number_of_blocks(xs, n):
+    """Количество блоков — ceil(len(xs) / n)."""
+    import math
+    blocks = chunk(xs, n)
+    expected = math.ceil(len(xs) / n) if xs else 0
+    assert len(blocks) == expected

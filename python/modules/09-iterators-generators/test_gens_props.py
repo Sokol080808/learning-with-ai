@@ -15,7 +15,7 @@ import itertools
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from gens import countdown, take, running_total, chunks
+from gens import countdown, take, running_total, chunks, flatten
 
 ints = st.integers(min_value=-10**9, max_value=10**9)
 int_lists = st.lists(ints, max_size=50)
@@ -152,3 +152,87 @@ def test_chunks_extreme_edges():
     assert list(chunks([], 3)) == []
     assert list(chunks([1], 5)) == [[1]]
     assert list(chunks([1, 2, 3], 1)) == [[1], [2], [3]]
+
+
+# --- flatten: property-тесты -------------------------------------------------
+
+# Стратегия: дерево вложенных списков с целыми числами и строками.
+# max_leaves ограничивает суммарный размер для быстрого прогона.
+_leaf = st.one_of(
+    st.integers(min_value=-100, max_value=100),
+    st.text(alphabet="abcde", min_size=1, max_size=4),
+)
+
+# Рекурсивная стратегия: либо лист, либо список таких же объектов.
+_nested = st.recursive(
+    _leaf,
+    lambda children: st.lists(children, max_size=5),
+    max_leaves=20,
+)
+
+
+def _oracle_flatten(obj):
+    """Независимый рекурсивный оракул — не использует yield from."""
+    result = []
+    if isinstance(obj, str):
+        result.append(obj)
+    elif hasattr(obj, "__iter__"):
+        for item in obj:
+            result.extend(_oracle_flatten(item))
+    else:
+        result.append(obj)
+    return result
+
+
+@given(nested=st.lists(_nested, max_size=6))
+@settings(derandomize=True)
+def test_flatten_matches_oracle(nested):
+    """Результат flatten совпадает с независимым рекурсивным оракулом."""
+    assert list(flatten(nested)) == _oracle_flatten(nested)
+
+
+@given(nested=st.lists(_nested, max_size=6))
+@settings(derandomize=True)
+def test_flatten_count_equals_oracle(nested):
+    """Число элементов совпадает с оракулом — ничего не теряем и не добавляем."""
+    assert len(list(flatten(nested))) == len(_oracle_flatten(nested))
+
+
+@given(xs=st.lists(st.integers(min_value=-50, max_value=50), max_size=20))
+@settings(derandomize=True)
+def test_flatten_flat_list_is_identity(xs):
+    """Плоский список проходит без изменений."""
+    assert list(flatten(xs)) == xs
+
+
+@given(
+    a=st.lists(st.integers(min_value=0, max_value=50), max_size=10),
+    b=st.lists(st.integers(min_value=0, max_value=50), max_size=10),
+)
+@settings(derandomize=True)
+def test_flatten_concat_law(a, b):
+    """flatten([a, b]) == flatten(a) + flatten(b) для плоских списков."""
+    assert list(flatten([a, b])) == list(flatten(a)) + list(flatten(b))
+
+
+@given(nested=st.lists(_nested, max_size=6))
+@settings(derandomize=True)
+def test_flatten_strings_never_split(nested):
+    """Ни один элемент результата не является одиночным символом, происходящим
+    от многосимвольной строки-атома — строки не разворачиваются побуквенно."""
+    # Собираем все строки-атомы, присутствующие во входе.
+    def collect_strings(obj):
+        if isinstance(obj, str):
+            yield obj
+        elif hasattr(obj, "__iter__"):
+            for item in obj:
+                yield from collect_strings(item)
+
+    input_strings = set(collect_strings(nested))
+    result = list(flatten(nested))
+    # Каждая строка в результате должна совпадать с одной из входных строк.
+    for item in result:
+        if isinstance(item, str):
+            assert item in input_strings, (
+                f"строка {item!r} в результате не является атомом из входа"
+            )

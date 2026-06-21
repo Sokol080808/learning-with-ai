@@ -7,6 +7,7 @@
 
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 from typing import Any, Callable, Iterator, Union
 
@@ -59,6 +60,28 @@ def parse_csv(text: str) -> list[dict]:
     Если данных нет (пустой текст или только заголовок) — вернуть [].
     """
     raise NotImplementedError("TODO: реализуй parse_csv через splitlines/split и zip")
+
+
+def write_csv(path: StrPath, rows: list[dict], fieldnames: list[str]) -> None:
+    """Записать список словарей в CSV-файл с заголовком через csv.DictWriter.
+
+    КРИТИЧНО: открывает файл с newline="" — иначе на Windows csv запишет лишний \\r.
+    Первая строка файла — заголовок (fieldnames). Ячейки с запятой внутри автоматически
+    берутся в кавычки: "London, UK".
+    """
+    raise NotImplementedError("TODO: реализуй write_csv через csv.DictWriter — открой с newline='', запиши заголовок и строки")
+
+
+def read_csv_typed(path: StrPath, schema: dict[str, Callable[[str], Any]]) -> list[dict]:
+    """Прочитать CSV-файл через csv.DictReader с приведением типов согласно schema.
+
+    Открывает файл с newline="" (требование модуля csv). Первая строка — заголовок
+    (DictReader читает его автоматически). Для колонок из schema применяет конвертер;
+    остальные колонки остаются строками. Пустой файл или только заголовок -> [].
+    Правильно обрабатывает ячейки с запятой внутри ("London, UK"), в отличие от
+    ручного split(",").
+    """
+    raise NotImplementedError("TODO: реализуй read_csv_typed через csv.DictReader — открой с newline='', применяй конвертеры из schema")
 
 
 # ---------------------------------------------------------------------------

@@ -6,7 +6,7 @@
 
 import pytest
 
-from typingtest import clamp, merge_counts, safe_get
+from typingtest import apply_all, clamp, merge_counts, safe_get
 
 
 # --- Задание 1: clamp (зажать в диапазон) ---
@@ -138,3 +138,81 @@ def test_merge_counts_result_is_new_object():
     assert result is not a
     assert result is not b
     assert result == {"a": 3}
+
+
+# --- Задание 4: apply_all (применить список Callable к числу) ---
+
+# ─── Фикстуры ─────────────────────────────────────────────────────────────────
+
+@pytest.fixture
+def sample_funcs() -> list:
+    """Небольшой набор функций int → int для тестов apply_all.
+
+    Демонстрирует pytest.fixture: подготовка данных вынесена в одно место,
+    каждый тест получает свежую копию (фикстура вызывается заново).
+    """
+    return [
+        lambda x: x + 1,    # прибавить 1
+        lambda x: x * 2,    # умножить на 2
+        abs,                 # абсолютное значение (встроенная функция)
+        lambda x: x ** 2,   # возвести в квадрат
+    ]
+
+
+# ─── Корректность ─────────────────────────────────────────────────────────────
+
+def test_apply_all_basic_positive(sample_funcs: list) -> None:
+    # arrange: x=3, функции из фикстуры
+    # act
+    result = apply_all(sample_funcs, 3)
+    # assert: [3+1, 3*2, abs(3), 3**2]
+    assert result == [4, 6, 3, 9]
+
+
+def test_apply_all_basic_negative(sample_funcs: list) -> None:
+    # x=-3 — проверяем abs и квадрат на отрицательном числе
+    result = apply_all(sample_funcs, -3)
+    assert result == [-2, -6, 3, 9]
+
+
+def test_apply_all_zero(sample_funcs: list) -> None:
+    result = apply_all(sample_funcs, 0)
+    assert result == [1, 0, 0, 0]
+
+
+def test_apply_all_single_func() -> None:
+    # один элемент в списке — результат тоже список из одного элемента
+    result = apply_all([lambda x: x * 10], 5)
+    assert result == [50]
+
+
+def test_apply_all_empty_funcs() -> None:
+    # пустой список функций → пустой результат
+    result = apply_all([], 42)
+    assert result == []
+
+
+def test_apply_all_result_length_matches_funcs(sample_funcs: list) -> None:
+    # длина результата всегда равна числу функций
+    result = apply_all(sample_funcs, 7)
+    assert len(result) == len(sample_funcs)
+
+
+def test_apply_all_preserves_order() -> None:
+    # порядок результатов совпадает с порядком функций
+    funcs = [lambda x: x + 100, lambda x: x - 100, lambda x: x * 0]
+    result = apply_all(funcs, 5)
+    assert result == [105, -95, 0]
+
+
+def test_apply_all_does_not_mutate_funcs(sample_funcs: list) -> None:
+    # вызов apply_all не должен менять список функций
+    original_len = len(sample_funcs)
+    apply_all(sample_funcs, 10)
+    assert len(sample_funcs) == original_len
+
+
+def test_apply_all_identity_func() -> None:
+    # тождественная функция: результат совпадает с x для каждого элемента
+    funcs = [lambda x: x, lambda x: x, lambda x: x]
+    assert apply_all(funcs, 7) == [7, 7, 7]

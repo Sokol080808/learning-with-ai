@@ -34,3 +34,17 @@ def title_case(s: str) -> str:
 def count_char(s: str, ch: str) -> int:
     """Сколько раз символ ch встречается в строке s (с учётом регистра)."""
     raise NotImplementedError("TODO: реализуй count_char (см. Идею 4)")
+
+
+def safe_decode(data: bytes, encodings: list[str]) -> str:
+    """Декодировать байты, перебирая кодировки по очереди; вернуть первую успешную.
+
+    Если ни одна кодировка из списка не подошла (или список пуст) — ValueError.
+
+    Примеры:
+        safe_decode(b'hello', ['ascii', 'utf-8'])  -> 'hello'
+        safe_decode(b'\\xca\\xee\\xf2', ['utf-8', 'cp1251'])  -> 'Кот'
+        safe_decode(b'\\xff', ['utf-8', 'ascii'])  -> ValueError
+        safe_decode(b'hello', [])                   -> ValueError
+    """
+    raise NotImplementedError("TODO: реализуй safe_decode — перебери encodings, поймай UnicodeDecodeError/LookupError, если ничего не подошло — подними ValueError")

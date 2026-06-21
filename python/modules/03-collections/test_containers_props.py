@@ -16,6 +16,8 @@ from containers import (
     flatten,
     intersection,
     invert_dict,
+    split_head_tail,
+    sort_by_length,
     Multiset,
 )
 
@@ -339,3 +341,96 @@ def test_multiset_intersection_leq_union(xs, ys):
     all_elements = set(xs) | set(ys)
     for x in all_elements:
         assert i.count(x) <= u.count(x)
+
+
+# ---------------------------------------------------------------------------
+# split_head_tail: property tests
+# ---------------------------------------------------------------------------
+
+any_lists = st.lists(st.integers(min_value=-100, max_value=100), max_size=50)
+
+
+@given(xs=any_lists)
+@settings(derandomize=True)
+def test_split_head_tail_oracle_head(xs):
+    """head совпадает с xs[0], или None для пустого — оракул через срез."""
+    head, _ = split_head_tail(xs)
+    if xs:
+        assert head == xs[0]
+    else:
+        assert head is None
+
+
+@given(xs=any_lists)
+@settings(derandomize=True)
+def test_split_head_tail_oracle_tail(xs):
+    """tail совпадает с xs[1:] — оракул через срез."""
+    _, tail = split_head_tail(xs)
+    assert tail == xs[1:]
+
+
+@given(xs=any_lists)
+@settings(derandomize=True)
+def test_split_head_tail_reconstruct(xs):
+    """Голова + хвост восстанавливают исходный список (round-trip)."""
+    head, tail = split_head_tail(xs)
+    if xs:
+        assert [head] + tail == xs
+    else:
+        assert head is None and tail == []
+
+
+@given(xs=any_lists)
+@settings(derandomize=True)
+def test_split_head_tail_tail_length(xs):
+    """Длина хвоста ровно max(0, len(xs)-1)."""
+    _, tail = split_head_tail(xs)
+    assert len(tail) == max(0, len(xs) - 1)
+
+
+# ---------------------------------------------------------------------------
+# sort_by_length: property tests
+# ---------------------------------------------------------------------------
+
+word_strategy = st.text(alphabet=st.characters(whitelist_categories=("Lu", "Ll")), max_size=15)
+word_list_strategy = st.lists(word_strategy, max_size=60)
+
+
+@given(words=word_list_strategy)
+@settings(derandomize=True)
+def test_sort_by_length_oracle(words):
+    """Результат совпадает с оракулом sorted(words, key=len)."""
+    assert sort_by_length(words) == sorted(words, key=len)
+
+
+@given(words=word_list_strategy)
+@settings(derandomize=True)
+def test_sort_by_length_lengths_non_decreasing(words):
+    """Длины слов в результате не убывают."""
+    result = sort_by_length(words)
+    lengths = [len(w) for w in result]
+    assert lengths == sorted(lengths)
+
+
+@given(words=word_list_strategy)
+@settings(derandomize=True)
+def test_sort_by_length_same_multiset(words):
+    """Результат содержит ровно те же слова (как мультимножество)."""
+    result = sort_by_length(words)
+    assert sorted(result) == sorted(words)
+
+
+@given(words=word_list_strategy)
+@settings(derandomize=True)
+def test_sort_by_length_stable(words):
+    """Стабильность: среди слов одинаковой длины исходный порядок сохраняется."""
+    result = sort_by_length(words)
+    # Для каждой длины слова в результате должны идти в том же порядке, что в words.
+    from itertools import groupby
+    # Собираем индексы исходного списка по длине
+    original_order = {w: [] for w in set(words)}
+    for i, w in enumerate(words):
+        original_order[w].append(i)
+    # В результате: для слов одинаковой длины относительный порядок (по исходным индексам)
+    # должен совпадать с тем, что даёт sorted(..., key=len) — он стабилен по определению.
+    assert result == sorted(words, key=len)

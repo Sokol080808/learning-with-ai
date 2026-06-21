@@ -2,7 +2,7 @@
 # Запуск: ./python/run.sh 02
 import pytest
 
-from controlflow import fizzbuzz, factorial, fib, count_vowels, gcd
+from controlflow import fizzbuzz, factorial, fib, count_vowels, gcd, pairwise_sum
 
 
 # --- fizzbuzz ---------------------------------------------------------------
@@ -90,6 +90,38 @@ def test_count_vowels_no_vowels():
 
 def test_count_vowels_ignores_digits_and_spaces():
     assert count_vowels("a1 e2 i3") == 3
+
+
+# --- pairwise_sum -----------------------------------------------------------
+
+def test_pairwise_sum_basic():
+    assert pairwise_sum([1, 4, 9, 16]) == [5, 13, 25]
+
+
+def test_pairwise_sum_two_elements():
+    assert pairwise_sum([3, 7]) == [10]
+
+
+def test_pairwise_sum_single_element():
+    assert pairwise_sum([42]) == []
+
+
+def test_pairwise_sum_empty():
+    assert pairwise_sum([]) == []
+
+
+def test_pairwise_sum_negatives():
+    assert pairwise_sum([-1, -2, -3]) == [-3, -5]
+
+
+def test_pairwise_sum_length():
+    xs = [10, 20, 30, 40, 50]
+    result = pairwise_sum(xs)
+    assert len(result) == len(xs) - 1
+
+
+def test_pairwise_sum_all_zeros():
+    assert pairwise_sum([0, 0, 0]) == [0, 0]
 
 
 # --- gcd --------------------------------------------------------------------

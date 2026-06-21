@@ -53,6 +53,40 @@ def days_between(a: str, b: str) -> int:
 
 
 # ---------------------------------------------------------------------------
+# Задание 6: running_totals (itertools.accumulate)
+# ---------------------------------------------------------------------------
+
+from itertools import accumulate as _accumulate, islice as _islice
+from typing import Iterable
+
+
+def running_totals(xs: list[float]) -> list[float]:
+    """Вернуть список накопленных сумм (running sums) той же длины.
+
+    Для [1, 2, 3, 4] результат [1, 3, 6, 10].
+    Реализовано через itertools.accumulate.
+    Для пустого списка возвращает [].
+    """
+    raise NotImplementedError("TODO: реализуй running_totals через itertools.accumulate")
+
+
+# ---------------------------------------------------------------------------
+# Задание 7: chunk (itertools.islice)
+# ---------------------------------------------------------------------------
+
+
+def chunk(it: Iterable, n: int) -> list[tuple]:
+    """Разбить итерируемое на блоки (кортежи) по n элементов.
+
+    Последний блок может быть меньше n, если элементов не хватает.
+    Реализовано через itertools.islice.
+    Для пустого итерируемого возвращает [].
+    Для n <= 0 поднимает ValueError.
+    """
+    raise NotImplementedError("TODO: реализуй chunk через itertools.islice, для n<=0 кидай ValueError")
+
+
+# ---------------------------------------------------------------------------
 # Задание (существенное): RecordAggregator — типизированный агрегатор записей
 # ---------------------------------------------------------------------------
 

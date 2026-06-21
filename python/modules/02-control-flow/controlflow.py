@@ -51,3 +51,15 @@ def gcd(a: int, b: int) -> int:
     Контракт: gcd(a, 0) == a, gcd(0, b) == b; для положительных a, b — их НОД.
     """
     raise NotImplementedError("TODO: реализуй gcd по контракту из docstring")
+
+
+def pairwise_sum(xs: list[int]) -> list[int]:
+    """Вернуть список попарных сумм соседних элементов.
+
+    Контракт:
+      - pairwise_sum([1, 4, 9, 16]) == [5, 13, 25]  (1+4, 4+9, 9+16)
+      - pairwise_sum([42]) == []    (один элемент — нет пар)
+      - pairwise_sum([]) == []      (пустой список — нет пар)
+    Длина результата равна len(xs) - 1 для непустого xs, иначе 0.
+    """
+    raise NotImplementedError("TODO: реализуй pairwise_sum — пройди по парам соседних элементов и собери их суммы")

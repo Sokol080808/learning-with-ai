@@ -9,6 +9,8 @@ from containers import (
     flatten,
     intersection,
     invert_dict,
+    split_head_tail,
+    sort_by_length,
     Multiset,
 )
 
@@ -360,3 +362,76 @@ def test_multiset_intersection_returns_new_multiset():
     result = a & b
     assert isinstance(result, Multiset)
     assert result.count(5) == 1
+
+
+# --- split_head_tail ----------------------------------------------------------
+
+def test_split_head_tail_empty():
+    assert split_head_tail([]) == (None, [])
+
+
+def test_split_head_tail_single():
+    assert split_head_tail([42]) == (42, [])
+
+
+def test_split_head_tail_multiple():
+    assert split_head_tail([1, 2, 3]) == (1, [2, 3])
+
+
+def test_split_head_tail_two_elements():
+    assert split_head_tail(["a", "b"]) == ("a", ["b"])
+
+
+def test_split_head_tail_returns_tuple():
+    result = split_head_tail([1, 2])
+    assert isinstance(result, tuple)
+    assert isinstance(result[1], list)
+
+
+def test_split_head_tail_tail_is_copy():
+    xs = [1, 2, 3]
+    _, tail = split_head_tail(xs)
+    tail.append(99)
+    # изменение хвоста не должно портить исходный список
+    assert xs == [1, 2, 3]
+
+
+# --- sort_by_length -----------------------------------------------------------
+
+def test_sort_by_length_basic():
+    assert sort_by_length(["банан", "кот", "яблоко", "пёс"]) == [
+        "кот", "пёс", "банан", "яблоко"
+    ]
+
+
+def test_sort_by_length_stable_tie_break():
+    # "bb" и "dd" одинаковой длины — исходный порядок сохраняется
+    assert sort_by_length(["bb", "a", "ccc", "dd"]) == ["a", "bb", "dd", "ccc"]
+
+
+def test_sort_by_length_empty():
+    assert sort_by_length([]) == []
+
+
+def test_sort_by_length_single():
+    assert sort_by_length(["hello"]) == ["hello"]
+
+
+def test_sort_by_length_all_same_length():
+    words = ["cat", "dog", "ant"]
+    result = sort_by_length(words)
+    assert sorted(result) == sorted(words)   # те же слова, порядок стабильный
+    assert result == words                   # все длины равны — порядок не меняется
+
+
+def test_sort_by_length_returns_new_list():
+    words = ["bb", "a"]
+    result = sort_by_length(words)
+    assert result is not words   # новый список, не мутация исходного
+
+
+def test_sort_by_length_does_not_mutate_input():
+    words = ["ccc", "a", "bb"]
+    original = words[:]
+    sort_by_length(words)
+    assert words == original

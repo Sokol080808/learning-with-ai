@@ -7,7 +7,7 @@
 
 from __future__ import annotations
 
-from typing import Generic, Iterator, TypeVar
+from typing import Callable, Generic, Iterator, TypeVar
 
 T = TypeVar("T")
 
@@ -88,3 +88,13 @@ def merge_counts(a: dict[str, int], b: dict[str, int]) -> dict[str, int]:
     Исходные словари a и b НЕ меняй — верни новый словарь.
     """
     raise NotImplementedError("TODO: реализуй merge_counts — сумма значений по ключам, новый dict")
+
+
+def apply_all(funcs: list[Callable[[int], int]], x: int) -> list[int]:
+    """Применить каждую функцию из funcs к числу x и вернуть список результатов.
+
+    Порядок результатов совпадает с порядком функций в funcs.
+    Если funcs пустой — вернуть пустой список.
+    Аннотация Callable[[int], int]: каждый элемент — функция int → int.
+    """
+    raise NotImplementedError("TODO: реализуй apply_all — примени каждую функцию к x, верни список")

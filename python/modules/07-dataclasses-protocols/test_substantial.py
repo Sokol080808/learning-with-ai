@@ -4,12 +4,14 @@
 # Сейчас — КРАСНЫЕ: стаб кидает NotImplementedError. Реализуй Disk / Rect / Ring /
 # describe_canvas в models.py — тесты позеленеют.
 import math
+from decimal import Decimal
 
 import pytest
 
 from models import (
     Disk,
     Drawable,
+    Money,
     Rect,
     Ring,
     describe_canvas,
@@ -220,3 +222,149 @@ def test_describe_canvas_accepts_custom_drawable():
     # Triangle area=6.0 > Disk(r=0.5) area≈0.7854
     assert result[0].startswith("Triangle(")
     assert result[1].startswith("Disk(")
+
+
+# ---------------------------------------------------------------------------
+# Money: frozen + order + __post_init__ (существенное задание 2)
+# ---------------------------------------------------------------------------
+
+def test_money_basic_creation():
+    m = Money(amount=Decimal("100.00"), currency="USD")
+    assert m.amount == Decimal("100.00")
+    assert m.currency == "USD"
+    assert m.tags == ()
+
+
+def test_money_frozen_prevents_mutation():
+    # frozen=True: попытка присвоить поле бросает исключение
+    from dataclasses import FrozenInstanceError
+    m = Money(amount=Decimal("50.00"), currency="EUR")
+    with pytest.raises((FrozenInstanceError, AttributeError)):
+        m.amount = Decimal("999")  # type: ignore[misc]
+
+
+def test_money_hashable_can_be_put_in_set():
+    # frozen=True автоматически добавляет __hash__ → объект кладётся в set/dict
+    m1 = Money(amount=Decimal("10.00"), currency="USD")
+    m2 = Money(amount=Decimal("10.00"), currency="USD")
+    m3 = Money(amount=Decimal("20.00"), currency="USD")
+    s = {m1, m2, m3}
+    # m1 и m2 равны → в множестве один элемент; m3 другой
+    assert len(s) == 2
+
+
+def test_money_eq_by_value():
+    # frozen dataclass: __eq__ сравнивает по полям
+    assert Money(Decimal("5.00"), "RUB") == Money(Decimal("5.00"), "RUB")
+    assert Money(Decimal("5.00"), "RUB") != Money(Decimal("6.00"), "RUB")
+    assert Money(Decimal("5.00"), "USD") != Money(Decimal("5.00"), "EUR")
+
+
+def test_money_order_less_than():
+    # order=True: сравнение по (amount, currency, tags) лексикографически
+    cheap = Money(Decimal("1.00"), "USD")
+    expensive = Money(Decimal("100.00"), "USD")
+    assert cheap < expensive
+    assert expensive > cheap
+
+
+def test_money_sortable():
+    prices = [
+        Money(Decimal("30.00"), "USD"),
+        Money(Decimal("10.00"), "USD"),
+        Money(Decimal("20.00"), "USD"),
+    ]
+    result = sorted(prices)
+    assert result[0].amount == Decimal("10.00")
+    assert result[1].amount == Decimal("20.00")
+    assert result[2].amount == Decimal("30.00")
+
+
+def test_money_post_init_negative_amount_raises():
+    # __post_init__ бросает ValueError при отрицательной сумме
+    with pytest.raises(ValueError, match="отрицательным"):
+        Money(amount=Decimal("-1.00"), currency="USD")
+
+
+def test_money_post_init_invalid_currency_too_short():
+    with pytest.raises(ValueError, match="currency"):
+        Money(amount=Decimal("10.00"), currency="US")
+
+
+def test_money_post_init_invalid_currency_too_long():
+    with pytest.raises(ValueError, match="currency"):
+        Money(amount=Decimal("10.00"), currency="USDD")
+
+
+def test_money_post_init_invalid_currency_lowercase():
+    with pytest.raises(ValueError, match="currency"):
+        Money(amount=Decimal("10.00"), currency="usd")
+
+
+def test_money_post_init_invalid_currency_digits():
+    with pytest.raises(ValueError, match="currency"):
+        Money(amount=Decimal("10.00"), currency="U5D")
+
+
+def test_money_zero_amount_is_valid():
+    # Ноль — допустимая сумма (граничный случай)
+    m = Money(amount=Decimal("0.00"), currency="EUR")
+    assert m.amount == Decimal("0.00")
+
+
+def test_money_tags_default_is_empty_tuple():
+    m = Money(Decimal("1.00"), "GBP")
+    assert m.tags == ()
+    assert isinstance(m.tags, tuple)
+
+
+def test_money_tags_are_stored():
+    m = Money(Decimal("1.00"), "GBP", tags=("sale", "promo"))
+    assert m.tags == ("sale", "promo")
+
+
+def test_money_tags_default_not_shared_between_instances():
+    # Разные экземпляры не делят один объект тегов (хотя кортеж иммутабелен,
+    # убеждаемся, что дефолт — действительно одинаковый пустой кортеж)
+    m1 = Money(Decimal("1.00"), "USD")
+    m2 = Money(Decimal("2.00"), "USD")
+    assert m1.tags == m2.tags  # оба ()
+    # Кортеж иммутабелен — нельзя «загрязнить» через один экземпляр
+
+
+def test_money_convert_basic():
+    usd = Money(Decimal("100.00"), "USD")
+    eur = usd.convert(rate=Decimal("0.92"), target_currency="EUR")
+    assert eur.currency == "EUR"
+    assert eur.amount == Decimal("92.00")
+
+
+def test_money_convert_rounds_to_two_decimal_places():
+    m = Money(Decimal("10.00"), "USD")
+    # 10 * 0.333 = 3.33 (после quantize до 0.01)
+    result = m.convert(rate=Decimal("0.333"), target_currency="EUR")
+    # Проверяем, что число знаков после запятой равно 2
+    assert result.amount == result.amount.quantize(Decimal("0.01"))
+
+
+def test_money_convert_does_not_modify_original():
+    # frozen: оригинал неизменен после convert
+    original = Money(Decimal("50.00"), "USD")
+    _ = original.convert(rate=Decimal("0.9"), target_currency="EUR")
+    assert original.amount == Decimal("50.00")
+    assert original.currency == "USD"
+
+
+def test_money_convert_result_is_valid_money():
+    # Результат convert сам является валидным Money
+    m = Money(Decimal("100.00"), "USD")
+    result = m.convert(Decimal("1.1"), "GBP")
+    assert isinstance(result, Money)
+    assert result.amount >= Decimal("0")
+
+
+def test_money_convert_drops_tags():
+    # Конвертация не переносит теги
+    m = Money(Decimal("100.00"), "USD", tags=("vip",))
+    result = m.convert(Decimal("1.0"), "EUR")
+    assert result.tags == ()
