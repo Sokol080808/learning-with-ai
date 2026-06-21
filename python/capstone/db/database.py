@@ -35,6 +35,7 @@
 from __future__ import annotations
 
 from typing import Any
+from pathlib import Path
 
 from .tokenizer import tokenize
 from .parser import parse
@@ -108,4 +109,106 @@ class Database:
         raise NotImplementedError(
             "TODO: проведи sql через tokenize -> parse и выполни CREATE/INSERT/SELECT/DELETE; "
             "семантические ошибки -> raise QueryError. Разнеси ветки по приватным методам. См. test_database.py"
+        )
+
+    # --- майлстоун 6: ПЕРСИСТЕНТНОСТЬ (json + pathlib + with) ------------------
+    # До сих пор база жила только в оперативной памяти: закрыл процесс — данные исчезли.
+    # Эти два метода дают «выгрузку на диск» и «загрузку обратно». Это прямой повод свести
+    # вместе модуль 12 (файлы и JSON) и модуль 08 (контекст-менеджеры: with гарантирует
+    # закрытие файла даже при исключении). Формат на диске — обычный JSON:
+    # {имя_таблицы: {"columns": [...], "rows": [{col: value, ...}, ...]}, ...}
+    #
+    # ИНВАРИАНТ round-trip: Database.load(db.save(path)) == db.
+    # Для == нужен __eq__, для __eq__ удобен вспомогательный to_dict().
+
+    def to_dict(self) -> dict[str, Any]:
+        """Сериализуемый снимок всей базы: {имя_таблицы: {"columns": [...], "rows": [...]}}.
+
+        Формат: каждая таблица — словарь с ключами "columns" (список строк) и "rows"
+        (список словарей col->value). Именно этот формат json.dump/load использует без потерь,
+        а __eq__ применяет для сравнения двух баз.
+
+        Подсказка: пройди по self._tables и для каждой таблицы собери нужный словарь.
+        Не забудь скопировать списки (list(...)), иначе внешние изменения мутируют внутренности.
+        """
+        raise NotImplementedError(
+            "TODO: верни dict вида {name: {'columns': [...], 'rows': [...]}} для каждой таблицы. "
+            "Значения строк — уже типизированы (int/str), копируй как есть. См. test_persistence_props.py"
+        )
+
+    def save(self, path: str | Path) -> Path:
+        """Записать базу в JSON-файл по пути path. Вернуть Path (удобно для round-trip).
+
+        Шаги:
+        1. Path(path) — нормализуй аргумент в Path.
+        2. with path.open("w", encoding="utf-8") as f: — открой файл для записи.
+        3. json.dump(self.to_dict(), f, ensure_ascii=False, indent=2) — запиши снимок.
+        4. Верни path.
+
+        Подсказка: не забудь import json (добавь в импорты вверху файла).
+        """
+        raise NotImplementedError(
+            "TODO: сериализуй self.to_dict() в JSON-файл по пути path, верни Path(path). "
+            "Используй with ... open(...) и json.dump. См. test_persistence_props.py"
+        )
+
+    @classmethod
+    def load(cls, path: str | Path) -> "Database":
+        """Прочитать базу из JSON-файла и вернуть НОВЫЙ экземпляр Database.
+
+        Это classmethod (альтернативный конструктор): Database.load(path).
+        Шаги:
+        1. Path(path) — нормализуй.
+        2. with path.open("r", encoding="utf-8") as f: data = json.load(f).
+        3. db = cls() — новый пустой экземпляр.
+        4. Воссоздай self._tables из data: для каждого имени/payload заполни таблицу.
+        5. Верни db.
+
+        Подсказка: структура data зеркалит to_dict() — те же ключи "columns" и "rows".
+        """
+        raise NotImplementedError(
+            "TODO: прочитай JSON из path, создай cls(), заполни _tables из данных, верни db. "
+            "Формат файла — тот же, что to_dict() записывает. См. test_persistence_props.py"
+        )
+
+    def __eq__(self, other: object) -> bool:
+        """Две базы равны, если совпадает их сериализуемое содержимое (to_dict() одинаков).
+
+        Нужно для инварианта load(save(db)) == db в тестах.
+        Подсказка: проверь isinstance(other, Database), затем сравни self.to_dict() == other.to_dict().
+        """
+        raise NotImplementedError(
+            "TODO: верни True если isinstance(other, Database) и self.to_dict() == other.to_dict(), "
+            "иначе NotImplemented. См. test_persistence_props.py"
+        )
+
+    # --- майлстоун 7: КОНТЕКСТ-МЕНЕДЖЕР транзакции (атомарность с откатом) -----
+    # Пачка операций «всё или ничего»: если посреди блока вылетело исключение,
+    # база возвращается к состоянию ДО входа в блок.
+    #
+    #     with db.transaction():
+    #         db.execute("INSERT ...")
+    #         db.execute("DELETE ...")   # если тут QueryError — обе операции откатятся
+    #
+    # @contextmanager превращает генератор в менеджер: код до yield — __enter__,
+    # код после — __exit__. try/except/raise даёт откат + проброс исключения наружу.
+
+    def transaction(self):
+        """Атомарная пачка операций: при любом исключении внутри блока изменения откатываются.
+
+        Реализация-скелет:
+          1. Сделай глубокую копию self._tables (copy.deepcopy) — это снимок состояния.
+          2. try: yield self  — передай управление телу блока with.
+          3. except BaseException: восстанови self._tables = snapshot; raise  — откат + проброс.
+          4. При нормальном выходе (нет исключения) снимок просто отбрасывается.
+
+        Превратить в контекст-менеджер можно двумя способами:
+          а) @contextmanager из contextlib (декоратор над генератором — см. модуль 08);
+          б) класс с __enter__/__exit__.
+
+        Подсказка: не забудь import copy и from contextlib import contextmanager.
+        """
+        raise NotImplementedError(
+            "TODO: реализуй контекст-менеджер транзакции: сохрани снимок _tables, "
+            "yield self, при исключении восстанови снимок и reraise. См. test_persistence_props.py"
         )

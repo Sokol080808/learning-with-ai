@@ -13,7 +13,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from errors import safe_divide, parse_int, get_or, Suppress
+from errors import safe_divide, parse_int, get_or, Suppress, tag, MissingKeyError, wrap_lookup
 
 ints = st.integers(min_value=-10**12, max_value=10**12)
 finite_floats = st.floats(min_value=-1e9, max_value=1e9, allow_nan=False, allow_infinity=False)
@@ -168,3 +168,63 @@ def test_suppress_enter_returns_self(types):
     with mgr as entered:
         pass
     assert entered is mgr
+
+
+# --- tag: teardown всегда выполняется, исключение пробрасывается ----------
+
+tag_names = st.text(alphabet=st.characters(whitelist_categories=("Ll", "Lu"), min_codepoint=65), min_size=1, max_size=16)
+
+
+@given(name=tag_names)
+@settings(derandomize=True)
+def test_tag_always_prints_closing_tag_on_exception(name, capsys):
+    # Инвариант: закрывающий тег появляется при любом исходе — нормальном и с ошибкой.
+    with pytest.raises(ValueError):
+        with tag(name):
+            raise ValueError("тест")
+    out = capsys.readouterr().out
+    assert f"</{name}>" in out
+
+
+@given(name=tag_names)
+@settings(derandomize=True)
+def test_tag_open_before_close(name, capsys):
+    # Инвариант: открывающий тег появляется перед закрывающим.
+    with tag(name):
+        pass
+    out = capsys.readouterr().out
+    open_pos = out.index(f"<{name}>")
+    close_pos = out.index(f"</{name}>")
+    assert open_pos < close_pos
+
+
+# --- wrap_lookup: поведение на произвольных dict-ах ----------------------
+
+printable_keys = st.text(min_size=1, max_size=20)
+printable_values = st.integers() | st.text(max_size=20)
+
+
+@given(d=st.dictionaries(printable_keys, printable_values, min_size=0, max_size=10), key=printable_keys)
+@settings(derandomize=True)
+def test_wrap_lookup_returns_value_iff_key_present(d, key):
+    # Инвариант: если ключ есть — возвращает значение из словаря;
+    # если ключа нет — бросает MissingKeyError с KeyError как __cause__.
+    if key in d:
+        assert wrap_lookup(d, key) == d[key]
+    else:
+        with pytest.raises(MissingKeyError) as exc_info:
+            wrap_lookup(d, key)
+        assert isinstance(exc_info.value.__cause__, KeyError)
+
+
+@given(d=st.dictionaries(printable_keys, printable_values, min_size=1, max_size=10))
+@settings(derandomize=True)
+def test_wrap_lookup_never_raises_key_error_directly(d):
+    # Голый KeyError никогда не должен просочиться наружу из wrap_lookup.
+    for key in list(d.keys()) + ["__absent_key__"]:
+        try:
+            wrap_lookup(d, key)
+        except MissingKeyError:
+            pass  # ожидаемо для отсутствующих ключей
+        except KeyError:
+            pytest.fail("wrap_lookup пробросил KeyError напрямую — должен MissingKeyError")

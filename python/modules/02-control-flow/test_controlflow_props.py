@@ -10,7 +10,7 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from controlflow import fizzbuzz, factorial, fib, count_vowels, gcd
+from controlflow import fizzbuzz, factorial, fib, count_vowels, gcd, pairwise_sum
 
 
 # --- fizzbuzz: длина, элементы и правило замены ------------------------------
@@ -168,3 +168,46 @@ def test_gcd_symmetric(a, b):
 @given(a=pos)
 def test_gcd_self(a):
     assert gcd(a, a) == a
+
+
+# --- pairwise_sum: длина, значения, инварианты -------------------------------
+
+int_list = st.lists(st.integers(min_value=-10**6, max_value=10**6))
+
+
+@given(xs=int_list)
+@settings(derandomize=True)
+def test_pairwise_sum_length(xs):
+    # Результат всегда на один элемент короче входа (или пуст, если вход пуст/одноэлементный).
+    result = pairwise_sum(xs)
+    expected_len = max(0, len(xs) - 1)
+    assert len(result) == expected_len
+
+
+@given(xs=int_list)
+@settings(derandomize=True)
+def test_pairwise_sum_values_match_oracle(xs):
+    # Оракул: каждый элемент результата равен xs[i] + xs[i+1].
+    result = pairwise_sum(xs)
+    for i, val in enumerate(result):
+        assert val == xs[i] + xs[i + 1]
+
+
+@given(xs=st.lists(st.integers(min_value=-10**6, max_value=10**6), min_size=1))
+@settings(derandomize=True)
+def test_pairwise_sum_nonempty_singleton_or_longer(xs):
+    # Для списка из одного элемента результат пуст; для двух и более — непуст.
+    result = pairwise_sum(xs)
+    if len(xs) == 1:
+        assert result == []
+    else:
+        assert len(result) == len(xs) - 1
+        assert len(result) >= 1
+
+
+@given(xs=st.lists(st.integers(min_value=0, max_value=10**6), min_size=2))
+@settings(derandomize=True)
+def test_pairwise_sum_nonneg_inputs_give_nonneg(xs):
+    # Если все входы неотрицательны — все суммы тоже неотрицательны.
+    for val in pairwise_sum(xs):
+        assert val >= 0

@@ -155,26 +155,131 @@ def test_eq_returns_notimplemented_for_other_type():
     assert Fraction(1, 2).__eq__("nope") is NotImplemented
 
 
-# --- Представление (__repr__) ------------------------------------------------
+# --- Представление (__repr__ и __str__) -------------------------------------
 
 def test_repr_simple():
-    assert repr(Fraction(1, 2)) == "1/2"
+    assert repr(Fraction(1, 2)) == "Fraction(1, 2)"
 
 
 def test_repr_normalizes_before_printing():
-    assert repr(Fraction(2, 4)) == "1/2"
+    assert repr(Fraction(2, 4)) == "Fraction(1, 2)"
 
 
 def test_repr_negative():
-    assert repr(Fraction(1, -2)) == "-1/2"
+    assert repr(Fraction(1, -2)) == "Fraction(-1, 2)"
 
 
 def test_repr_integer_like():
-    assert repr(Fraction(6, 3)) == "2/1"
+    assert repr(Fraction(6, 3)) == "Fraction(2, 1)"
 
 
 def test_repr_zero():
-    assert repr(Fraction(0, 9)) == "0/1"
+    assert repr(Fraction(0, 9)) == "Fraction(0, 1)"
+
+
+def test_str_simple():
+    assert str(Fraction(1, 2)) == "1/2"
+
+
+def test_str_negative():
+    assert str(Fraction(1, -2)) == "-1/2"
+
+
+def test_str_zero():
+    assert str(Fraction(0, 5)) == "0/1"
+
+
+# --- __hash__ — хешируемость и согласованность с __eq__ ---------------------
+
+def test_hash_equal_fractions_have_equal_hash():
+    # 2/4 и 1/2 — одна дробь после нормализации; хеш обязан совпасть
+    assert hash(Fraction(2, 4)) == hash(Fraction(1, 2))
+
+
+def test_hash_negative_equivalent():
+    assert hash(Fraction(1, -2)) == hash(Fraction(-1, 2))
+
+
+def test_hash_fraction_usable_as_dict_key():
+    d = {Fraction(1, 2): "half", Fraction(1, 3): "third"}
+    assert d[Fraction(2, 4)] == "half"   # 2/4 нормализуется в 1/2 → тот же ключ
+
+
+def test_hash_fraction_usable_in_set():
+    s = {Fraction(1, 2), Fraction(2, 4), Fraction(3, 6)}
+    assert len(s) == 1   # все три равны после нормализации
+
+
+def test_hash_distinct_fractions_likely_differ():
+    # Не гарантия (коллизии возможны), но для простых дробей — обычно разные
+    assert hash(Fraction(1, 2)) != hash(Fraction(1, 3))
+
+
+# --- Операторы __add__ и __mul__ --------------------------------------------
+
+def test_operator_add_basic():
+    assert Fraction(1, 2) + Fraction(1, 3) == Fraction(5, 6)
+
+
+def test_operator_add_same_as_method():
+    a, b = Fraction(2, 3), Fraction(1, 4)
+    assert a + b == a.add(b)
+
+
+def test_operator_add_with_non_fraction_returns_notimplemented():
+    result = Fraction(1, 2).__add__(3)
+    assert result is NotImplemented
+
+
+def test_operator_mul_basic():
+    assert Fraction(2, 3) * Fraction(3, 4) == Fraction(1, 2)
+
+
+def test_operator_mul_same_as_method():
+    a, b = Fraction(2, 3), Fraction(3, 5)
+    assert a * b == a.mul(b)
+
+
+def test_operator_mul_with_non_fraction_returns_notimplemented():
+    result = Fraction(1, 2).__mul__("x")
+    assert result is NotImplemented
+
+
+def test_operator_add_commutativity():
+    a, b = Fraction(1, 3), Fraction(2, 5)
+    assert a + b == b + a
+
+
+def test_operator_add_returns_new_object():
+    a, b = Fraction(1, 4), Fraction(1, 4)
+    result = a + b
+    assert result is not a and result is not b
+
+
+# --- @classmethod from_int ---------------------------------------------------
+
+def test_from_int_creates_fraction_over_one():
+    f = Fraction.from_int(3)
+    assert (f.num, f.den) == (3, 1)
+
+
+def test_from_int_zero():
+    f = Fraction.from_int(0)
+    assert (f.num, f.den) == (0, 1)
+
+
+def test_from_int_negative():
+    f = Fraction.from_int(-5)
+    assert (f.num, f.den) == (-5, 1)
+
+
+def test_from_int_equals_constructor():
+    assert Fraction.from_int(7) == Fraction(7, 1)
+
+
+def test_from_int_arithmetic():
+    # 3 + 1/2 = 7/2 (через from_int)
+    assert Fraction.from_int(3) + Fraction(1, 2) == Fraction(7, 2)
 
 
 # --- Свойство value ----------------------------------------------------------

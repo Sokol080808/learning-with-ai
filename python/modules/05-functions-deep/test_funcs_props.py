@@ -17,6 +17,8 @@ from funcs import (
     compose,
     sort_by_length,
     memoize,
+    make_counter,
+    compose_many,
 )
 
 # Числа в разумных пределах: умножение/сложение замыканий не должно упираться в производительность.
@@ -221,3 +223,84 @@ def test_memoize_preserves_name_and_doc():
         return x
 
     assert my_func.__name__ == "my_func"
+
+
+# --- make_counter: nonlocal, независимость замыканий ---
+
+@given(n=st.integers(min_value=1, max_value=50))
+@settings(derandomize=True)
+def test_make_counter_reaches_n(n):
+    # После n вызовов счётчик (с нуля) обязан вернуть ровно n.
+    c = make_counter()
+    result = None
+    for _ in range(n):
+        result = c()
+    assert result == n
+
+
+@given(start=st.integers(min_value=-100, max_value=100),
+       n=st.integers(min_value=1, max_value=50))
+@settings(derandomize=True)
+def test_make_counter_offset_start(start, n):
+    # После n вызовов с произвольным стартом счётчик == start + n.
+    c = make_counter(start)
+    for _ in range(n):
+        last = c()
+    assert last == start + n
+
+
+@given(n1=st.integers(min_value=1, max_value=30),
+       n2=st.integers(min_value=1, max_value=30))
+@settings(derandomize=True)
+def test_make_counter_closures_are_independent(n1, n2):
+    # Инвариант независимости: два счётчика не делят состояние — каждый ведёт свой счёт.
+    c1 = make_counter()
+    c2 = make_counter()
+    for _ in range(n1):
+        c1()
+    for _ in range(n2):
+        c2()
+    # c1 не знает о вызовах c2, и наоборот
+    assert c1() == n1 + 1
+    assert c2() == n2 + 1
+
+
+# --- compose_many: ассоциативность, тождество, согласованность с compose ---
+
+@given(a=small_ints, b=small_ints, c=small_ints, d=small_ints, x=small_ints)
+@settings(derandomize=True)
+def test_compose_many_two_equals_compose(a, b, c, d, x):
+    # Двуместный compose_many обязан совпадать с двуместным compose.
+    f = lambda t: a * t + b
+    g = lambda t: c * t + d
+    assert compose_many(f, g)(x) == compose(f, g)(x)
+
+
+@given(a=small_ints, b=small_ints, c=small_ints, d=small_ints,
+       e=small_ints, k=small_ints, x=small_ints)
+@settings(derandomize=True, max_examples=100)
+def test_compose_many_three_is_associative(a, b, c, d, e, k, x):
+    # compose_many(f, g, h) == compose_many(compose_many(f, g), h)
+    # (ассоциативность — группировать можно как угодно, результат тот же)
+    f = lambda t: a * t + b
+    g = lambda t: c * t + d
+    h = lambda t: e * t + k
+    flat  = compose_many(f, g, h)(x)
+    left  = compose_many(compose_many(f, g), h)(x)
+    right = compose_many(f, compose_many(g, h))(x)
+    assert flat == left == right
+
+
+@given(x=ints)
+@settings(derandomize=True)
+def test_compose_many_empty_is_identity(x):
+    # Нулевая композиция — тождественная функция.
+    assert compose_many()(x) == x
+
+
+@given(a=small_ints, b=small_ints, x=small_ints)
+@settings(derandomize=True)
+def test_compose_many_single_equals_original(a, b, x):
+    # compose_many(f)(x) == f(x)
+    f = lambda t: a * t + b
+    assert compose_many(f)(x) == f(x)

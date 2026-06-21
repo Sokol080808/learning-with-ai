@@ -6,10 +6,12 @@ import json
 import pytest
 
 from stdlibtour import (
+    chunk,
     days_between,
     from_json_str,
     group_by_first_letter,
     most_common_word,
+    running_totals,
     to_json_str,
 )
 
@@ -135,3 +137,74 @@ def test_days_between_rejects_bad_format():
     # fromisoformat строгий: не-ISO формат должен приводить к ValueError
     with pytest.raises(ValueError):
         days_between("01/03/2024", "2024-03-02")
+
+
+# --- Задание 6: running_totals (itertools.accumulate) ---
+
+def test_running_totals_basic():
+    assert running_totals([1, 2, 3, 4]) == [1, 3, 6, 10]
+
+
+def test_running_totals_single_element():
+    assert running_totals([7]) == [7]
+
+
+def test_running_totals_empty():
+    assert running_totals([]) == []
+
+
+def test_running_totals_floats():
+    result = running_totals([0.5, 0.5, 1.0])
+    assert result == pytest.approx([0.5, 1.0, 2.0])
+
+
+def test_running_totals_with_negatives():
+    assert running_totals([1, -1, 2, -2]) == [1, 0, 2, 0]
+
+
+def test_running_totals_length_preserved():
+    xs = [10, 20, 30, 40, 50]
+    result = running_totals(xs)
+    assert len(result) == len(xs)
+
+
+# --- Задание 7: chunk (itertools.islice) ---
+
+def test_chunk_basic():
+    assert chunk([1, 2, 3, 4, 5, 6], 2) == [(1, 2), (3, 4), (5, 6)]
+
+
+def test_chunk_last_block_smaller():
+    assert chunk([1, 2, 3, 4, 5], 2) == [(1, 2), (3, 4), (5,)]
+
+
+def test_chunk_n_larger_than_list():
+    assert chunk([1, 2], 10) == [(1, 2)]
+
+
+def test_chunk_n_equals_length():
+    assert chunk([1, 2, 3], 3) == [(1, 2, 3)]
+
+
+def test_chunk_empty_iterable():
+    assert chunk([], 3) == []
+
+
+def test_chunk_size_one():
+    assert chunk([1, 2, 3], 1) == [(1,), (2,), (3,)]
+
+
+def test_chunk_zero_n_raises():
+    with pytest.raises(ValueError):
+        chunk([1, 2, 3], 0)
+
+
+def test_chunk_negative_n_raises():
+    with pytest.raises(ValueError):
+        chunk([1, 2, 3], -1)
+
+
+def test_chunk_works_on_generator():
+    # islice должен работать на любом итерируемом, не только на списках
+    result = chunk((x for x in range(6)), 3)
+    assert result == [(0, 1, 2), (3, 4, 5)]

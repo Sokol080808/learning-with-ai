@@ -9,7 +9,7 @@
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from textproc import normalize_spaces, is_palindrome, title_case, count_char
+from textproc import normalize_spaces, is_palindrome, title_case, count_char, safe_decode
 
 text = st.text(max_size=100)
 
@@ -136,3 +136,54 @@ def test_count_char_extreme_cases():
     assert count_char("", "a") == 0
     assert count_char("банан", "а") == 2
     assert count_char("Алла", "а") == 1  # регистрозависимо
+
+
+# --- safe_decode: round-trip и инварианты ----------------------------------
+
+# Стратегия: генерируем текстовые строки, кодируем в UTF-8, декодируем через safe_decode.
+# Инвариант: encode→decode возвращает исходную строку (round-trip).
+
+@given(s=st.text(max_size=80))
+@settings(derandomize=True)
+def test_safe_decode_roundtrip_utf8(s):
+    """encode("utf-8") → safe_decode([..., "utf-8"]) должен вернуть исходную строку."""
+    encoded = s.encode("utf-8")
+    # Список намеренно начинаем с заведомо узкой кодировки (ascii),
+    # чтобы safe_decode мог упасть на первой и перейти к utf-8.
+    result = safe_decode(encoded, ["ascii", "utf-8"])
+    assert result == s
+
+
+@given(s=st.text(alphabet=st.characters(whitelist_categories=("L", "N", "P")), max_size=60))
+@settings(derandomize=True)
+def test_safe_decode_result_is_str(s):
+    """safe_decode всегда возвращает str, а не bytes."""
+    encoded = s.encode("utf-8")
+    result = safe_decode(encoded, ["utf-8"])
+    assert isinstance(result, str)
+
+
+@given(data=st.binary(max_size=60))
+@settings(derandomize=True)
+def test_safe_decode_latin1_never_raises(data):
+    """latin-1 декодирует любую последовательность байтов — исключения нет."""
+    result = safe_decode(data, ["utf-8", "latin-1"])
+    assert isinstance(result, str)
+
+
+@given(s=st.text(max_size=80))
+@settings(derandomize=True)
+def test_safe_decode_empty_encodings_always_raises(s):
+    """Пустой список кодировок всегда даёт ValueError."""
+    import pytest
+    with pytest.raises(ValueError):
+        safe_decode(s.encode("utf-8"), [])
+
+
+def test_safe_decode_extreme_cases():
+    # CP1251 «Кот» — первый UTF-8 промахивается, второй cp1251 попадает
+    assert safe_decode(b"\xca\xee\xf2", ["utf-8", "cp1251"]) == "Кот"
+    # Пустые байты — пустая строка
+    assert safe_decode(b"", ["utf-8"]) == ""
+    # latin-1 как спасательная сеть
+    assert isinstance(safe_decode(b"\xff", ["utf-8", "latin-1"]), str)

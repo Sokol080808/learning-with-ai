@@ -11,6 +11,22 @@ from collections import deque
 from typing import Iterable, Iterator, Any
 
 
+def flatten(nested: Iterable[Any]) -> Iterator[Any]:
+    """Генератор: рекурсивно разворачивает вложенные итерируемые в плоский поток.
+
+    Строки считаются атомарными значениями и НЕ разворачиваются поэлементно.
+    Поддерживает произвольную глубину вложенности и любые iterable-контейнеры
+    (списки, кортежи, range, генераторы).
+
+    Примеры:
+        list(flatten([1, [2, [3]], 4]))            == [1, 2, 3, 4]
+        list(flatten(["hi", [1, "world"]]))        == ["hi", 1, "world"]
+        list(flatten([1, (2, 3), range(4, 6)]))   == [1, 2, 3, 4, 5]
+        list(flatten([]))                          == []
+    """
+    raise NotImplementedError("TODO: рекурсивно yield-й элементы, строки — атомы, остальные iterable — разворачивай через yield from flatten(...)")
+
+
 def countdown(n: int) -> Iterator[int]:
     """Генератор: выдаёт числа n, n-1, …, 1 (по убыванию, включая 1).
 

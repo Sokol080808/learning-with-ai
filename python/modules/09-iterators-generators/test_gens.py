@@ -9,7 +9,7 @@ import itertools
 
 import pytest
 
-from gens import countdown, take, running_total, chunks
+from gens import countdown, take, running_total, chunks, flatten
 
 
 # --- countdown -------------------------------------------------------------
@@ -155,3 +155,50 @@ def test_chunks_yields_lists():
 
 def test_chunks_with_strings():
     assert list(chunks(["a", "b", "c"], 2)) == [["a", "b"], ["c"]]
+
+
+# --- flatten ---------------------------------------------------------------
+
+def test_flatten_flat_list():
+    assert list(flatten([1, 2, 3])) == [1, 2, 3]
+
+
+def test_flatten_one_level():
+    assert list(flatten([1, [2, 3], 4])) == [1, 2, 3, 4]
+
+
+def test_flatten_two_levels():
+    assert list(flatten([1, [2, [3, 4]], 5])) == [1, 2, 3, 4, 5]
+
+
+def test_flatten_three_levels():
+    assert list(flatten([[[1]], [[2, [3]]]]) ) == [1, 2, 3]
+
+
+def test_flatten_empty():
+    assert list(flatten([])) == []
+
+
+def test_flatten_nested_empty_lists():
+    assert list(flatten([[], [[], []], []])) == []
+
+
+def test_flatten_strings_are_atomic():
+    # Строки — атомы: не разворачиваются побуквенно.
+    assert list(flatten(["hello", [1, "world"]])) == ["hello", 1, "world"]
+
+
+def test_flatten_tuple_input():
+    assert list(flatten((1, (2, 3), 4))) == [1, 2, 3, 4]
+
+
+def test_flatten_range_input():
+    assert list(flatten([range(3), range(3, 5)])) == [0, 1, 2, 3, 4]
+
+
+def test_flatten_mixed_containers():
+    assert list(flatten([1, (2, 3), range(4, 6)])) == [1, 2, 3, 4, 5]
+
+
+def test_flatten_is_a_generator():
+    assert inspect.isgenerator(flatten([1, [2, 3]]))

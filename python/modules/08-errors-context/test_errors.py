@@ -7,7 +7,7 @@
 
 import pytest
 
-from errors import safe_divide, parse_int, get_or, Suppress
+from errors import safe_divide, parse_int, get_or, Suppress, tag, MissingKeyError, wrap_lookup
 
 
 # ---------- safe_divide ----------
@@ -165,3 +165,110 @@ def test_suppress_does_not_swallow_unrelated_in_real_use():
     with pytest.raises(TypeError):
         with Suppress(ValueError):
             int(None)  # TypeError, а не ValueError
+
+
+# ---------- tag (генераторный контекст-менеджер) ----------
+
+def test_tag_prints_open_and_close(capsys):
+    with tag("span"):
+        pass
+    out = capsys.readouterr().out
+    assert out == "<span>\n</span>\n"
+
+
+def test_tag_close_printed_even_on_exception(capsys):
+    # teardown (закрывающий тег) должен выполниться даже при исключении.
+    with pytest.raises(ValueError):
+        with tag("div"):
+            raise ValueError("что-то пошло не так")
+    out = capsys.readouterr().out
+    assert "<div>" in out
+    assert "</div>" in out
+
+
+def test_tag_exception_propagates_after_teardown(capsys):
+    # Исключение внутри блока не проглатывается — оно пробрасывается наружу.
+    with pytest.raises(RuntimeError, match="boom"):
+        with tag("p"):
+            raise RuntimeError("boom")
+
+
+def test_tag_nesting(capsys):
+    # Вложенные теги работают корректно.
+    with tag("outer"):
+        with tag("inner"):
+            pass
+    out = capsys.readouterr().out
+    assert out == "<outer>\n<inner>\n</inner>\n</outer>\n"
+
+
+def test_tag_no_exception_normal_execution(capsys):
+    # Без исключения тело блока выполняется полностью.
+    results = []
+    with tag("ul"):
+        results.append("item")
+    out = capsys.readouterr().out
+    assert results == ["item"]
+    assert out == "<ul>\n</ul>\n"
+
+
+# ---------- wrap_lookup / MissingKeyError (связывание исключений) ----------
+
+def test_wrap_lookup_found():
+    assert wrap_lookup({"a": 1}, "a") == 1
+
+
+def test_wrap_lookup_missing_raises_missing_key_error():
+    with pytest.raises(MissingKeyError):
+        wrap_lookup({"a": 1}, "z")
+
+
+def test_wrap_lookup_cause_is_key_error():
+    # __cause__ должен быть оригинальным KeyError (raise … from err).
+    with pytest.raises(MissingKeyError) as exc_info:
+        wrap_lookup({}, "missing")
+    assert exc_info.value.__cause__ is not None
+    assert isinstance(exc_info.value.__cause__, KeyError)
+
+
+def test_wrap_lookup_message_contains_key():
+    # Сообщение доменной ошибки должно содержать имя ключа.
+    with pytest.raises(MissingKeyError, match="not found"):
+        wrap_lookup({}, "my_key")
+
+
+def test_wrap_lookup_missing_key_error_is_exception():
+    # MissingKeyError — нормальное Exception, а не BaseException.
+    assert issubclass(MissingKeyError, Exception)
+
+
+def test_wrap_lookup_cause_key_matches():
+    # Оригинальный KeyError содержит тот же ключ, что мы искали.
+    with pytest.raises(MissingKeyError) as exc_info:
+        wrap_lookup({"x": 10}, "y")
+    original = exc_info.value.__cause__
+    assert isinstance(original, KeyError)
+    assert original.args[0] == "y"
+
+
+def test_missing_key_error_can_be_caught_separately():
+    # MissingKeyError можно поймать отдельно от KeyError — это доменная ошибка.
+    caught = False
+    try:
+        wrap_lookup({}, "k")
+    except MissingKeyError:
+        caught = True
+    assert caught
+
+
+def test_wrap_lookup_does_not_raise_key_error_directly():
+    # Вызывающий код получает MissingKeyError, а не голый KeyError.
+    # Убеждаемся, что исключение ровно MissingKeyError — не KeyError и не Exception.
+    exc_type = None
+    try:
+        wrap_lookup({}, "k")
+    except MissingKeyError as e:
+        exc_type = type(e)
+    except KeyError:
+        pytest.fail("wrap_lookup не должен пробрасывать KeyError напрямую")
+    assert exc_type is MissingKeyError
