@@ -43,7 +43,7 @@ log_modules  = st.from_regex(r"\w+", fullmatch=True).filter(lambda s: len(s) >= 
 log_messages = st.text(
     alphabet=string.ascii_letters + string.digits + " .:,_/-@",
     min_size=1, max_size=60,
-)
+).map(str.strip).filter(bool)  # без краевых пробелов и не пустые: parse_log_line strip-ает строку
 
 # ---------------------------------------------------------------------------
 # find_all_numbers — инвариант: количество результатов совпадает с числом
