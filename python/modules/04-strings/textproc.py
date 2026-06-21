@@ -32,3 +32,22 @@ def title_case(s: str) -> str:
 def count_char(s: str, ch: str) -> int:
     """Сколько раз символ ch встречается в строке s (с учётом регистра)."""
     return s.count(ch)
+
+
+def safe_decode(data: bytes, encodings: list[str]) -> str:
+    """Декодировать байты, перебирая кодировки по очереди; вернуть первую успешную.
+
+    Если ни одна кодировка из списка не подошла (или список пуст) — ValueError.
+
+    Примеры:
+        safe_decode(b'hello', ['ascii', 'utf-8'])  -> 'hello'
+        safe_decode(b'\\xca\\xee\\xf2', ['utf-8', 'cp1251'])  -> 'Кот'
+        safe_decode(b'\\xff', ['utf-8', 'ascii'])  -> ValueError
+        safe_decode(b'hello', [])                   -> ValueError
+    """
+    for enc in encodings:
+        try:
+            return data.decode(enc)
+        except (UnicodeDecodeError, LookupError):
+            continue
+    raise ValueError(f"Cannot decode bytes with any of the given encodings: {encodings}")

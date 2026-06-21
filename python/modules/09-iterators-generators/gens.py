@@ -7,6 +7,7 @@
 # должен быть yield, а не return со списком. take — обычная функция, возвращает список.
 
 from collections import deque
+from collections.abc import Iterable as IterableABC
 from typing import Iterable, Iterator, Any
 
 
@@ -59,6 +60,31 @@ def chunks(xs: list, size: int) -> Iterator[list]:
     """
     for i in range(0, len(xs), size):
         yield xs[i:i + size]
+
+
+def flatten(nested: Iterable[Any]) -> Iterator[Any]:
+    """Генератор: рекурсивно разворачивает вложенные итерируемые в плоский поток.
+
+    Строки считаются атомарными значениями и НЕ разворачиваются поэлементно.
+    Поддерживает произвольную глубину вложенности и любые iterable-контейнеры
+    (списки, кортежи, range, генераторы).
+
+    Примеры:
+        list(flatten([1, [2, [3]], 4]))            == [1, 2, 3, 4]
+        list(flatten(["hi", [1, "world"]]))        == ["hi", 1, "world"]
+        list(flatten([1, (2, 3), range(4, 6)]))   == [1, 2, 3, 4, 5]
+        list(flatten([]))                          == []
+    """
+    for item in nested:
+        # Строки — iterable, но мы считаем их атомами: выдаём целиком.
+        if isinstance(item, str):
+            yield item
+        elif isinstance(item, IterableABC):
+            # yield from делегирует производство значений рекурсивному вызову:
+            # внешний генератор «замолкает» до исчерпания вложенного.
+            yield from flatten(item)
+        else:
+            yield item
 
 
 class Window:

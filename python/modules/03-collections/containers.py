@@ -50,6 +50,30 @@ def invert_dict(d: dict) -> dict:
     return {value: key for key, value in d.items()}
 
 
+def split_head_tail(xs: list) -> tuple:
+    """Вернуть (head, tail): голова и хвост списка.
+
+    Использует starred-распаковку для непустого списка.
+    Краевые случаи:
+      []      -> (None, [])
+      [x]     -> (x, [])
+      [x,..] -> (x, [...])
+    """
+    if not xs:
+        return (None, [])
+    head, *tail = xs
+    return (head, tail)
+
+
+def sort_by_length(words: list[str]) -> list[str]:
+    """Вернуть новый список строк, отсортированный по возрастанию длины.
+
+    При равной длине исходный относительный порядок сохраняется (стабильная сортировка).
+    Пример: ["банан", "кот", "яблоко", "пёс"] -> ["кот", "пёс", "банан", "яблоко"].
+    """
+    return sorted(words, key=len)
+
+
 class Multiset:
     """Мультимножество: хранит элементы с учётом кратности вхождения.
 

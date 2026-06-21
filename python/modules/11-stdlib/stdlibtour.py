@@ -10,7 +10,8 @@ from __future__ import annotations
 import json
 from collections import Counter, defaultdict
 from datetime import date
-from typing import Any
+from itertools import accumulate, islice
+from typing import Any, Iterable
 
 
 def most_common_word(text: str) -> str:
@@ -64,6 +65,41 @@ def days_between(a: str, b: str) -> int:
     start = date.fromisoformat(a)
     end = date.fromisoformat(b)
     return (end - start).days
+
+
+# ---------------------------------------------------------------------------
+# Задание 6: itertools — running_totals и chunk
+# ---------------------------------------------------------------------------
+
+
+def running_totals(xs: list[float]) -> list[float]:
+    """Вернуть список накопленных сумм (running sums) той же длины.
+
+    Для [1, 2, 3, 4] результат [1, 3, 6, 10].
+    Реализовано через itertools.accumulate.
+    Для пустого списка возвращает [].
+    """
+    return list(accumulate(xs))
+
+
+def chunk(it: Iterable, n: int) -> list[tuple]:
+    """Разбить итерируемое на блоки (кортежи) по n элементов.
+
+    Последний блок может быть меньше n, если элементов не хватает.
+    Реализовано через itertools.islice.
+    Для пустого итерируемого возвращает [].
+    Для n <= 0 поднимает ValueError.
+    """
+    if n <= 0:
+        raise ValueError(f"n must be positive, got {n!r}")
+    iterator = iter(it)
+    result = []
+    while True:
+        block = tuple(islice(iterator, n))
+        if not block:
+            break
+        result.append(block)
+    return result
 
 
 # ---------------------------------------------------------------------------

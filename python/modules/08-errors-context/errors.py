@@ -4,6 +4,8 @@
 
 from __future__ import annotations
 
+from contextlib import contextmanager
+from collections.abc import Generator
 from types import TracebackType
 
 
@@ -101,3 +103,67 @@ class Suppress:
         if exc_type is not None and issubclass(exc_type, self.exc_types):
             return True
         return False
+
+
+# ---------------------------------------------------------------------------
+# Задача 5. Генераторный контекст-менеджер tag()
+# ---------------------------------------------------------------------------
+
+@contextmanager
+def tag(name: str) -> Generator[None, None, None]:
+    """Контекст-менеджер, оборачивающий блок псевдо-XML тегами.
+
+    Пример:
+        with tag("p"):
+            print("привет")
+        # напечатает:
+        # <p>
+        # привет
+        # </p>
+
+    Контракт:
+      - при входе в блок печатается <name>;
+      - при выходе (в том числе при исключении внутри блока) печатается </name>;
+      - если внутри блока возникло исключение — teardown (закрывающий тег)
+        всё равно выполняется, затем исключение пробрасывается наружу.
+
+    Реализован через @contextlib.contextmanager + try: yield … finally:
+    — самый распространённый паттерн генераторных CM на практике.
+    """
+    print(f"<{name}>")
+    try:
+        yield
+    finally:
+        print(f"</{name}>")
+
+
+# ---------------------------------------------------------------------------
+# Задача 6. Связывание исключений: wrap_lookup() и MissingKeyError
+# ---------------------------------------------------------------------------
+
+class MissingKeyError(Exception):
+    """Ключ не найден в словаре.
+
+    Доменное исключение, оборачивающее KeyError.  Через атрибут __cause__
+    сохраняет оригинальный KeyError — он доступен при отладке, но
+    вызывающий код работает с понятным доменным именем, а не с голым KeyError.
+    """
+
+
+def wrap_lookup(d: dict, key) -> object:
+    """Достать d[key], оборачивая KeyError в MissingKeyError.
+
+    Контракт:
+      - если key есть в d — вернуть d[key];
+      - если ключа нет — поднять MissingKeyError(f"key {key!r} not found"),
+        причиной которой (exc.__cause__) является оригинальный KeyError.
+
+    Это пример паттерна «оборачивание низкоуровневой ошибки в доменную»:
+    вызывающий код ловит MissingKeyError и не зависит от деталей реализации
+    (то, что внутри используется словарь — его не касается), но при отладке
+    через __cause__ всегда можно добраться до первопричины.
+    """
+    try:
+        return d[key]
+    except KeyError as err:
+        raise MissingKeyError(f"key {key!r} not found") from err

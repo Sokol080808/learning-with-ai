@@ -11,7 +11,7 @@ import pytest
 from hypothesis import given, settings
 from hypothesis import strategies as st
 
-from typingtest import clamp, merge_counts, safe_get
+from typingtest import apply_all, clamp, merge_counts, safe_get
 
 # Числа в разумных, но широких пределах — включают огромные, нулевые и отрицательные.
 ints = st.integers(min_value=-10**12, max_value=10**12)
@@ -159,3 +159,61 @@ def test_merge_counts_with_empty_is_identity(a):
 def test_merge_counts_is_commutative(a, b):
     # сложение счётчиков коммутативно: a+b даёт те же пары, что b+a
     assert merge_counts(a, b) == merge_counts(b, a)
+
+
+# --- apply_all: инварианты для Callable-списков ---
+
+# Фиксированный набор «безопасных» функций int → int для property-тестов.
+# Используем индексы вместо самих функций, чтобы hypothesis мог генерировать
+# произвольные комбинации без сериализации lambda (которую hypothesis не умеет).
+_FUNCS = [
+    lambda x: x,          # тождественная
+    lambda x: x + 1,      # +1
+    lambda x: x - 1,      # -1
+    lambda x: x * 2,      # *2
+    lambda x: -x,         # смена знака
+    abs,                   # абсолютное значение
+    lambda x: x ** 2,     # квадрат
+    lambda x: x % 7 if x >= 0 else -((-x) % 7),  # остаток (знакозависимый)
+]
+
+# Стратегия: список индексов 0..len(_FUNCS)-1, длиной от 0 до 8
+func_indices = st.lists(
+    st.integers(min_value=0, max_value=len(_FUNCS) - 1),
+    min_size=0,
+    max_size=8,
+)
+
+
+@settings(derandomize=True)
+@given(indices=func_indices, x=ints)
+def test_apply_all_length_invariant(indices: list[int], x: int) -> None:
+    """Длина результата apply_all равна числу функций в списке."""
+    funcs = [_FUNCS[i] for i in indices]
+    result = apply_all(funcs, x)
+    assert len(result) == len(funcs)
+
+
+@settings(derandomize=True)
+@given(indices=func_indices, x=ints)
+def test_apply_all_each_result_matches_direct_call(indices: list[int], x: int) -> None:
+    """Каждый элемент результата совпадает с прямым вызовом соответствующей функции."""
+    funcs = [_FUNCS[i] for i in indices]
+    result = apply_all(funcs, x)
+    for i, f in enumerate(funcs):
+        assert result[i] == f(x)
+
+
+@settings(derandomize=True)
+@given(indices=func_indices, x=ints)
+def test_apply_all_empty_returns_empty_list(indices: list[int], x: int) -> None:
+    """Частный случай инварианта длины: пустой funcs → пустой результат."""
+    assert apply_all([], x) == []
+
+
+@settings(derandomize=True)
+@given(i=st.integers(min_value=0, max_value=len(_FUNCS) - 1), x=ints)
+def test_apply_all_single_func_equals_direct_call(i: int, x: int) -> None:
+    """apply_all([f], x) == [f(x)] для любой одной функции из набора."""
+    f = _FUNCS[i]
+    assert apply_all([f], x) == [f(x)]

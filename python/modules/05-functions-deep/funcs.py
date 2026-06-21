@@ -90,3 +90,64 @@ def memoize(f: Callable) -> Callable:
         return cache[args]
 
     return wrapper
+
+
+# ---------------------------------------------------------------------------
+# Новые задания (Идеи 6–8)
+# ---------------------------------------------------------------------------
+
+def make_counter(start: int = 0) -> Callable[[], int]:
+    """Фабрика счётчиков: каждый вызов возвращённой функции увеличивает счётчик на 1.
+
+    Контракт:
+      - возвращаем функцию без аргументов;
+      - при каждом вызове она увеличивает внутреннее состояние на 1 и возвращает
+        новое значение (т.е. первый вызов → start + 1);
+      - два вызова make_counter() создают полностью независимые счётчики —
+        один не влияет на другой;
+      - изменение внутреннего состояния требует nonlocal.
+
+    Пример:
+        c = make_counter()
+        c()  # 1
+        c()  # 2
+        d = make_counter(10)
+        d()  # 11  — независим от c
+        c()  # 3   — c не изменился
+    """
+    count = start
+
+    def counter() -> int:
+        nonlocal count
+        count += 1
+        return count
+
+    return counter
+
+
+def compose_many(*funcs: Callable) -> Callable:
+    """Variadic-композиция: применить функции справа налево.
+
+    compose_many(f, g, h)(x)  ==  f(g(h(x)))
+
+    Контракт:
+      - принимает произвольное число функций одного аргумента;
+      - возвращает новую функцию одного аргумента, которая применяет их
+        правоналево (как в математической записи f∘g∘h);
+      - compose_many() (без функций) — тождественная функция (x → x);
+      - compose_many(f) == f по поведению;
+      - связь с двуместным compose: compose_many(f, g) == compose(f, g).
+
+    Пример:
+        add1 = lambda x: x + 1
+        dbl  = lambda x: x * 2
+        neg  = lambda x: -x
+        compose_many(add1, dbl, neg)(3)  # neg(3)=-3 → dbl(-3)=-6 → add1(-6)=-5
+    """
+    def composed(x):
+        result = x
+        for f in reversed(funcs):
+            result = f(result)
+        return result
+
+    return composed

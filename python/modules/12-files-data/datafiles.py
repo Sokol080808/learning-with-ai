@@ -6,6 +6,7 @@
 
 from __future__ import annotations
 
+import csv
 import json
 from pathlib import Path
 from typing import Any, Callable, Iterator, Union
@@ -78,6 +79,39 @@ def parse_csv(text: str) -> list[dict]:
         values = line.split(",")
         rows.append(dict(zip(header, values)))
     return rows
+
+
+def write_csv(path: StrPath, rows: list[dict], fieldnames: list[str]) -> None:
+    """Записать список словарей в CSV-файл с заголовком через csv.DictWriter.
+
+    КРИТИЧНО: открывает файл с newline="" — иначе на Windows csv запишет лишний \\r.
+    Первая строка файла — заголовок (fieldnames). Ячейки с запятой внутри автоматически
+    берутся в кавычки: "London, UK".
+    """
+    with open(path, "w", newline="", encoding="utf-8") as f:
+        writer = csv.DictWriter(f, fieldnames=fieldnames)
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def read_csv_typed(path: StrPath, schema: dict[str, Callable[[str], Any]]) -> list[dict]:
+    """Прочитать CSV-файл через csv.DictReader с приведением типов согласно schema.
+
+    Открывает файл с newline="" (требование модуля csv). Первая строка — заголовок
+    (DictReader читает его автоматически). Для колонок из schema применяет конвертер;
+    остальные колонки остаются строками. Пустой файл или только заголовок -> [].
+    Правильно обрабатывает ячейки с запятой внутри ("London, UK"), в отличие от
+    ручного split(",").
+    """
+    result: list[dict] = []
+    with open(path, newline="", encoding="utf-8") as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            row_dict: dict[str, Any] = dict(row)
+            for col, convert in schema.items():
+                row_dict[col] = convert(row_dict[col])
+            result.append(row_dict)
+    return result
 
 
 class TypedCSVReader:

@@ -4,7 +4,8 @@
 from __future__ import annotations
 
 import math
-from dataclasses import dataclass
+from dataclasses import dataclass, field
+from decimal import Decimal, ROUND_HALF_UP
 from typing import Protocol, runtime_checkable
 
 
@@ -171,3 +172,60 @@ def describe_canvas(shapes: list[Drawable]) -> list[str]:
     """
     ordered = sorted(shapes, key=lambda s: s.area(), reverse=True)
     return [f"{s.label()}: area={round(s.area(), 4)}" for s in ordered]
+
+
+# ---------------------------------------------------------------------------
+# Существенное задание 2: Money — frozen + order + __post_init__
+# ---------------------------------------------------------------------------
+
+@dataclass(frozen=True, order=True)
+class Money:
+    """Денежная сумма с валютой и необязательными метками.
+
+    Демонстрирует три новые идеи одновременно:
+    - frozen=True: иммутабельность и хешируемость (можно класть в set/dict).
+    - order=True: сравнение и сортировка по (amount, currency, tags).
+    - __post_init__: валидация инвариантов после автогенерированного __init__.
+    - field(default=()): безопасный иммутабельный дефолт для кортежа тегов.
+
+    Поля:
+        amount: Decimal — сумма >= 0; Decimal даёт точную арифметику (без float-погрешности).
+        currency: str — код валюты ровно из 3 заглавных латинских букв (напр. "USD").
+        tags: tuple[str, ...] — метки; иммутабельны (frozen требует хешируемых полей).
+    """
+
+    amount: Decimal
+    currency: str
+    tags: tuple[str, ...] = field(default=())
+
+    def __post_init__(self) -> None:
+        """Проверяет инварианты сразу после автогенерированного __init__.
+
+        Бросает ValueError, если:
+        - amount < 0
+        - currency не состоит ровно из 3 заглавных латинских букв
+        """
+        if self.amount < Decimal("0"):
+            raise ValueError(
+                f"amount не может быть отрицательным: {self.amount}"
+            )
+        if (
+            len(self.currency) != 3
+            or not self.currency.isalpha()
+            or not self.currency.isupper()
+        ):
+            raise ValueError(
+                f"currency должен быть 3 заглавными буквами: {self.currency!r}"
+            )
+
+    def convert(self, rate: Decimal, target_currency: str) -> "Money":
+        """Конвертирует сумму по указанному курсу в другую валюту.
+
+        Возвращает новый Money (оригинал не изменяется — frozen).
+        Результирующая сумма округляется до 2 знаков (ROUND_HALF_UP).
+        Теги не переносятся (новый объект получает пустой кортеж).
+        """
+        new_amount = (self.amount * rate).quantize(
+            Decimal("0.01"), rounding=ROUND_HALF_UP
+        )
+        return Money(amount=new_amount, currency=target_currency)

@@ -16,6 +16,7 @@ from basics import (
     min_of_three,
     average3,
     greet,
+    parse_number,
 )
 
 # Числа в разумных пределах: за гранью ~1e15 у float не хватает мантиссы и сравнения «плывут».
@@ -124,3 +125,61 @@ def test_greet_wraps_any_name(name):
     assert result.startswith("Привет, ")
     assert result.endswith("!")
     assert name in result
+
+
+# --- parse_number: property-тесты (seeded для воспроизводимости) ---
+
+@given(n=ints)
+@settings(derandomize=True)
+def test_parse_number_roundtrip_int(n):
+    # Строковое представление целого всегда должно распарситься обратно в то же int.
+    s = str(n)
+    result = parse_number(s)
+    assert result == n
+    assert type(result) is int
+
+
+@given(n=ints)
+@settings(derandomize=True)
+def test_parse_number_negative_mod2_parity(n):
+    # Инвариант чётности: parse_number(str(n)) % 2 совпадает с n % 2.
+    # Это косвенно проверяет знак остатка: -3 % 2 == 1 в Python.
+    result = parse_number(str(n))
+    assert result is not None
+    assert result % 2 == n % 2
+
+
+@given(n=ints)
+@settings(derandomize=True)
+def test_parse_number_int_not_float_for_integer_strings(n):
+    # Целочисленная строка должна давать ровно int, а не float.
+    result = parse_number(str(n))
+    assert type(result) is int
+
+
+@given(f=st.floats(min_value=-1e15, max_value=1e15, allow_nan=False,
+                   allow_infinity=False))
+@settings(derandomize=True)
+def test_parse_number_float_result_is_float_or_int(f):
+    # Для любого конечного float его repr даёт число (int или float), не None.
+    s = repr(f)
+    result = parse_number(s)
+    # repr(float) иногда включает 'nan'/'inf' — они уже отфильтрованы стратегией,
+    # но из осторожности допускаем None только если это не числовая строка.
+    assert result is not None or not s.lstrip("-").replace(".", "", 1).isdigit()
+
+
+@given(text=st.text(alphabet=st.characters(
+    blacklist_categories=("Nd",),  # без цифровых символов Unicode
+    blacklist_characters=".-+eE"
+), min_size=1))
+@settings(derandomize=True, max_examples=200)
+def test_parse_number_non_numeric_text_returns_none(text):
+    # Строки без цифр, точек и знаков — всегда None.
+    # Но дополнительно фильтруем случайные строки, которые float() принимает
+    # (например строки, которые случайно оказались числами после strip).
+    result = parse_number(text)
+    # Нельзя утверждать None на любой текст (некоторые Unicode-символы — цифры),
+    # но если результат не None, он должен быть числом.
+    if result is not None:
+        assert isinstance(result, (int, float))

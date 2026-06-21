@@ -64,9 +64,62 @@ class Fraction:
             return NotImplemented
         return self.num == other.num and self.den == other.den
 
+    def __hash__(self) -> int:
+        """Хеш, согласованный с __eq__.
+
+        Равные дроби (одинаковые num и den после нормализации) обязаны иметь
+        одинаковый хеш. Делегируем кортежу — он умеет хешироваться сам.
+        Определение __eq__ без __hash__ делает класс нехешируемым (Python
+        ставит __hash__ = None); явно определяем, чтобы Fraction можно было
+        класть в set и использовать как ключ dict.
+        """
+        return hash((self.num, self.den))
+
+    def __add__(self, other: object) -> "Fraction":
+        """Сложение через оператор +.
+
+        a/b + c/d = (a*d + c*b) / (b*d). Для чужого типа — NotImplemented,
+        чтобы Python мог попробовать __radd__ правого операнда.
+        """
+        if not isinstance(other, Fraction):
+            return NotImplemented
+        new_num = self.num * other.den + other.num * self.den
+        new_den = self.den * other.den
+        return Fraction(new_num, new_den)
+
+    def __mul__(self, other: object) -> "Fraction":
+        """Умножение через оператор *.
+
+        a/b * c/d = (a*c) / (b*d). Для чужого типа — NotImplemented.
+        """
+        if not isinstance(other, Fraction):
+            return NotImplemented
+        return Fraction(self.num * other.num, self.den * other.den)
+
     def __repr__(self) -> str:
-        """Строковое представление вида 'a/b' (например, '-1/2', '3/1')."""
+        """Технический вид объекта для разработчика (REPL, pytest, отладчик).
+
+        Формат 'Fraction(num, den)' — по нему сразу ясен тип и данные.
+        """
+        return f"Fraction({self.num}, {self.den})"
+
+    def __str__(self) -> str:
+        """Человекочитаемое представление: просто 'num/den'.
+
+        __str__ используется print() и f-строками. Если __str__ не определён,
+        Python как запасной вариант использует __repr__.
+        """
         return f"{self.num}/{self.den}"
+
+    @classmethod
+    def from_int(cls, n: int) -> "Fraction":
+        """Альтернативный конструктор: целое число n → дробь n/1.
+
+        Пример: Fraction.from_int(3) == Fraction(3, 1).
+        Используем cls вместо Fraction, чтобы подклассы могли его
+        корректно наследовать.
+        """
+        return cls(n, 1)
 
     @property
     def value(self) -> float:

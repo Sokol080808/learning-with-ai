@@ -37,7 +37,11 @@ from __future__ import annotations
 
 from typing import Any
 
+import copy
+import json
 import operator
+from contextlib import contextmanager
+from pathlib import Path
 
 from .tokenizer import tokenize
 from .parser import parse, Create, Insert, Select, Delete, Condition
@@ -184,6 +188,93 @@ class Database:
                 keep.append(row)
         table.rows = keep
         return removed
+
+    # --- майлстоун 6: ПЕРСИСТЕНТНОСТЬ (json + pathlib + with) ------------------
+    # До сих пор база жила только в оперативной памяти: закрыл процесс — данные исчезли.
+    # Эти два метода дают «выгрузку на диск» и «загрузку обратно». Это прямой повод свести
+    # вместе модуль 12 (файлы и JSON) и модуль 08 (контекст-менеджеры: with гарантирует
+    # закрытие файла даже при исключении). Формат на диске — обычный JSON, который json
+    # сериализует «бесплатно»: наши значения — это int и str, ключи строки, строки — словари.
+    #
+    # ИНВАРИАНТ round-trip: Database.load(db.save(path)) == db. Именно его проверяет
+    # property-тест: сохранили случайную базу, прочитали обратно — получили равную.
+
+    def to_dict(self) -> dict[str, Any]:
+        """Сериализуемый снимок всей базы: {имя_таблицы: {"columns": [...], "rows": [...]}}.
+
+        Это «чистые данные» без объектов-обёрток — ровно то, что без потерь ложится в JSON
+        и обратно. Используется и save(), и сравнением баз на равенство.
+        """
+        return {
+            name: {"columns": list(t.columns), "rows": [dict(r) for r in t.rows]}
+            for name, t in self._tables.items()
+        }
+
+    def save(self, path: str | Path) -> Path:
+        """Записать базу в JSON-файл по пути path. Вернуть Path (удобно для round-trip).
+
+        with гарантирует, что файл закроется даже если запись прервётся исключением.
+        ensure_ascii=False — чтобы кириллица/юникод в значениях не превращались в \\uXXXX.
+        """
+        path = Path(path)
+        with path.open("w", encoding="utf-8") as f:
+            json.dump(self.to_dict(), f, ensure_ascii=False, indent=2)
+        return path
+
+    @classmethod
+    def load(cls, path: str | Path) -> "Database":
+        """Прочитать базу из JSON-файла и собрать НОВЫЙ экземпляр Database.
+
+        classmethod, потому что метод КОНСТРУИРУЕТ объект (альтернативный конструктор),
+        а не меняет существующий: естественно писать Database.load(path).
+        """
+        path = Path(path)
+        with path.open("r", encoding="utf-8") as f:
+            data = json.load(f)
+        db = cls()
+        for name, payload in data.items():
+            db._tables[name] = _Table(
+                columns=list(payload["columns"]),
+                rows=[dict(r) for r in payload["rows"]],
+            )
+        return db
+
+    def __eq__(self, other: object) -> bool:
+        """Две базы равны, если совпадает их сериализуемое содержимое (таблицы и строки).
+
+        Нужно прежде всего для round-trip-инварианта load(save(db)) == db в тестах.
+        """
+        if not isinstance(other, Database):
+            return NotImplemented
+        return self.to_dict() == other.to_dict()
+
+    # --- майлстоун 7: КОНТЕКСТ-МЕНЕДЖЕР транзакции (атомарность с откатом) -----
+    # Иногда пачку операций нужно применить «всё или ничего»: если посреди пачки вылетело
+    # исключение, состояние должно вернуться к тому, что было ДО входа в блок. Это классика
+    # транзакций. Контекст-менеджер (модуль 08) — идеальная форма: на входе делаем снимок,
+    # на выходе либо фиксируем (нормальный выход), либо откатываемся (выход по исключению).
+    #
+    #     with db.transaction():
+    #         db.execute("INSERT ...")
+    #         db.execute("DELETE ...")   # если тут вылетит QueryError — обе операции откатятся
+    #
+    # @contextmanager превращает функцию-генератор в менеджер: код ДО yield — это __enter__,
+    # код ПОСЛЕ — __exit__. try/except/raise внутри даёт нам откат и проброс ошибки наружу.
+
+    @contextmanager
+    def transaction(self):
+        """Атомарная пачка операций: при исключении внутри блока изменения откатываются.
+
+        Снимок делаем глубокой копией хранилища (copy.deepcopy), чтобы откат не зависел от
+        того, мутировали ли мы строки на месте. При успешном выходе снимок просто
+        отбрасывается — все изменения остаются. Исключение НЕ глотаем: пробрасываем дальше.
+        """
+        snapshot = copy.deepcopy(self._tables)
+        try:
+            yield self
+        except BaseException:
+            self._tables = snapshot  # откат к состоянию «до входа в блок»
+            raise
 
 
 # --- внутренние структуры данных и сравнение ---------------------------------

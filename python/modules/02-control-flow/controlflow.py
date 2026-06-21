@@ -69,3 +69,15 @@ def gcd(a: int, b: int) -> int:
     while b:
         a, b = b, a % b
     return a
+
+
+def pairwise_sum(xs: list[int]) -> list[int]:
+    """Вернуть список попарных сумм соседних элементов.
+
+    Контракт:
+      - pairwise_sum([1, 4, 9, 16]) == [5, 13, 25]  (1+4, 4+9, 9+16)
+      - pairwise_sum([42]) == []    (один элемент — нет пар)
+      - pairwise_sum([]) == []      (пустой список — нет пар)
+    Длина результата равна len(xs) - 1 для непустого xs, иначе 0.
+    """
+    return [a + b for a, b in zip(xs, xs[1:])]

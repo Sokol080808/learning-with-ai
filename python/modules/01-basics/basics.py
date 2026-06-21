@@ -21,3 +21,21 @@ def average3(a: int, b: int, c: int) -> float:
 
 def greet(name: str) -> str:
     return f"Привет, {name}!"
+
+
+def parse_number(s: str) -> "int | float | None":
+    """Безопасно распарсить строку в число без исключений.
+
+    Возвращает:
+    - int,   если строка представляет целое число (например, "42", "-7", " 10 ")
+    - float, если строка представляет дробное число ("3.14", "-0.5", "1e3")
+    - None,  если строка — мусор, пустая или не является числом
+    """
+    try:
+        return int(s.strip())
+    except (ValueError, AttributeError):
+        pass
+    try:
+        return float(s.strip())
+    except (ValueError, AttributeError):
+        return None

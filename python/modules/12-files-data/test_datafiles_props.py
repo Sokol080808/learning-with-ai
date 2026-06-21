@@ -14,8 +14,10 @@ from hypothesis import strategies as st
 from datafiles import (
     load_json,
     parse_csv,
+    read_csv_typed,
     read_lines,
     save_json,
+    write_csv,
     write_lines,
 )
 
@@ -254,3 +256,112 @@ def test_parse_csv_trailing_newline_ignored(header, data):
     body = "\n".join([",".join(header)] + [",".join(r) for r in rows])
     assert parse_csv(body + "\n") == parse_csv(body)
     assert len(parse_csv(body + "\n")) == n_rows
+
+
+# --- write_csv / read_csv_typed: инварианты стандартного csv-модуля ---
+
+# Стратегия: CSV-безопасный текст ячейки для DictWriter/DictReader.
+# Для round-trip через csv модуль можно включить запятые в значениях — DictWriter
+# сам берёт их в кавычки. Запрещаем только символы перевода строки и суррогаты.
+_CELL_NEWLINE = set("\n\r\v\f\x1c\x1d\x1e\x85")
+csv_module_cell = st.text(
+    alphabet=st.characters(blacklist_categories=("Cs",)).filter(
+        lambda ch: ch not in _CELL_NEWLINE
+    ),
+    min_size=0,
+    max_size=20,
+)
+# Имена колонок не могут содержать запятые (иначе DictReader путает заголовок).
+csv_colname = st.text(
+    alphabet=st.characters(blacklist_categories=("Cs",)).filter(
+        lambda ch: ch not in _CELL_NEWLINE and ch != ","
+    ),
+    min_size=1,
+    max_size=12,
+)
+
+
+@given(
+    header=st.lists(csv_colname, min_size=1, max_size=4, unique=True),
+    data=st.data(),
+)
+@settings(
+    derandomize=True,           # воспроизводимость — seed фиксирован
+    max_examples=60,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_write_then_read_csv_roundtrip(tmp_path, header, data):
+    """Инвариант round-trip: read_csv_typed(write_csv(rows)) == rows для любых данных.
+
+    Включает ячейки с запятой — csv.DictWriter оборачивает их в кавычки,
+    csv.DictReader читает обратно как единое значение. Ручной split ломается,
+    стандартный модуль — нет.
+    """
+    n_rows = data.draw(st.integers(min_value=0, max_value=8))
+    rows = [
+        {col: data.draw(csv_module_cell) for col in header}
+        for _ in range(n_rows)
+    ]
+    p = tmp_path / "rt_csv.csv"
+    write_csv(p, rows, fieldnames=header)
+    back = read_csv_typed(p, schema={})
+
+    assert len(back) == n_rows
+    for got, original in zip(back, rows):
+        # Значения должны совпадать — кавычки прозрачны для round-trip
+        assert got == original
+        # Порядок ключей совпадает с заголовком
+        assert list(got.keys()) == header
+        # Все значения — строки (schema пустая, конвертеров нет)
+        assert all(isinstance(v, str) for v in got.values())
+
+
+@given(
+    header=st.lists(csv_colname, min_size=1, max_size=4, unique=True),
+    data=st.data(),
+)
+@settings(
+    derandomize=True,
+    max_examples=40,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_read_csv_typed_row_count_invariant(tmp_path, header, data):
+    """Инвариант: количество строк после round-trip равно исходному."""
+    n_rows = data.draw(st.integers(min_value=0, max_value=10))
+    rows = [
+        {col: data.draw(csv_module_cell) for col in header}
+        for _ in range(n_rows)
+    ]
+    p = tmp_path / "cnt_csv.csv"
+    write_csv(p, rows, fieldnames=header)
+    back = read_csv_typed(p, schema={})
+    assert len(back) == n_rows
+
+
+@given(
+    header=st.lists(csv_colname, min_size=1, max_size=4, unique=True),
+    data=st.data(),
+)
+@settings(
+    derandomize=True,
+    max_examples=40,
+    deadline=None,
+    suppress_health_check=[HealthCheck.function_scoped_fixture],
+)
+def test_read_csv_typed_int_schema_gives_ints(tmp_path, header, data):
+    """Инвариант: int-конвертер в schema даёт int-значения в каждой строке."""
+    n_rows = data.draw(st.integers(min_value=1, max_value=6))
+    int_val = st.integers(min_value=-9999, max_value=9999).map(str)
+    rows = [
+        {col: data.draw(int_val) for col in header}
+        for _ in range(n_rows)
+    ]
+    p = tmp_path / "int_csv.csv"
+    write_csv(p, rows, fieldnames=header)
+    schema = {col: int for col in header}
+    back = read_csv_typed(p, schema=schema)
+    assert len(back) == n_rows
+    for row in back:
+        assert all(isinstance(v, int) for v in row.values())
