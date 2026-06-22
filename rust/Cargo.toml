@@ -18,5 +18,7 @@ members = [
   "modules/12-lifetimes-slices",
   "modules/13-smart-pointers",
   "modules/14-tooling",
+  "modules/15-concurrency",
+  "modules/16-async",
   "capstone",
 ]
