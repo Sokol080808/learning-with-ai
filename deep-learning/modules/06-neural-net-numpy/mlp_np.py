@@ -82,3 +82,34 @@ def cross_entropy(logits: np.ndarray, y: np.ndarray) -> float:
         log(softmax(...)) напрямую — иначе log(0) даст -inf.
     """
     raise NotImplementedError("TODO: средняя cross-entropy через log-sum-exp")
+
+
+def init_xavier(fan_in: int, fan_out: int, rng: np.random.Generator = None) -> np.ndarray:
+    """Инициализация весов Xavier (Glorot): масштаб под симметричные активации.
+
+    Возвращает матрицу формы (fan_in, fan_out) из нормального шума со стандартным
+    отклонением sqrt(2 / (fan_in + fan_out)). Усреднение fan_in и fan_out балансирует
+    дисперсию и прямого, и обратного потока (см. README, Идея 6).
+
+    Контракт:
+      - fan_in, fan_out: положительные целые (число входов / выходов слоя).
+      - rng: опциональный np.random.Generator для воспроизводимости. Если None —
+        создаётся np.random.default_rng() (несидированный).
+      - Возвращает np.ndarray формы (fan_in, fan_out); эмпирическое std ≈ целевому.
+    """
+    raise NotImplementedError("TODO: std = sqrt(2/(fan_in+fan_out)), сгенерируй матрицу через rng")
+
+
+def init_he(fan_in: int, fan_out: int, rng: np.random.Generator = None) -> np.ndarray:
+    """Инициализация весов He (Kaiming): масштаб под ReLU.
+
+    Возвращает матрицу формы (fan_in, fan_out) из нормального шума со стандартным
+    отклонением sqrt(2 / fan_in). Множитель 2 компенсирует то, что ReLU обнуляет
+    примерно половину входов, теряя половину дисперсии (см. README, Идея 6).
+
+    Контракт:
+      - fan_in, fan_out: положительные целые.
+      - rng: опциональный np.random.Generator. Если None — np.random.default_rng().
+      - Возвращает np.ndarray формы (fan_in, fan_out); эмпирическое std ≈ целевому.
+    """
+    raise NotImplementedError("TODO: std = sqrt(2/fan_in), сгенерируй матрицу через rng")

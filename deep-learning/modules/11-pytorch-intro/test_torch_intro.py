@@ -6,7 +6,7 @@
 import numpy as np
 import torch
 
-from torch_intro import to_tensor, grad_of, linear_forward, mse_torch
+from torch_intro import to_tensor, grad_of, linear_forward, mse_torch, numpy_bridge
 
 
 # ---------------------------------------------------------------------------
@@ -177,3 +177,42 @@ def test_pieces_combine_into_training_that_reduces_loss():
     final_loss = loss_for(params).item()
 
     assert final_loss < 0.5 * initial_loss
+
+
+# ---------------------------------------------------------------------------
+# numpy_bridge: numpy -> torch (from_numpy) -> +1 под no_grad -> numpy (.numpy())
+# ---------------------------------------------------------------------------
+
+def test_numpy_bridge_returns_numpy_array():
+    arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    out = numpy_bridge(arr)
+    assert isinstance(out, np.ndarray)
+
+
+def test_numpy_bridge_adds_one():
+    # детерминированный оракул: вход + 1.0
+    arr = np.array([1.0, 2.0, 3.0], dtype=np.float32)
+    out = numpy_bridge(arr)
+    np.testing.assert_allclose(out, arr + 1.0, atol=1e-6)
+
+
+def test_numpy_bridge_dtype_is_float32():
+    # вход во float64 — на выходе всё равно float32
+    arr = np.array([0.5, -1.0, 2.5], dtype=np.float64)
+    out = numpy_bridge(arr)
+    assert out.dtype == np.float32
+
+
+def test_numpy_bridge_shape_preserved_2d():
+    arr = np.array([[1.0, 2.0], [3.0, 4.0]], dtype=np.float32)
+    out = numpy_bridge(arr)
+    assert out.shape == (2, 2)
+    np.testing.assert_allclose(out, arr + 1.0, atol=1e-6)
+
+
+def test_numpy_bridge_from_int_array():
+    # int-массив должен пройти мост и стать float32
+    arr = np.array([0, 5, -3], dtype=np.int64)
+    out = numpy_bridge(arr)
+    assert out.dtype == np.float32
+    np.testing.assert_allclose(out, np.array([1.0, 6.0, -2.0], dtype=np.float32), atol=1e-6)

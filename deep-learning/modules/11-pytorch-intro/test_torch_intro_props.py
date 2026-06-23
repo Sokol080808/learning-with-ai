@@ -11,7 +11,7 @@ import numpy as np
 import pytest
 import torch
 
-from torch_intro import to_tensor, grad_of, linear_forward, mse_torch
+from torch_intro import to_tensor, grad_of, linear_forward, mse_torch, numpy_bridge
 
 
 # ===========================================================================
@@ -522,3 +522,92 @@ class TestIntegration:
         loss = mse_torch(pred, y)
         assert loss.dtype == torch.float32
         assert loss.item() >= 0.0
+
+
+# ===========================================================================
+# numpy_bridge — torch↔numbpy round-trip: oracle, dtype/shape, and the two
+# canon pitfalls (.numpy() grad-precondition, from_numpy shared memory)
+# ===========================================================================
+
+class TestNumpyBridge:
+    """numpy_bridge: numpy -> from_numpy -> (+1 under no_grad) -> .numpy().
+
+    The biting invariants here are the two things juniors stumble on when first
+    mixing torch with numpy/matplotlib/sklearn output:
+      • .numpy() refuses to run on a requires_grad tensor (must detach first);
+      • torch.from_numpy SHARES memory with the source array.
+    """
+
+    def test_oracle_input_plus_one_random_seeds(self):
+        """Seeded oracle: numpy_bridge(arr) == arr + 1.0 for many random shapes/dtypes."""
+        np.random.seed(100)
+        for _ in range(10):
+            ndim = np.random.randint(1, 4)
+            shape = tuple(int(np.random.randint(1, 6)) for _ in range(ndim))
+            arr = np.random.randn(*shape).astype(np.float32)
+            out = numpy_bridge(arr)
+            np.testing.assert_allclose(out, arr + 1.0, atol=1e-6)
+
+    def test_dtype_always_float32(self):
+        """Float64 / int inputs all come back as float32."""
+        np.random.seed(101)
+        for src_dtype in (np.float64, np.int32, np.int64, np.float32):
+            arr = (np.random.randn(3, 4) * 10).astype(src_dtype)
+            out = numpy_bridge(arr)
+            assert out.dtype == np.float32, f"dtype mismatch for input {src_dtype}"
+
+    def test_shape_preserved_various_sizes(self):
+        """Shape is preserved exactly across several random 1-D and 2-D sizes."""
+        np.random.seed(102)
+        for _ in range(6):
+            N = int(np.random.randint(1, 8))
+            D = int(np.random.randint(1, 8))
+            arr = np.random.randn(N, D).astype(np.float32)
+            out = numpy_bridge(arr)
+            assert out.shape == (N, D)
+
+    def test_output_is_writable_numpy_not_tensor(self):
+        """Returned object is a plain numpy ndarray (a real bridge to the numpy world)."""
+        arr = np.array([1.0, 2.0], dtype=np.float32)
+        out = numpy_bridge(arr)
+        assert isinstance(out, np.ndarray)
+        assert not isinstance(out, torch.Tensor)
+
+    # --- pitfall 1: .numpy() refuses requires_grad tensors (negative test) ---
+
+    def test_numpy_raises_on_requires_grad_tensor(self):
+        """The precondition the learner must understand: .numpy() errors without detach.
+
+        This is WHY numpy_bridge does its +1 under no_grad — so the resulting tensor
+        is not grad-tracked and .numpy() is legal.
+        """
+        torch.manual_seed(103)
+        x = torch.randn(3, requires_grad=True)
+        with pytest.raises(RuntimeError):
+            x.numpy()
+        # and detach() is the documented escape hatch:
+        assert isinstance(x.detach().numpy(), np.ndarray)
+
+    # --- pitfall 2: torch.from_numpy shares memory with the source array ---
+
+    def test_from_numpy_shares_memory_invariant(self):
+        """The biting invariant that makes the concept stick: from_numpy is zero-copy.
+
+        Mutating the numpy source after from_numpy is reflected in the tensor. This is
+        exactly the shared-memory hazard the README (Идея 8) warns about.
+        """
+        arr = np.array([1.0, 2.0], dtype=np.float32)
+        t = torch.from_numpy(arr)
+        arr[0] = 99.0
+        assert t[0].item() == 99.0
+
+    def test_bridge_does_not_track_grad(self):
+        """numpy_bridge must not leak a grad-tracked tensor: round-trip stays grad-free.
+
+        If the +1 were done outside no_grad on a from_numpy view that somehow tracked
+        grad, .numpy() would raise. A clean round-trip proves the no_grad discipline.
+        """
+        np.random.seed(104)
+        arr = np.random.randn(5).astype(np.float32)
+        out = numpy_bridge(arr)            # must not raise
+        np.testing.assert_allclose(out, arr + 1.0, atol=1e-6)

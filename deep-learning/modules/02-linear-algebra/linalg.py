@@ -65,3 +65,26 @@ def cosine_similarity(a: np.ndarray, b: np.ndarray) -> float:
       (делить на ноль нельзя).
     """
     raise NotImplementedError("TODO: реализуй косинусную близость")
+
+
+def linear_forward(X: np.ndarray, W: np.ndarray, b: np.ndarray) -> np.ndarray:
+    """Прямой проход линейного (полносвязного) слоя: Y = X @ W + b.
+
+    Это сборка всего модуля в одну функцию — именно то, что прячется внутри
+    `torch.nn.Linear`. Матричное умножение даёт «сырые» выходы нейронов, а
+    вектор сдвига b добавляется к КАЖДОЙ строке батча (broadcast).
+
+    Контракт:
+      X: np.ndarray формы (N, D) — батч из N примеров по D признаков.
+      W: np.ndarray формы (D, H) — веса: D входов, H нейронов (выходов).
+      b: np.ndarray формы (H,)   — сдвиг (bias), по одному числу на нейрон.
+      Возвращает: np.ndarray формы (N, H), тип float, где
+        Y[i, j] = dot(X[i, :], W[:, j]) + b[j].
+
+      Если число столбцов X (= D) не равно числу строк W — поднять ValueError.
+      Если длина b не равна числу столбцов W (= H) — поднять ValueError.
+
+    Реализуй БЕЗ np.matmul и без оператора @ — переиспользуй свой matmul, а bias
+    прибавь обычным поэлементным `+` (broadcast (H,) на (N, H) numpy делает сам).
+    """
+    raise NotImplementedError("TODO: используй свой matmul(X, W) и прибавь b (broadcast)")

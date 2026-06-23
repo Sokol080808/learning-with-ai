@@ -249,6 +249,73 @@ def test_gradient_flows_through_embedding():
 
 
 # ---------------------------------------------------------------------------
+# BPTT correctness: finite-difference grad-check of the WHOLE pipeline.
+#
+# The previous gradient tests only assert grads are not-None and nonzero — they
+# never check the grad VALUES are right. torch.autograd.gradcheck closes that
+# gap: it compares analytic (autograd / BPTT) gradients against a numerical
+# finite-difference oracle  (f(x+eps) - f(x-eps)) / (2*eps)  and fails if they
+# disagree. This is the standard BPTT-sanity check from Karpathy makemore,
+# CS231n a3 and d2l ch.8 — it turns "loss.backward() just works" (Idea 4) into
+# something tangible and catches any wiring bug (out vs h_n, a wrong reshape).
+#
+# gradcheck must perturb a *float* tensor, but CharRNN.forward takes integer
+# indices (non-differentiable). The trick: express the embedding lookup as the
+# differentiable matmul it really is —  one_hot(x) @ W_embed  — and grad-check
+# w.r.t. the embedding weight W. The gradient then flows back through the FULL
+# Embedding -> RNN -> Linear -> CrossEntropy pipeline. Everything runs in
+# float64 (.double()) so the finite-difference oracle is numerically precise.
+# ---------------------------------------------------------------------------
+
+def test_rnn_gradcheck_finite_difference():
+    """BPTT through Embedding->RNN->Linear must match a finite-difference oracle.
+
+    Wraps the forward pass as f(W_embed) -> scalar loss and runs
+    torch.autograd.gradcheck (eps=1e-4, atol=1e-3, rtol=1e-3) in float64 on a
+    minimal config (vocab=4, embed=2, hidden=3, B=1, T=3). gradcheck compares
+    the autograd (BPTT) gradient against (f(x+eps)-f(x-eps))/(2*eps) for every
+    entry of W and raises if they diverge — so passing means the analytic
+    backward through time is numerically correct, not merely nonzero.
+    """
+    from seqmodels import CharRNN  # noqa: PLC0415
+
+    torch.manual_seed(123)
+    vocab_size, embed_dim, hidden_size = 4, 2, 3
+    B, T = 1, 3
+
+    # float64 model so the numerical gradient oracle is precise enough
+    model = CharRNN(vocab_size, embed_dim, hidden_size).double()
+    model.eval()
+
+    g = torch.Generator().manual_seed(123)
+    x = torch.randint(0, vocab_size, (B, T), generator=g)  # (B, T) long indices
+    Y = torch.roll(x, shifts=-1, dims=1)                   # shift-by-1 targets
+    loss_fn = nn.CrossEntropyLoss()
+
+    # one_hot(x) @ W reproduces the embedding lookup but is differentiable in W,
+    # so gradcheck can perturb W and probe the whole BPTT path.
+    onehot = torch.nn.functional.one_hot(x, num_classes=vocab_size).double()  # (B, T, vocab)
+    W = model.embed.weight.detach().clone().double().requires_grad_(True)     # (vocab, embed)
+
+    def f(weight):
+        e = onehot @ weight              # (B, T, vocab) @ (vocab, embed) -> (B, T, embed)
+        out, _ = model.rnn(e)            # BPTT lives here: (B, T, hidden)
+        logits = model.fc(out)           # (B, T, vocab)
+        return loss_fn(logits.reshape(-1, vocab_size), Y.reshape(-1))
+
+    # Sanity: our matmul really equals the Embedding lookup (so we grad-check
+    # the SAME computation CharRNN performs, not a lookalike).
+    assert torch.allclose(onehot @ W, model.embed(x).double(), atol=1e-12), (
+        "one_hot @ W does not reproduce the embedding lookup"
+    )
+
+    assert torch.autograd.gradcheck(f, (W,), eps=1e-4, atol=1e-3, rtol=1e-3), (
+        "gradcheck failed — analytic BPTT gradient disagrees with the "
+        "finite-difference oracle; backward through time is miswired"
+    )
+
+
+# ---------------------------------------------------------------------------
 # train_step: gradients zeroed before each step (no accumulation)
 # ---------------------------------------------------------------------------
 

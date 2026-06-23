@@ -22,7 +22,7 @@ import numpy as np
 import pytest
 import torch
 
-from micrograd import Value
+from micrograd import MLP, Layer, Neuron, Value
 
 
 # ---------------------------------------------------------------------------
@@ -584,3 +584,205 @@ def test_deep_mixed_expression_oracle():
             f"deep b.grad at ({a0},{b0},{c0}): {b.grad} vs {float(tb.grad)}"
         assert math.isclose(c.grad, float(tc.grad), abs_tol=1e-9), \
             f"deep c.grad at ({a0},{b0},{c0}): {c.grad} vs {float(tc.grad)}"
+
+
+# ---------------------------------------------------------------------------
+# 16. Task 7 — Neuron / Layer / MLP built on top of Value
+#
+# These tests cover the "top of the micrograd lecture": a real network assembled
+# from Value nodes. We verify (a) forward matches a hand-written numpy/torch
+# reference, (b) backward propagates correct gradients to EVERY weight (vs
+# finite-difference), and (c) SGD on a toy XOR-like set actually reduces loss.
+# ---------------------------------------------------------------------------
+
+import random as _random  # noqa: E402  (kept local to this section)
+
+
+def _set_mlp_params(net: MLP, values):
+    """Overwrite every parameter .data of `net` from a flat iterable `values`."""
+    ps = net.parameters()
+    assert len(values) == len(ps)
+    for p, v in zip(ps, values):
+        p.data = float(v)
+
+
+def _torch_mlp_forward(net: MLP, x):
+    """
+    Recompute the forward pass of `net` in pure torch, reading weights/biases
+    straight off the Value parameters. Layout per neuron: [w_0..w_{n-1}, b].
+    Hidden layers use tanh, the last layer is linear (matching MLP's default).
+    """
+    out = torch.tensor([float(xi) for xi in x], dtype=torch.float64)
+    n_layers = len(net.layers)
+    for li, layer in enumerate(net.layers):
+        neuron_outs = []
+        for neuron in layer.neurons:
+            w = torch.tensor([wi.data for wi in neuron.w], dtype=torch.float64)
+            b = torch.tensor(neuron.b.data, dtype=torch.float64)
+            act = torch.dot(w, out) + b
+            if neuron.nonlin == "tanh":
+                act = torch.tanh(act)
+            elif neuron.nonlin == "relu":
+                act = torch.relu(act)
+            # 'linear' -> leave as is
+            neuron_outs.append(act)
+        out = torch.stack(neuron_outs)
+    return out
+
+
+def test_mlp_forward_matches_torch_oracle():
+    """
+    MLP([3, 4, 4, 1]) forward output (a single Value) must match a torch
+    recomputation of the same weights to 1e-6, on several random inputs.
+    """
+    rng = _random.Random(101)
+    net = MLP([3, 4, 4, 1], rng=rng)
+
+    np.random.seed(101)
+    for _ in range(10):
+        x = np.random.uniform(-2.0, 2.0, 3)
+        got = net(list(x))
+        assert isinstance(got, Value), "single-output MLP must return a lone Value"
+
+        want = _torch_mlp_forward(net, x)
+        assert want.shape == (1,)
+        assert math.isclose(got.data, float(want[0]), rel_tol=1e-9, abs_tol=1e-6), (
+            f"MLP forward {got.data} vs torch {float(want[0])} at x={x}"
+        )
+
+
+def test_neuron_and_layer_shapes_and_params():
+    """Structural invariants: parameter counts and Layer output cardinality."""
+    rng = _random.Random(202)
+
+    # Neuron(n_in) has n_in weights + 1 bias.
+    n = Neuron(5, nonlin="tanh", rng=rng)
+    assert len(n.parameters()) == 5 + 1
+    assert isinstance(n([0.0] * 5), Value)
+
+    # Layer(n_in, n_out) returns n_out Values and owns n_out*(n_in+1) params.
+    layer = Layer(3, 4, nonlin="tanh", rng=rng)
+    ys = layer([1.0, 2.0, 3.0])
+    assert isinstance(ys, list) and len(ys) == 4
+    assert all(isinstance(y, Value) for y in ys)
+    assert len(layer.parameters()) == 4 * (3 + 1)
+
+    # MLP([2,3,1]) -> hidden 3 neurons (each 2w+1b) + output 1 neuron (3w+1b).
+    net = MLP([2, 3, 1], rng=rng)
+    assert len(net.parameters()) == 3 * (2 + 1) + 1 * (3 + 1)
+
+
+def test_mlp_backward_matches_finite_difference():
+    """
+    For MLP(2,3,1) at a fixed random input, backward() must fill .grad of EVERY
+    weight to match a central finite-difference estimate (atol=1e-5). This is the
+    real "does autograd reach all weights" check, not just the output node.
+    """
+    rng = _random.Random(303)
+    net = MLP([2, 3, 1], rng=rng)
+    params = net.parameters()
+    x = [0.7, -1.3]
+
+    # Backward from the scalar output.
+    net.zero_grad()
+    out = net(x)
+    out.backward()
+    analytic = [p.grad for p in params]
+
+    # Finite difference: perturb each parameter's .data in place.
+    h = 1e-5
+    for i, p in enumerate(params):
+        orig = p.data
+
+        p.data = orig + h
+        f_plus = net(x).data
+        p.data = orig - h
+        f_minus = net(x).data
+        p.data = orig  # restore
+
+        fd = (f_plus - f_minus) / (2 * h)
+        assert math.isclose(analytic[i], fd, rel_tol=1e-5, abs_tol=1e-5), (
+            f"param[{i}] grad {analytic[i]} vs finite-diff {fd}"
+        )
+
+
+def test_mlp_sgd_reduces_xor_loss_monotonically():
+    """
+    Train MLP([2, 8, 8, 1]) on the XOR toy set with manual SGD.
+    Invariants:
+      * loss decreases at 3 checkpoints (catches zero_grad / sign bugs);
+      * final loss is at most 50% of the initial loss.
+    XOR is the canonical "needs a hidden layer" task — a single neuron cannot fit it.
+    """
+    rng = _random.Random(404)
+    net = MLP([2, 8, 8, 1], rng=rng)
+
+    # XOR: label +1 when inputs differ, -1 when they match (tanh-friendly targets).
+    xs = [[0.0, 0.0], [0.0, 1.0], [1.0, 0.0], [1.0, 1.0]]
+    ys = [-1.0, 1.0, 1.0, -1.0]
+
+    def mean_loss() -> float:
+        total = Value(0.0)
+        for x, y in zip(xs, ys):
+            pred = net(x)
+            diff = pred - y
+            total = total + diff * diff
+        return (total * (1.0 / len(xs))).data
+
+    loss0 = mean_loss()
+    checkpoints = []
+    lr = 0.05
+    steps = 50
+    for step in range(steps):
+        # forward — accumulate squared error over the 4 examples
+        total = Value(0.0)
+        for x, y in zip(xs, ys):
+            pred = net(x)
+            diff = pred - y
+            total = total + diff * diff
+        loss = total * (1.0 / len(xs))
+
+        net.zero_grad()        # <-- the optimizer.zero_grad() analogue
+        loss.backward()
+        for p in net.parameters():
+            p.data -= lr * p.grad
+
+        if step in (steps // 3, 2 * steps // 3, steps - 1):
+            checkpoints.append(mean_loss())
+
+    loss_final = checkpoints[-1]
+
+    # Monotonic decrease across the 3 checkpoints.
+    assert checkpoints[0] > checkpoints[1] > checkpoints[2], (
+        f"loss must decrease monotonically at checkpoints, got {checkpoints}"
+    )
+    # Substantial overall reduction.
+    assert loss_final < 0.5 * loss0, (
+        f"final loss {loss_final} should be < 50% of initial {loss0}"
+    )
+
+
+def test_mlp_zero_grad_is_required():
+    """
+    Without zero_grad, gradients accumulate across steps. This test pins the
+    contract: zero_grad() must reset every parameter's .grad to exactly 0.0,
+    and a fresh backward then equals a single-step gradient.
+    """
+    rng = _random.Random(505)
+    net = MLP([2, 3, 1], rng=rng)
+    x = [0.4, -0.9]
+
+    # First backward.
+    net.zero_grad()
+    net(x).backward()
+    single = [p.grad for p in net.parameters()]
+
+    # Second backward WITHOUT zero_grad -> grads roughly double (same graph value).
+    net(x).backward()
+    doubled = [p.grad for p in net.parameters()]
+    for s, d in zip(single, doubled):
+        assert math.isclose(d, 2.0 * s, rel_tol=1e-9, abs_tol=1e-12)
+
+    # zero_grad clears everything back to 0.0.
+    net.zero_grad()
+    assert all(p.grad == 0.0 for p in net.parameters())
