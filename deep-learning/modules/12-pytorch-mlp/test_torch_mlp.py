@@ -8,7 +8,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from torch_mlp import MLP, train_step, accuracy
+from torch_mlp import MLP, train_step, train_epoch, accuracy
 
 
 # ---------------------------------------------------------------------------
@@ -230,3 +230,92 @@ def test_training_loss_is_monotone_ish():
     for _ in range(100):
         last = train_step(model, optimizer, loss_fn, X, y)
     assert last < first
+
+
+# ---------------------------------------------------------------------------
+# train_epoch: одна эпоха мини-батчами.
+#   - возвращает положительный float;
+#   - оракул: при batch_size = len(X) (полный батч) одна эпоха = один train_step
+#     на всём X (порядок внутри единственного батча роли не играет);
+#   - обучение через train_epoch снижает loss и поднимает accuracy.
+# ---------------------------------------------------------------------------
+
+def test_train_epoch_returns_positive_float():
+    torch.manual_seed(0)
+    model = MLP(in_dim=4, hidden=8, out_dim=3)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    loss_fn = nn.CrossEntropyLoss()
+    X, y = _toy_classification()
+    mean_loss = train_epoch(model, optimizer, loss_fn, X, y, batch_size=16)
+    assert isinstance(mean_loss, float)
+    assert mean_loss > 0.0
+
+
+def test_train_epoch_full_batch_matches_single_train_step():
+    # ОРАКУЛ: с batch_size = N DataLoader отдаёт ровно ОДИН батч со всеми данными.
+    # Тогда train_epoch обязан вернуть то же число, что один train_step на всём X, y,
+    # и сдвинуть параметры идентично (shuffle одного полного батча ничего не меняет:
+    # full-batch градиент не зависит от порядка объектов).
+    X, y = _toy_classification(seed=0)
+    N = X.shape[0]
+
+    # Две идентично проинициализированные модели (один и тот же seed перед созданием).
+    torch.manual_seed(123)
+    model_step = MLP(in_dim=4, hidden=8, out_dim=3)
+    torch.manual_seed(123)
+    model_epoch = MLP(in_dim=4, hidden=8, out_dim=3)
+
+    loss_fn = nn.CrossEntropyLoss()
+    opt_step = torch.optim.SGD(model_step.parameters(), lr=0.1)
+    opt_epoch = torch.optim.SGD(model_epoch.parameters(), lr=0.1)
+
+    loss_step = train_step(model_step, opt_step, loss_fn, X, y)
+    loss_epoch = train_epoch(model_epoch, opt_epoch, loss_fn, X, y, batch_size=N)
+
+    # Возвращённый средний loss совпадает (батч ровно один).
+    assert abs(loss_epoch - loss_step) < 1e-4
+
+    # И параметры после шага совпали — абстракция «эпоха» сводится к одному шагу.
+    for p_step, p_epoch in zip(model_step.parameters(), model_epoch.parameters()):
+        assert torch.allclose(p_step, p_epoch, atol=1e-5)
+
+
+def test_train_epoch_changes_parameters():
+    torch.manual_seed(0)
+    model = MLP(in_dim=4, hidden=8, out_dim=3)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    loss_fn = nn.CrossEntropyLoss()
+    X, y = _toy_classification()
+
+    before = [p.detach().clone() for p in model.parameters()]
+    train_epoch(model, optimizer, loss_fn, X, y, batch_size=16)
+    after = list(model.parameters())
+
+    changed = any(not torch.allclose(b, a) for b, a in zip(before, after))
+    assert changed
+
+
+def test_training_via_train_epoch_reduces_loss_and_raises_accuracy():
+    # Тот же контракт, что и у пошагового обучения, но прогон идёт ЭПОХАМИ
+    # (мини-батчами через DataLoader) — проверяем, что абстракция реально учит.
+    torch.manual_seed(0)
+    X, y = _toy_classification(n_per_class=30, n_classes=3, in_dim=4, seed=0)
+
+    model = MLP(in_dim=4, hidden=16, out_dim=3)
+    optimizer = torch.optim.Adam(model.parameters(), lr=0.05)
+    loss_fn = nn.CrossEntropyLoss()
+
+    # Качество ДО обучения (на свежей сети) — обучение по эпохам сходится быстро,
+    # поэтому замеряем точность здесь, а не после первой эпохи.
+    initial_acc = accuracy(model, X, y)
+
+    initial_loss = train_epoch(model, optimizer, loss_fn, X, y, batch_size=16)
+    final_loss = initial_loss
+    for _ in range(50):
+        final_loss = train_epoch(model, optimizer, loss_fn, X, y, batch_size=16)
+
+    final_acc = accuracy(model, X, y)
+
+    assert final_loss < 0.5 * initial_loss
+    assert final_acc > initial_acc
+    assert final_acc >= 0.9

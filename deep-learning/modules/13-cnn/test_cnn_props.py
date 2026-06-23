@@ -9,7 +9,13 @@ import pytest
 import torch
 import torch.nn as nn
 
-from cnn import conv_output_size, SmallCNN, train_step
+from cnn import (
+    conv_output_size,
+    SmallCNN,
+    train_step,
+    receptive_field,
+    augment_batch,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -515,3 +521,152 @@ class TestFormulaArchitectureConsistency:
         model = SmallCNN()
         x = torch.randn(n, 1, 8, 8)
         assert tuple(model(x).shape) == (n, 2)
+
+
+# ---------------------------------------------------------------------------
+# receptive_field — formula vs spatial impulse oracle, parametrised
+# ---------------------------------------------------------------------------
+
+def _rf_impulse_oracle(num_conv_layers: int, kernel_size: int) -> int:
+    """Trace the receptive field with a single-pixel impulse through a
+    same-padding stack of all-ones convolutions; sqrt(#nonzero) == RF edge."""
+    layers = []
+    for _ in range(num_conv_layers):
+        conv = nn.Conv2d(
+            1, 1, kernel_size=kernel_size, padding=(kernel_size - 1) // 2, bias=True
+        )
+        with torch.no_grad():
+            conv.weight.fill_(1.0)
+            conv.bias.zero_()
+        layers.append(conv)
+    net = nn.Sequential(*layers)
+    size = 1 + (kernel_size - 1) * num_conv_layers + 8
+    x = torch.zeros(1, 1, size, size)
+    x[0, 0, size // 2, size // 2] = 1.0
+    with torch.no_grad():
+        out = net(x)
+    nonzero = int((out.abs() > 1e-8).sum().item())
+    return int(round(math.sqrt(nonzero)))
+
+
+class TestReceptiveField:
+    """RF = 1 + (k-1)*depth, verified against a concrete spatial oracle."""
+
+    @pytest.mark.parametrize("n,k", [(1, 3), (2, 3), (3, 3), (4, 3), (1, 5), (2, 5), (3, 5)])
+    def test_matches_impulse_oracle(self, n: int, k: int):
+        assert receptive_field(n, k) == _rf_impulse_oracle(n, k)
+
+    @pytest.mark.parametrize("k", [3, 5, 7])
+    def test_grows_linearly_with_depth(self, k: int):
+        """Each extra same-padding conv layer adds exactly (k-1) to the RF edge."""
+        prev = receptive_field(1, k)
+        for n in range(2, 8):
+            cur = receptive_field(n, k)
+            assert cur - prev == k - 1
+            prev = cur
+
+    @pytest.mark.parametrize("n", [1, 2, 3, 5])
+    def test_kernel1_is_pointwise(self, n: int):
+        """1×1 convs never widen the receptive field."""
+        assert receptive_field(n, 1) == 1
+
+    def test_returns_python_int(self):
+        assert type(receptive_field(2, 3)) is int
+
+
+# ---------------------------------------------------------------------------
+# augment_batch — shape / determinism / flip oracle / noise bound invariants
+# ---------------------------------------------------------------------------
+
+class TestAugmentBatch:
+    """Augmentation must preserve shape, be deterministic per seed, and only
+    apply label-preserving transforms (flip / crop+pad / bounded noise)."""
+
+    @pytest.mark.parametrize("n", [1, 2, 5, 16])
+    @pytest.mark.parametrize("seed", [0, 7, 99])
+    def test_shape_preserved(self, n: int, seed: int):
+        torch.manual_seed(seed)
+        x = torch.randn(n, 1, 8, 8)
+        out = augment_batch(x, seed=seed)
+        assert tuple(out.shape) == (n, 1, 8, 8)
+        assert out.dtype == torch.float32
+
+    @pytest.mark.parametrize("seed", [0, 1, 5, 13, 100])
+    def test_deterministic_given_same_seed(self, seed: int):
+        torch.manual_seed(0)
+        x = torch.randn(6, 1, 8, 8)
+        a = augment_batch(x, seed=seed)
+        b = augment_batch(x, seed=seed)
+        assert torch.equal(a, b)
+
+    @pytest.mark.parametrize("s1,s2", [(0, 1), (3, 4), (10, 20), (7, 99)])
+    def test_different_seeds_give_different_outputs(self, s1: int, s2: int):
+        torch.manual_seed(0)
+        x = torch.randn(8, 1, 8, 8)
+        a = augment_batch(x, seed=s1)
+        b = augment_batch(x, seed=s2)
+        assert not torch.allclose(a, b)
+
+    @pytest.mark.parametrize("seed", range(8))
+    def test_noise_zero_pad_zero_is_identity_or_flip(self, seed: int):
+        """With noise_std=0 and pad=0 each image is itself or its mirror — nothing else."""
+        torch.manual_seed(0)
+        x = torch.randn(6, 1, 8, 8)
+        out = augment_batch(x, seed=seed, noise_std=0.0, pad=0)
+        for i in range(x.shape[0]):
+            same = torch.equal(out[i], x[i])
+            flipped = torch.equal(out[i], torch.flip(x[i], dims=[-1]))
+            assert same or flipped
+
+    def test_flip_is_involution_oracle(self):
+        """Forced-flip path (seed=0, single image) equals torch.flip; flip twice = original."""
+        torch.manual_seed(0)
+        x = torch.randn(1, 1, 8, 8)
+        out = augment_batch(x, seed=0, noise_std=0.0, pad=0)
+        assert torch.equal(out, torch.flip(x, dims=[-1]))
+        assert torch.equal(torch.flip(out, dims=[-1]), x)
+
+    @pytest.mark.parametrize("noise_std", [0.0, 0.05, 0.1, 0.3])
+    def test_noise_magnitude_scales(self, noise_std: float):
+        """On a constant image flip/crop are no-ops; mean|out-in| ~ noise_std, ->0 at 0."""
+        const = torch.full((4, 1, 8, 8), 0.5)
+        out = augment_batch(const, seed=5, noise_std=noise_std, pad=0)
+        mad = (out - const).abs().mean().item()
+        if noise_std == 0.0:
+            assert torch.equal(out, const)
+        else:
+            assert mad < 3 * noise_std
+
+    @pytest.mark.parametrize("seed", [0, 1, 2])
+    def test_finite_on_extreme_inputs(self, seed: int):
+        for x in [torch.zeros(3, 1, 8, 8), torch.full((3, 1, 8, 8), 1e4)]:
+            out = augment_batch(x, seed=seed)
+            assert torch.isfinite(out).all()
+
+    def test_does_not_mutate_input(self):
+        torch.manual_seed(0)
+        x = torch.randn(4, 1, 8, 8)
+        x_before = x.clone()
+        _ = augment_batch(x, seed=3)
+        assert torch.equal(x, x_before)
+
+    def test_crop_keeps_shape_and_stays_in_range(self):
+        """random crop+pad must not change (H, W) and must stay within input range
+        (reflect padding never invents out-of-range values; noise off)."""
+        torch.manual_seed(0)
+        x = torch.randn(5, 1, 8, 8)
+        lo, hi = x.min().item(), x.max().item()
+        out = augment_batch(x, seed=11, noise_std=0.0, pad=2)
+        assert tuple(out.shape) == (5, 1, 8, 8)
+        # reflect-pad + crop only reuses existing pixels, so range is preserved
+        assert out.min().item() >= lo - 1e-6
+        assert out.max().item() <= hi + 1e-6
+
+    def test_signature_is_images_only(self):
+        """Augmentation must take/return only images — labels are the caller's job.
+        A single tensor in, a single tensor out (documents the label-preserving contract)."""
+        torch.manual_seed(0)
+        x = torch.randn(4, 1, 8, 8)
+        out = augment_batch(x, seed=1)
+        assert isinstance(out, torch.Tensor)
+        assert out.shape == x.shape

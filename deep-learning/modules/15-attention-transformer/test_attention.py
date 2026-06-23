@@ -5,6 +5,7 @@
 
 import math
 
+import pytest
 import torch
 import torch.nn as nn
 
@@ -13,6 +14,8 @@ from attention import (
     causal_mask,
     MultiHeadAttention,
     TransformerBlock,
+    sinusoidal_positional_encoding,
+    LearnedPositionalEncoding,
 )
 
 
@@ -258,3 +261,85 @@ def test_transformer_block_trains_reduces_loss():
     final_loss = compute_loss().item()
 
     assert final_loss < 0.5 * initial_loss
+
+
+# ---------------------------------------------------------------------------
+# Позиционное кодирование: форма, формула sin/cos, обучаемость
+# ---------------------------------------------------------------------------
+
+def test_sinusoidal_pe_shape():
+    pe = sinusoidal_positional_encoding(5, 8)
+    assert tuple(pe.shape) == (5, 8)
+
+
+def test_sinusoidal_pe_matches_formula_hand_checked():
+    # сверка конкретных (pos, 2i) с замкнутой формулой из статьи
+    T, d_model = 6, 8
+    pe = sinusoidal_positional_encoding(T, d_model)
+    for pos in [0, 1, 3, 5]:
+        for i2 in [0, 2, 4, 6]:           # 2i: чётные каналы
+            i = i2 // 2
+            denom = 10000.0 ** (i2 / d_model)
+            expected_sin = math.sin(pos / denom)
+            expected_cos = math.cos(pos / denom)
+            assert torch.isclose(pe[pos, i2], torch.tensor(expected_sin), atol=1e-6)
+            assert torch.isclose(pe[pos, i2 + 1], torch.tensor(expected_cos), atol=1e-6)
+
+
+def test_sinusoidal_pe_row_zero_is_sin0_cos0():
+    # pos=0 -> синусы=0, косинусы=1 -> [0,1,0,1,...]
+    pe = sinusoidal_positional_encoding(3, 6)
+    expected_row0 = torch.tensor([0.0, 1.0, 0.0, 1.0, 0.0, 1.0])
+    assert torch.allclose(pe[0], expected_row0, atol=1e-6)
+
+
+def test_sinusoidal_pe_is_not_trainable():
+    # синусоидальный код — константа: тензор без grad
+    pe = sinusoidal_positional_encoding(4, 8)
+    assert pe.requires_grad is False
+
+
+def test_sinusoidal_pe_odd_d_model_raises():
+    # нечётный d_model нельзя разложить по парам sin/cos
+    with pytest.raises(ValueError):
+        sinusoidal_positional_encoding(4, 7)
+
+
+def test_sinusoidal_pe_broadcasts_onto_batch():
+    # x + PE(T, d_model) сохраняет форму (B, T, d_model)
+    torch.manual_seed(0)
+    B, T, d_model = 2, 5, 8
+    x = torch.randn(B, T, d_model)
+    pe = sinusoidal_positional_encoding(T, d_model)
+    out = x + pe
+    assert tuple(out.shape) == (B, T, d_model)
+
+
+def test_learned_pe_shape():
+    pe = LearnedPositionalEncoding(max_T=16, d_model=8)
+    out = pe(5)
+    assert tuple(out.shape) == (5, 8)
+
+
+def test_learned_pe_is_trainable_changes_after_step():
+    # обучаемый код: после шага Adam значения эмбеддинга меняются
+    torch.manual_seed(0)
+    pe = LearnedPositionalEncoding(max_T=16, d_model=8)
+    before = pe.emb.weight.detach().clone()
+    opt = torch.optim.Adam(pe.parameters(), lr=1e-1)
+    out = pe(5)
+    loss = (out ** 2).mean()
+    opt.zero_grad()
+    loss.backward()
+    opt.step()
+    after = pe.emb.weight.detach().clone()
+    assert not torch.allclose(before, after, atol=1e-6)
+
+
+def test_learned_and_sinusoidal_differ():
+    # два способа дают РАЗНЫЕ значения для одного (T, d_model)
+    torch.manual_seed(0)
+    T, d_model = 5, 8
+    sin_pe = sinusoidal_positional_encoding(T, d_model)
+    learned = LearnedPositionalEncoding(max_T=16, d_model=d_model)(T)
+    assert not torch.allclose(sin_pe, learned, atol=1e-3)

@@ -7,6 +7,7 @@
 # кирпичики torch, чтобы ты понимал КАЖДУЮ строчку.
 # Весь модуль — на CPU, всё во float32.
 
+import math
 from typing import Optional, Tuple
 
 import torch
@@ -170,4 +171,75 @@ class TransformerBlock(nn.Module):
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError(
             "TODO: x = x + attn(ln1(x)); x = x + mlp(ln2(x)); верни x"
+        )
+
+
+def sinusoidal_positional_encoding(T: int, d_model: int) -> torch.Tensor:
+    """Синусоидальное позиционное кодирование (Vaswani et al. 2017, §3.5).
+
+    Внимание само по себе — операция, НЕ ЗАВИСЯЩАЯ ОТ ПОРЯДКА: если переставить
+    токены входа, веса просто переставятся, а «понимание», кто стоит первым,
+    исчезнет. Поэтому в трансформер информацию о позиции добавляют ЯВНО — к
+    эмбеддингам прибавляют вектор позиции `PE`. Здесь — классический,
+    БЕЗ ОБУЧАЕМЫХ параметров вариант: каждая позиция получает свой узор из синусов
+    и косинусов разных частот.
+
+    Формула (pos — индекс позиции 0..T-1, i — индекс пары каналов 0..d_model/2-1):
+        PE[pos, 2i]   = sin( pos / 10000^(2i / d_model) )
+        PE[pos, 2i+1] = cos( pos / 10000^(2i / d_model) )
+
+    То есть чётные каналы — синусы, нечётные — косинусы; частота падает с ростом i
+    (большие i → длинные волны). Такой «многочастотный» код позволяет модели
+    линейно выражать относительные сдвиги позиций.
+
+    Формы:
+      - вход: два скаляра T (длина) и d_model (размерность модели, должна быть
+        чётной, чтобы синусы и косинусы разложились по парам);
+      - выход: тензор формы (T, d_model), float32, без grad
+        (это фиксированная таблица, а не обучаемый параметр).
+
+    Применение: `x + sinusoidal_positional_encoding(T, d_model)` — таблица (T,
+    d_model) броадкастится на батч (B, T, d_model), форма входа не меняется.
+    """
+    raise NotImplementedError(
+        "TODO: для каждой позиции pos и пары каналов i вычисли "
+        "sin(pos/10000^(2i/d_model)) и cos(...); верни тензор (T, d_model)"
+    )
+
+
+class LearnedPositionalEncoding(nn.Module):
+    """Обучаемое позиционное кодирование (как в GPT / Karpathy nanoGPT).
+
+    Альтернатива синусоидальной таблице: вместо фиксированной формулы заводим
+    `nn.Embedding(max_T, d_model)` — таблицу позиций, которую сеть УЧИТ сама,
+    как обычные веса. Позиция t берёт строку `t` этой таблицы.
+
+    __init__(max_T, d_model):
+      - max_T — максимальная поддерживаемая длина последовательности;
+      - d_model — размерность модели;
+      - внутри: self.emb = nn.Embedding(max_T, d_model).
+
+    forward(T) -> (T, d_model):
+      - возвращает первые T строк таблицы: `self.emb(torch.arange(T))`;
+      - результат ОБУЧАЕМ (requires_grad через параметры nn.Embedding),
+        поэтому после шага оптимизатора значения меняются.
+
+    ПОЧЕМУ обучаемый код: он не навязывает заранее заданную геометрию частот —
+    сеть подбирает представление позиций под задачу. Цена — параметры
+    (max_T × d_model) и невозможность экстраполировать на длины > max_T.
+
+    Применение: `x + LearnedPositionalEncoding(max_T, d_model)(T)` — выход
+    (T, d_model) броадкастится на (B, T, d_model), форма входа не меняется.
+    """
+
+    def __init__(self, max_T: int, d_model: int) -> None:
+        super().__init__()
+        raise NotImplementedError(
+            "TODO: сохрани max_T и d_model; создай self.emb = nn.Embedding(max_T, d_model)"
+        )
+
+    def forward(self, T: int) -> torch.Tensor:
+        raise NotImplementedError(
+            "TODO: верни self.emb(torch.arange(T, device=...)) — первые T строк таблицы; "
+            "проверь T <= max_T"
         )

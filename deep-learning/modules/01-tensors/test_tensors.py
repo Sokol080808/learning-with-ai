@@ -5,7 +5,7 @@
 
 import numpy as np
 
-from tensors import scale, row_normalize, add_bias, relu_np
+from tensors import scale, row_normalize, add_bias, relu_np, standardize
 
 
 # ---------------------------------------------------------------- scale ----
@@ -122,4 +122,47 @@ def test_relu_does_not_mutate_input():
     x = np.array([-1.0, 2.0, -3.0])
     before = x.copy()
     _ = relu_np(x)
+    assert np.allclose(x, before)
+
+
+# ----------------------------------------------------------- standardize ---
+
+def test_standardize_basic():
+    # Оба столбца — арифметические прогрессии из 3 точек, поэтому после
+    # z-нормализации каждый даёт один и тот же паттерн [-z, 0, +z],
+    # где z = (макс - среднее) / std = 2/sqrt(8/3) = sqrt(3/2) = 1.224744...
+    x = np.array([[1.0, 10.0],
+                  [3.0, 20.0],
+                  [5.0, 30.0]])
+    out = standardize(x)
+    z = np.sqrt(1.5)  # = 1.2247448...
+    expected = np.array([[-z, -z],
+                         [0.0, 0.0],
+                         [z, z]])
+    assert out.shape == x.shape
+    assert np.allclose(out, expected)
+
+
+def test_standardize_columns_have_zero_mean_unit_std():
+    np.random.seed(0)
+    x = np.random.randn(20, 4) * 3.0 + 5.0  # сдвинутые и растянутые признаки
+    out = standardize(x)
+    assert out.shape == x.shape
+    assert np.allclose(out.mean(axis=0), 0.0, atol=1e-12)
+    assert np.allclose(out.std(axis=0), 1.0, atol=1e-12)
+
+
+def test_standardize_matches_reference():
+    np.random.seed(2)
+    x = np.random.randn(7, 5) * 2.0 - 1.0
+    out = standardize(x)
+    ref = (x - x.mean(axis=0)) / x.std(axis=0)
+    assert np.allclose(out, ref, atol=1e-12)
+
+
+def test_standardize_does_not_mutate_input():
+    np.random.seed(3)
+    x = np.random.randn(6, 3) + 2.0
+    before = x.copy()
+    _ = standardize(x)
     assert np.allclose(x, before)

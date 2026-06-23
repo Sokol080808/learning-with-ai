@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Iterable, Set, Tuple, Union
+import random
+from typing import Callable, Iterable, List, Set, Tuple, Union
 
 # Чему разрешаем участвовать в арифметике с Value: либо другой Value, либо обычное число.
 Number = Union[int, float]
@@ -134,3 +135,126 @@ class Value:
 
     def __repr__(self) -> str:
         return f"Value(data={self.data}, grad={self.grad})"
+
+
+# =========================================================================== #
+# Задание 7 — сеть поверх Value: Neuron → Layer → MLP.
+#
+# Это «вершина» лекции Карпатого про micrograd: сам движок (Value) уже готов,
+# и теперь мы строим на нём НАСТОЯЩУЮ нейросеть. Ничего нового в автограде не
+# нужно — Neuron/Layer/MLP это просто УДОБНЫЕ КОНТЕЙНЕРЫ из Value-узлов.
+# Forward строит граф, .backward() от loss заполняет .grad у всех весов,
+# и тот же цикл «обнули .grad → backward → шаг по -grad», что и в одном нейроне,
+# обучает уже многослойную сеть.
+# =========================================================================== #
+
+
+class Module:
+    """Общий родитель Neuron/Layer/MLP: умеет обнулять и перечислять параметры.
+
+    parameters() возвращает ПЛОСКИЙ список всех обучаемых Value (веса + смещения).
+    zero_grad() ставит .grad = 0.0 каждому параметру — это и есть ручной аналог
+    optimizer.zero_grad() из PyTorch. В цикле обучения его вызывают ПЕРЕД backward(),
+    иначе градиенты с прошлых шагов накопятся (backward делает +=, а не =).
+    """
+
+    def parameters(self) -> List["Value"]:
+        raise NotImplementedError("TODO: вернуть плоский список всех Value-параметров")
+
+    def zero_grad(self) -> None:
+        raise NotImplementedError("TODO: обнулить .grad у каждого параметра")
+
+
+class Neuron(Module):
+    """Один нейрон: out = activation( w·x + b ).
+
+    Хранит:
+      - w : list[Value]   — по одному весу на каждый вход (n_in штук);
+      - b : Value         — смещение (bias), один на нейрон;
+      - nonlin : str      — 'tanh', 'relu' или 'linear' (без активации).
+
+    __call__(x) принимает список входов (числа или Value), считает взвешенную
+    сумму  act = b + Σ w_i * x_i,  затем применяет нелинейность и возвращает Value.
+
+    Веса инициализируются маленькими случайными числами; если передан rng
+    (random.Random), берём числа из него — так тесты делаются детерминированными.
+    """
+
+    def __init__(
+        self,
+        n_in: int,
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        raise NotImplementedError("TODO: создать self.w (список Value), self.b (Value), self.nonlin")
+
+    def __call__(self, x: Iterable[Union["Value", Number]]) -> "Value":
+        raise NotImplementedError("TODO: посчитать взвешенную сумму + применить нелинейность")
+
+    def parameters(self) -> List["Value"]:
+        raise NotImplementedError("TODO: вернуть self.w + [self.b]")
+
+    def __repr__(self) -> str:
+        raise NotImplementedError("TODO: вернуть строку вида 'TanhNeuron(n_in=...)'")
+
+
+class Layer(Module):
+    """Слой = список из n_out независимых нейронов, каждый видит все n_in входов.
+
+    __call__(x) возвращает СПИСОК из n_out Value (выход каждого нейрона).
+    Параметры слоя — это все параметры всех его нейронов, сплющенные в один список.
+    """
+
+    def __init__(
+        self,
+        n_in: int,
+        n_out: int,
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        raise NotImplementedError("TODO: создать self.neurons — список из n_out Neuron'ов")
+
+    def __call__(self, x: Iterable[Union["Value", Number]]) -> List["Value"]:
+        raise NotImplementedError("TODO: прогнать x через каждый нейрон, вернуть список")
+
+    def parameters(self) -> List["Value"]:
+        raise NotImplementedError("TODO: собрать параметры всех нейронов в плоский список")
+
+    def __repr__(self) -> str:
+        raise NotImplementedError("TODO: вернуть строку вида 'Layer of [...]'")
+
+
+class MLP(Module):
+    """Многослойный перцептрон: цепочка Layer'ов.
+
+    layer_sizes = [n_in, h1, h2, ..., n_out] задаёт размеры:
+      первый элемент — число входов, остальные — ширины слоёв.
+    Например MLP([2, 3, 1]) — вход 2 признака, скрытый слой из 3 нейронов, выход 1.
+
+    Скрытые слои получают активацию nonlin (по умолчанию 'tanh'); ПОСЛЕДНИЙ слой
+    делается линейным ('linear') — типичный приём, чтобы выход не зажимался tanh'ом
+    в (-1, 1). Это удобный дефолт; при желании можно собрать слои вручную.
+
+    __call__(x): прогоняем x через все слои по очереди. Если на выходе ровно один
+    Value (n_out == 1), возвращаем его одного, а не список из одного элемента —
+    так с одиночным выходом удобнее работать (loss = (pred - y)**2).
+    """
+
+    def __init__(
+        self,
+        layer_sizes: List[int],
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        raise NotImplementedError("TODO: создать self.layers — список Layer'ов по layer_sizes")
+
+    def __call__(
+        self, x: Iterable[Union["Value", Number]]
+    ) -> Union["Value", List["Value"]]:
+        raise NotImplementedError("TODO: прогнать x через все слои; если выход один — вернуть Value, иначе список")
+
+    def parameters(self) -> List["Value"]:
+        raise NotImplementedError("TODO: собрать параметры всех слоёв в плоский список")
+
+    def __repr__(self) -> str:
+        raise NotImplementedError("TODO: вернуть строку вида 'MLP of [...]'")

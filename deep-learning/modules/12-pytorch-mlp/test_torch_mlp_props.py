@@ -20,7 +20,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 
-from torch_mlp import MLP, train_step, accuracy
+from torch_mlp import MLP, train_step, train_epoch, accuracy
 
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -465,3 +465,83 @@ def test_relu_produces_sparsity_in_hidden_layer():
     assert (sv > 1e-3).sum().item() >= min(2, logits.shape[1]), (
         "Logit matrix appears rank-deficient — ReLU may not be creating non-linearity"
     )
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# train_epoch: one epoch of mini-batch training (Dataset / DataLoader)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _toy_separable(n_per_class: int, n_classes: int, in_dim: int, seed: int):
+    """Well-separated clusters, deterministic — float32 X, int64 y."""
+    torch.manual_seed(seed)
+    centers = 4.0 * torch.randn(n_classes, in_dim)
+    xs, ys = [], []
+    for c in range(n_classes):
+        cloud = centers[c] + 0.5 * torch.randn(n_per_class, in_dim)
+        xs.append(cloud)
+        ys.append(torch.full((n_per_class,), c, dtype=torch.long))
+    return torch.cat(xs), torch.cat(ys)
+
+
+@pytest.mark.parametrize("batch_size", [1, 8, 32, "full"])
+def test_train_epoch_mean_loss_finite_and_positive(batch_size):
+    """Across batch sizes (incl. 1, a non-dividing size, and full-batch) the returned
+    mean loss must be a finite positive float."""
+    torch.manual_seed(4)
+    X, y = _toy_separable(n_per_class=30, n_classes=3, in_dim=5, seed=4)  # N=90
+    bs = X.shape[0] if batch_size == "full" else batch_size
+
+    model = MLP(in_dim=5, hidden=12, out_dim=3)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.05)
+    loss_fn = nn.CrossEntropyLoss()
+
+    mean_loss = train_epoch(model, optimizer, loss_fn, X, y, batch_size=bs)
+    assert isinstance(mean_loss, float)
+    assert np.isfinite(mean_loss), f"batch_size={batch_size}: mean loss not finite ({mean_loss})"
+    assert mean_loss > 0.0, f"batch_size={batch_size}: mean loss not positive ({mean_loss})"
+
+
+@pytest.mark.parametrize("batch_size", [4, 16, 50])
+def test_train_epoch_moves_parameters(batch_size):
+    """After one epoch at least one parameter must have changed (steps actually applied)."""
+    torch.manual_seed(9)
+    X, y = _toy_separable(n_per_class=20, n_classes=3, in_dim=4, seed=9)  # N=60
+    model = MLP(in_dim=4, hidden=8, out_dim=3)
+    optimizer = torch.optim.SGD(model.parameters(), lr=0.1)
+    loss_fn = nn.CrossEntropyLoss()
+
+    before = [p.detach().clone() for p in model.parameters()]
+    train_epoch(model, optimizer, loss_fn, X, y, batch_size=batch_size)
+    after = list(model.parameters())
+
+    changed = any(not torch.allclose(b, a) for b, a in zip(before, after))
+    assert changed, f"batch_size={batch_size}: no parameter moved after a full epoch"
+
+
+@pytest.mark.parametrize("seed", [0, 7, 21])
+def test_train_epoch_full_batch_oracle_equals_train_step(seed):
+    """Full-batch oracle across seeds: with batch_size = N, one epoch == one train_step,
+    both in returned loss and in resulting parameters (order inside the single batch is
+    irrelevant for the full-batch gradient)."""
+    X, y = _toy_separable(n_per_class=15, n_classes=4, in_dim=6, seed=seed)
+    N = X.shape[0]
+    loss_fn = nn.CrossEntropyLoss()
+
+    torch.manual_seed(1000 + seed)
+    model_step = MLP(in_dim=6, hidden=10, out_dim=4)
+    torch.manual_seed(1000 + seed)
+    model_epoch = MLP(in_dim=6, hidden=10, out_dim=4)
+
+    opt_step = torch.optim.SGD(model_step.parameters(), lr=0.1)
+    opt_epoch = torch.optim.SGD(model_epoch.parameters(), lr=0.1)
+
+    loss_step = train_step(model_step, opt_step, loss_fn, X, y)
+    loss_epoch = train_epoch(model_epoch, opt_epoch, loss_fn, X, y, batch_size=N)
+
+    assert abs(loss_epoch - loss_step) < 1e-4, (
+        f"seed={seed}: full-batch epoch loss {loss_epoch:.6f} != train_step {loss_step:.6f}"
+    )
+    for p_s, p_e in zip(model_step.parameters(), model_epoch.parameters()):
+        assert torch.allclose(p_s, p_e, atol=1e-5), (
+            f"seed={seed}: parameters diverged between train_step and full-batch train_epoch"
+        )

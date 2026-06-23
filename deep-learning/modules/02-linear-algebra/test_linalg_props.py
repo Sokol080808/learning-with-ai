@@ -16,7 +16,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from linalg import dot, matmul, l2_norm, cosine_similarity
+from linalg import dot, matmul, l2_norm, cosine_similarity, linear_forward
 
 
 # ===========================================================================
@@ -515,6 +515,145 @@ class TestCosineSimilarityOracle:
 
 
 # ===========================================================================
+# linear_forward — oracle: torch.nn.functional.linear / torch.nn.Linear
+# ===========================================================================
+
+class TestLinearForwardOracle:
+    """Y = X @ W + b must match PyTorch's Linear semantics.
+
+    Note: torch.nn.functional.linear(x, weight, bias) computes
+    x @ weight.T + bias, i.e. it stores the weight TRANSPOSED relative to our
+    (D, H) convention. So the oracle passes W.T as the torch weight to get
+    X @ W + b. This is exactly the transpose subtlety taught in Идея 5.
+    """
+
+    def test_linear_forward_vs_torch_F_linear(self):
+        np.random.seed(600); torch.manual_seed(600)
+        for _ in range(25):
+            N = np.random.randint(1, 8)
+            D = np.random.randint(1, 8)
+            H = np.random.randint(1, 8)
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.random.randn(H)
+            tX = torch.tensor(X, dtype=torch.float64)
+            tW = torch.tensor(W, dtype=torch.float64)   # (D, H)
+            tb = torch.tensor(b, dtype=torch.float64)
+            # F.linear expects weight of shape (H, D) -> pass W.T
+            expected = F.linear(tX, tW.T, tb).numpy()
+            result = linear_forward(X, W, b)
+            assert np.allclose(result, expected, atol=1e-9), (
+                f"linear_forward mismatch for shapes ({N},{D})@({D},{H})")
+
+    def test_linear_forward_vs_torch_nn_Linear_module(self):
+        """Cross-check against an nn.Linear module with weights assigned."""
+        np.random.seed(601); torch.manual_seed(601)
+        for _ in range(10):
+            N = np.random.randint(1, 6)
+            D = np.random.randint(1, 6)
+            H = np.random.randint(1, 6)
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.random.randn(H)
+            layer = torch.nn.Linear(D, H).double()
+            with torch.no_grad():
+                # nn.Linear stores weight as (H, D) -> assign W.T
+                layer.weight.copy_(torch.tensor(W.T, dtype=torch.float64))
+                layer.bias.copy_(torch.tensor(b, dtype=torch.float64))
+                expected = layer(torch.tensor(X, dtype=torch.float64)).numpy()
+            assert np.allclose(linear_forward(X, W, b), expected, atol=1e-9)
+
+    def test_linear_forward_output_shape(self):
+        np.random.seed(602)
+        for _ in range(20):
+            N = np.random.randint(1, 10)
+            D = np.random.randint(1, 10)
+            H = np.random.randint(1, 10)
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.random.randn(H)
+            Y = linear_forward(X, W, b)
+            assert Y.shape == (N, H), f"Expected ({N},{H}), got {Y.shape}"
+
+    def test_linear_forward_output_dtype_is_float(self):
+        np.random.seed(603)
+        X = np.random.randn(3, 4)
+        W = np.random.randn(4, 2)
+        b = np.random.randn(2)
+        Y = linear_forward(X, W, b)
+        assert np.issubdtype(Y.dtype, np.floating)
+
+    def test_linear_forward_bias_broadcast_over_batch(self):
+        """Fixed W, b; vary N. Each row i equals matmul(X[i:i+1], W)[0] + b."""
+        np.random.seed(604)
+        D, H = 5, 3
+        W = np.random.randn(D, H)
+        b = np.random.randn(H)
+        for N in (1, 4, 16):
+            X = np.random.randn(N, D)
+            Y = linear_forward(X, W, b)
+            assert Y.shape == (N, H)
+            for i in range(N):
+                row = matmul(X[i:i + 1, :], W)[0] + b
+                assert np.allclose(Y[i, :], row, atol=1e-9)
+
+    def test_linear_forward_zero_bias_equals_matmul(self):
+        """b = 0 reduces linear_forward to plain matmul(X, W)."""
+        np.random.seed(605)
+        for _ in range(15):
+            N = np.random.randint(1, 6)
+            D = np.random.randint(1, 6)
+            H = np.random.randint(1, 6)
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.zeros(H)
+            assert np.allclose(linear_forward(X, W, b), matmul(X, W), atol=1e-12)
+
+    def test_linear_forward_additive_in_bias(self):
+        """linear_forward(X, W, b1 + b2) == linear_forward(X, W, b1) + (b2 broadcast)."""
+        np.random.seed(606)
+        N, D, H = 6, 4, 3
+        X = np.random.randn(N, D)
+        W = np.random.randn(D, H)
+        b1 = np.random.randn(H)
+        b2 = np.random.randn(H)
+        lhs = linear_forward(X, W, b1 + b2)
+        rhs = linear_forward(X, W, b1) + b2
+        assert np.allclose(lhs, rhs, atol=1e-12)
+
+    def test_linear_forward_does_not_mutate_inputs(self):
+        np.random.seed(607)
+        X = np.random.randn(4, 3)
+        W = np.random.randn(3, 2)
+        b = np.random.randn(2)
+        X0, W0, b0 = X.copy(), W.copy(), b.copy()
+        _ = linear_forward(X, W, b)
+        assert np.array_equal(X, X0)
+        assert np.array_equal(W, W0)
+        assert np.array_equal(b, b0)
+
+    # --- error paths ---
+
+    def test_linear_forward_inner_dim_mismatch_raises(self):
+        np.random.seed(608)
+        for (N, D, Drows, H) in [(3, 4, 5, 2), (1, 2, 3, 4), (5, 1, 2, 5)]:
+            X = np.random.randn(N, D)
+            W = np.random.randn(Drows, H)   # Drows != D
+            b = np.zeros(H)
+            with pytest.raises(ValueError):
+                linear_forward(X, W, b)
+
+    def test_linear_forward_bias_length_mismatch_raises(self):
+        np.random.seed(609)
+        for (N, D, H, bad_b) in [(3, 4, 5, 4), (2, 3, 2, 3), (4, 2, 6, 5)]:
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.zeros(bad_b)             # len != H
+            with pytest.raises(ValueError):
+                linear_forward(X, W, b)
+
+
+# ===========================================================================
 # Cross-function invariants: dot / l2_norm / cosine_similarity consistency
 # ===========================================================================
 
@@ -560,3 +699,18 @@ class TestCrossFunctionInvariants:
             b = np.random.randn(n)
             mm_result = matmul(a.reshape(1, n), b.reshape(n, 1))[0, 0]
             assert np.isclose(dot(a, b), mm_result, atol=1e-12)
+
+    def test_linear_forward_entrywise_dot_plus_bias(self):
+        """linear_forward(X, W, b)[i, j] == dot(X[i, :], W[:, j]) + b[j]."""
+        np.random.seed(504)
+        for _ in range(10):
+            N, D, H = (np.random.randint(1, 6) for _ in range(3))
+            X = np.random.randn(N, D)
+            W = np.random.randn(D, H)
+            b = np.random.randn(H)
+            Y = linear_forward(X, W, b)
+            for i in range(N):
+                for j in range(H):
+                    expected = dot(X[i, :], W[:, j]) + b[j]
+                    assert np.isclose(Y[i, j], expected, atol=1e-12), (
+                        f"Y[{i},{j}] = {Y[i,j]} != dot(row,col)+b = {expected}")

@@ -9,7 +9,7 @@ import numpy as np  # noqa: F401  (часть курса на numpy; здесь 
 import torch
 import torch.nn.functional as F
 
-from trainingcraft import layernorm, init_scale, lr_at_step
+from trainingcraft import layernorm, init_scale, lr_at_step, clip_gradients
 
 
 # ---------------------------------------------------------------------------
@@ -215,3 +215,155 @@ def test_overfit_single_batch_reduces_loss():
 
     final_loss = loss_fn().item()
     assert final_loss < 0.5 * initial_loss
+
+
+# ---------------------------------------------------------------------------
+# clip_gradients: глобальная L2-норма; эталон — torch.nn.utils.clip_grad_norm_
+# ---------------------------------------------------------------------------
+
+def _make_params_with_grads(seed, shapes):
+    """Список листовых тензоров с заданными .grad (детерминированно по seed)."""
+    torch.manual_seed(seed)
+    params = []
+    for shp in shapes:
+        p = torch.randn(*shp, requires_grad=True)
+        p.grad = torch.randn(*shp)
+        params.append(p)
+    return params
+
+
+def test_clip_gradients_returns_pre_clip_norm():
+    # Возвращаемое значение — глобальная норма ДО обрезки.
+    params = _make_params_with_grads(0, [(3, 4), (5,), (2, 2)])
+    manual = torch.sqrt(sum((p.grad ** 2).sum() for p in params)).item()
+    ret = clip_gradients(params, max_norm=1.0)
+    assert isinstance(ret, float)
+    assert math.isclose(ret, manual, rel_tol=1e-6)
+
+
+def test_clip_gradients_matches_torch_clip_grad_norm():
+    # Эталон: те же градиенты, прогнанные через torch.nn.utils.clip_grad_norm_.
+    shapes = [(4, 3), (6,), (2, 5)]
+    ours = _make_params_with_grads(1, shapes)
+    ref = _make_params_with_grads(1, shapes)   # тот же seed -> те же grad
+
+    ret_ours = clip_gradients(ours, max_norm=1.0)
+    ret_ref = torch.nn.utils.clip_grad_norm_(ref, max_norm=1.0)
+
+    # совпадает возвращённая норма ДО обрезки
+    assert math.isclose(ret_ours, float(ret_ref), rel_tol=1e-5)
+    # и совпадают все градиенты ПОСЛЕ обрезки
+    for a, b in zip(ours, ref):
+        assert torch.allclose(a.grad, b.grad, atol=1e-5)
+
+
+def test_clip_gradients_passthrough_when_norm_small():
+    # Если глобальная норма уже <= max_norm, градиенты не меняются (бит-в-бит).
+    params = _make_params_with_grads(2, [(3,), (4,)])
+    before = [p.grad.clone() for p in params]
+    # ставим заведомо большой порог
+    clip_gradients(params, max_norm=1000.0)
+    for p, g0 in zip(params, before):
+        assert torch.equal(p.grad, g0)
+
+
+def test_clip_gradients_caps_global_norm():
+    # После обрезки глобальная норма не превышает max_norm (с малым допуском).
+    params = _make_params_with_grads(3, [(5, 5), (7,), (3, 2)])
+    max_norm = 0.5
+    clip_gradients(params, max_norm=max_norm)
+    new_norm = torch.sqrt(sum((p.grad ** 2).sum() for p in params)).item()
+    assert new_norm <= max_norm + 1e-5
+
+
+def test_clip_gradients_preserves_direction():
+    # Обрезка по норме сохраняет направление каждого градиента.
+    params = _make_params_with_grads(4, [(6,), (4, 3)])
+    before = [p.grad.clone() for p in params]
+    clip_gradients(params, max_norm=0.1)   # порог мал -> обрезка точно сработает
+    for p, g0 in zip(params, before):
+        dir_after = p.grad / p.grad.norm()
+        dir_before = g0 / g0.norm()
+        assert torch.allclose(dir_after, dir_before, atol=1e-5)
+
+
+def _train_with_grad_spikes(use_clip, steps=60, lr=0.3):
+    """Обучение простой квадратичной задачи w -> 0, где раз в 7 шагов в градиент
+    влетает «выброс» (×1e4) — модель взрыва градиента. Возвращает (init, final).
+
+    Без клиппинга один такой выброс при lr·grad улетает в бесконечность.
+    С клиппингом по норме длина шага ограничена, и обучение остаётся стабильным.
+    """
+    torch.manual_seed(0)
+    w = torch.tensor([5.0], requires_grad=True)
+    target = torch.tensor([0.0])
+
+    def compute_loss():
+        return 0.5 * ((w - target) ** 2).sum()
+
+    initial = compute_loss().item()
+    for t in range(steps):
+        loss = compute_loss()
+        w.grad = None
+        loss.backward()
+        if t % 7 == 0:           # редкий «взрыв» градиента
+            w.grad.mul_(1e4)
+        if use_clip:
+            clip_gradients([w], max_norm=1.0)
+        with torch.no_grad():
+            w -= lr * w.grad
+    return initial, compute_loss().item()
+
+
+def test_clip_gradients_prevents_divergence_on_grad_spikes():
+    # Без клиппинга редкие выбросы градиента разносят обучение в inf;
+    # с клиппингом по норме оно остаётся конечным и снижает loss.
+    init_clip, final_clip = _train_with_grad_spikes(use_clip=True)
+    init_noclip, final_noclip = _train_with_grad_spikes(use_clip=False)
+
+    # без клиппинга — взрыв (не конечно)
+    assert not math.isfinite(final_noclip), (
+        f"без клиппинга ожидался взрыв (inf/nan), получили {final_noclip}"
+    )
+    # с клиппингом — стабильно и реально сошлось
+    assert math.isfinite(final_clip), "с клиппингом loss не должен взрываться"
+    assert final_clip < init_clip, (
+        f"с клиппингом loss должен снизиться: {init_clip} -> {final_clip}"
+    )
+
+
+def test_clip_gradients_keeps_training_stable_with_large_lr():
+    # Интеграция в стиле модуля: с клиппингом большой lr остаётся управляемым —
+    # обучение крошечной модели (Linear + LayerNorm) конечно и снижает loss.
+    torch.manual_seed(0)
+    N, D_in, D_out = 8, 4, 3
+    x = torch.randn(N, D_in)
+    target = torch.randn(N, D_out)
+
+    scale = init_scale(D_in)
+    W = (torch.randn(D_in, D_out) * scale).requires_grad_(True)
+    b = torch.zeros(D_out, requires_grad=True)
+    gamma = torch.ones(D_out, requires_grad=True)
+    beta = torch.zeros(D_out, requires_grad=True)
+    params = [W, b, gamma, beta]
+
+    def compute_loss():
+        z = x @ W + b
+        h = layernorm(z, gamma, beta)
+        return ((h - target) ** 2).mean()
+
+    initial = compute_loss().item()
+    big_lr = 0.5   # крупный шаг, который клиппинг держит под контролем
+    for _ in range(200):
+        loss = compute_loss()
+        for p in params:
+            p.grad = None
+        loss.backward()
+        clip_gradients(params, max_norm=1.0)
+        with torch.no_grad():
+            for p in params:
+                p -= big_lr * p.grad
+
+    final = compute_loss().item()
+    assert math.isfinite(final), "loss взорвался (inf/nan) несмотря на клиппинг"
+    assert final < initial, f"loss не снизился при стабилизированном обучении: {initial} -> {final}"

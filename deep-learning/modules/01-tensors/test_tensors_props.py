@@ -9,7 +9,7 @@ import numpy as np
 import torch
 import pytest
 
-from tensors import scale, row_normalize, add_bias, relu_np
+from tensors import scale, row_normalize, add_bias, relu_np, standardize
 
 
 # ===================================================================== scale
@@ -355,3 +355,105 @@ class TestReLUProps:
         pos_mask = x >= 0
         assert np.allclose(out[neg_mask], 0.0, atol=1e-15)
         assert np.allclose(out[pos_mask], x[pos_mask], atol=1e-15)
+
+
+# ================================================================ standardize
+
+class TestStandardizeProps:
+    """Randomised + oracle tests for standardize() (per-feature z-score)."""
+
+    def test_standardize_vs_numpy_reference_varied_shapes(self):
+        """standardize must match closed-form (x - x.mean(0)) / x.std(0)."""
+        np.random.seed(50)
+        for N, D in [(2, 1), (3, 4), (8, 6), (20, 3), (50, 10)]:
+            # scale/shift each feature so the transform has real work to do;
+            # keep N >= 2 so column std is well-defined and away from zero.
+            x = np.random.randn(N, D) * (np.random.rand(D) * 5 + 0.5) + np.random.randn(D) * 3
+            expected = (x - x.mean(axis=0)) / x.std(axis=0)
+            got = standardize(x)
+            assert got.shape == (N, D), f"shape changed for ({N},{D})"
+            assert np.allclose(got, expected, atol=1e-12), (
+                f"value mismatch vs numpy reference for shape ({N},{D})"
+            )
+
+    def test_standardize_vs_torch_oracle(self):
+        """standardize must match torch's (xt - xt.mean(0)) / xt.std(0, unbiased=False)."""
+        np.random.seed(51)
+        torch.manual_seed(51)
+        for N, D in [(3, 2), (10, 5), (16, 8), (32, 4)]:
+            x = np.random.randn(N, D) * 2.0 + 1.0
+            xt = torch.from_numpy(x)
+            # unbiased=False so torch divides by N (matches numpy's default std)
+            expected = ((xt - xt.mean(dim=0)) / xt.std(dim=0, unbiased=False)).numpy()
+            got = standardize(x)
+            assert np.allclose(got, expected, atol=1e-10), (
+                f"value mismatch vs torch oracle for shape ({N},{D})"
+            )
+
+    def test_standardize_columns_zero_mean_unit_std(self):
+        """Each output column must have mean ~0 and std ~1 (the defining invariant)."""
+        np.random.seed(52)
+        for N, D in [(5, 1), (12, 7), (40, 4), (100, 10)]:
+            x = np.random.randn(N, D) * 7.0 - 3.0
+            out = standardize(x)
+            assert np.allclose(out.mean(axis=0), 0.0, atol=1e-12), (
+                f"column means not ~0 for shape ({N},{D})"
+            )
+            assert np.allclose(out.std(axis=0), 1.0, atol=1e-12), (
+                f"column stds not ~1 for shape ({N},{D})"
+            )
+
+    def test_standardize_shape_preserved(self):
+        """Output shape must equal input shape (N, D)."""
+        np.random.seed(53)
+        N, D = 9, 6
+        x = np.random.randn(N, D) + 4.0
+        out = standardize(x)
+        assert out.shape == (N, D)
+
+    def test_standardize_does_not_mutate_input(self):
+        """standardize must not modify the input array."""
+        np.random.seed(54)
+        x = np.random.randn(7, 5) * 3.0 + 2.0
+        before = x.copy()
+        _ = standardize(x)
+        assert np.allclose(x, before), "standardize mutated the input"
+
+    def test_standardize_does_not_share_memory_with_input(self):
+        """standardize must return a fresh array; mutating it must not touch input."""
+        np.random.seed(55)
+        x = np.random.randn(4, 4) + 1.0
+        before = x.copy()
+        out = standardize(x)
+        out[:] = 999.0
+        assert np.allclose(x, before), "standardize() output shares memory with input"
+
+    def test_standardize_already_standardized_is_idempotent(self):
+        """Standardizing already-standardized data leaves it (numerically) unchanged."""
+        np.random.seed(56)
+        x = np.random.randn(30, 5) * 4.0 + 6.0
+        once = standardize(x)
+        twice = standardize(once)
+        assert np.allclose(once, twice, atol=1e-10), "standardize is not idempotent on z-scored data"
+
+    def test_standardize_invariant_to_affine_per_column(self):
+        """z-score is invariant to per-column scale a>0 and shift c: std(a*x+c) cancels a."""
+        np.random.seed(57)
+        N, D = 25, 4
+        x = np.random.randn(N, D)
+        a = np.random.rand(D) * 5 + 0.5       # positive per-column scale
+        c = np.random.randn(D) * 10           # per-column shift
+        out_x = standardize(x)
+        out_affine = standardize(a * x + c)
+        assert np.allclose(out_x, out_affine, atol=1e-10), (
+            "standardize is not invariant to positive affine per-column transform"
+        )
+
+    def test_standardize_large_magnitude_no_inf(self):
+        """Large-magnitude (but non-degenerate) features must not produce inf/nan."""
+        np.random.seed(58)
+        x = np.random.randn(10, 6) * 1e7 + 1e7
+        out = standardize(x)
+        assert np.all(np.isfinite(out)), "standardize produced inf/nan for large values"
+        assert np.allclose(out.mean(axis=0), 0.0, atol=1e-8)
+        assert np.allclose(out.std(axis=0), 1.0, atol=1e-8)
