@@ -11,6 +11,9 @@ from regularize import (
     l2_penalty,
     dropout_mask,
     should_early_stop,
+    train_regularized,
+    confusion_counts,
+    precision_recall_f1,
 )
 
 
@@ -228,3 +231,233 @@ def test_l2_reduces_overfitting_gap():
 
     assert gap_no_l2 > 0.0  # без регуляризации разрыв заметен (переобучение есть)
     assert gap_l2 < 0.5 * gap_no_l2  # L2 ужимает разрыв более чем вдвое
+
+
+# --------------------------------------------------------------------------- #
+#  Задание 5: train_regularized — собрать все кирпичики в один цикл обучения   #
+# --------------------------------------------------------------------------- #
+
+def _poly_overfit_data(seed=0):
+    """Та же конструкция, что в test_l2_reduces_overfitting_gap: малый шумный полином."""
+    rng = np.random.default_rng(seed)
+    n = 14
+    x = np.linspace(-1.0, 1.0, n)
+    y = 2.0 * x + rng.normal(scale=0.3, size=n)
+    Phi = np.vander(x, 9 + 1, increasing=True)  # степень 9 — легко переобучиться
+    return train_val_split(Phi, y, val_frac=0.4, seed=0)
+
+
+def test_train_regularized_improves_val():
+    """(a) w_best должен давать val-MSE ниже, чем стартовые веса w_init."""
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.zeros(X_tr.shape[1])
+    val_init = float(np.mean((X_val @ w_init - y_val) ** 2))
+
+    w_best, val_losses = train_regularized(
+        X_tr, y_tr, X_val, y_val, w_init,
+        lam=0.01, dropout_p=0.0, lr=0.05, patience=50, max_epochs=400,
+    )
+    val_best = float(np.mean((X_val @ w_best - y_val) ** 2))
+    assert val_best < val_init  # обучение реально улучшило val
+
+
+def test_train_regularized_returns_python_floats():
+    """val_losses — список питоновских float; w_best — np.ndarray нужной формы."""
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.zeros(X_tr.shape[1])
+    w_best, val_losses = train_regularized(
+        X_tr, y_tr, X_val, y_val, w_init,
+        lam=0.0, dropout_p=0.0, lr=0.05, patience=5, max_epochs=20,
+    )
+    assert isinstance(val_losses, list)
+    assert all(isinstance(v, float) for v in val_losses)
+    assert isinstance(w_best, np.ndarray)
+    assert w_best.shape == w_init.shape
+
+
+def test_train_regularized_does_not_mutate_w_init():
+    """w_init не должен испортиться in-place (стартуем с копии)."""
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.zeros(X_tr.shape[1])
+    before = w_init.copy()
+    train_regularized(
+        X_tr, y_tr, X_val, y_val, w_init,
+        lam=0.01, dropout_p=0.2, lr=0.05, patience=10, max_epochs=50,
+    )
+    assert np.array_equal(w_init, before)
+
+
+def test_train_regularized_early_stop_fires():
+    """(b) len(val_losses) <= max_epochs, и в сценарии переобучения ранняя остановка срабатывает.
+
+    На полиноме степени 9 без регуляризации val-loss сперва падает, потом РАСТЁТ (модель
+    переобучается). После минимума идут эпохи без нового рекорда → should_early_stop
+    обрывает цикл задолго до max_epochs.
+    """
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.zeros(X_tr.shape[1])
+    max_epochs = 5000
+    _, val_losses = train_regularized(
+        X_tr, y_tr, X_val, y_val, w_init,
+        lam=0.0, dropout_p=0.0, lr=0.3, patience=5, max_epochs=max_epochs,
+    )
+    assert len(val_losses) <= max_epochs
+    assert len(val_losses) < max_epochs  # ранняя остановка действительно сработала
+    # минимум val достигнут РАНЬШЕ последней эпохи — значит после него было плато/рост
+    assert int(np.argmin(val_losses)) < len(val_losses) - 1
+
+
+def test_train_regularized_no_reg_equals_plain_gd():
+    """(c) lam=0, dropout_p=0 воспроизводит обычный ручной градиентный спуск бит-в-бит.
+
+    Оракул — ручной numpy-GD на полном X_tr (без маски, без L2-члена) на то же число шагов.
+    patience делаем большим, чтобы ранняя остановка не оборвала и оба прошли все эпохи.
+    """
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.full(X_tr.shape[1], 0.1)
+    lr = 0.03
+    epochs = 200
+
+    w_best, _ = train_regularized(
+        X_tr, y_tr, X_val, y_val, w_init,
+        lam=0.0, dropout_p=0.0, lr=lr, patience=10_000, max_epochs=epochs,
+    )
+
+    # ручной эталон: тот же GD, та же арифметика, что и в train-ветке при p=0, lam=0.
+    # w_best — это веса ЛУЧШЕЙ по val эпохи, поэтому и в эталоне отслеживаем минимум val.
+    w_manual = w_init.astype(float).copy()
+    w_manual_best = w_manual.copy()
+    best_val = float("inf")
+    for _ in range(epochs):
+        err = X_tr @ w_manual - y_tr
+        grad = (2.0 / len(y_tr)) * (X_tr.T @ err)
+        w_manual = w_manual - lr * grad
+        val_mse = float(np.mean((X_val @ w_manual - y_val) ** 2))
+        if val_mse < best_val:
+            best_val = val_mse
+            w_manual_best = w_manual.copy()
+
+    assert np.allclose(w_best, w_manual_best, atol=1e-6)
+
+
+def test_train_regularized_shrinks_train_val_gap():
+    """(d) на полиноме степени 9 L2+dropout дают меньший разрыв train/val, чем без регуляризации.
+
+    Оракул — сам нерегуляризованный прогон (lam=0, dropout_p=0). Сравниваем разрывы.
+    """
+    X_tr, y_tr, X_val, y_val = _poly_overfit_data(seed=0)
+    w_init = np.zeros(X_tr.shape[1])
+    lr, epochs = 0.05, 600
+
+    def gap(lam, dropout_p):
+        w_best, _ = train_regularized(
+            X_tr, y_tr, X_val, y_val, w_init,
+            lam=lam, dropout_p=dropout_p, lr=lr, patience=10_000, max_epochs=epochs,
+        )
+        train_mse = float(np.mean((X_tr @ w_best - y_tr) ** 2))
+        val_mse = float(np.mean((X_val @ w_best - y_val) ** 2))
+        return val_mse - train_mse
+
+    gap_plain = gap(lam=0.0, dropout_p=0.0)
+    gap_reg = gap(lam=0.1, dropout_p=0.1)
+    assert gap_plain > 0.0           # без регуляризации переобучение есть
+    assert gap_reg < gap_plain       # регуляризация ужимает разрыв
+
+
+# --------------------------------------------------------------------------- #
+#  Задание 6: confusion_counts — ячейки матрицы ошибок (TP/FP/FN/TN)          #
+# --------------------------------------------------------------------------- #
+
+def test_confusion_counts_worked_example():
+    # y_true=[1,1,1,0,0], y_pred=[1,0,1,1,0]
+    #   tp: позиции 0,2 -> 2 ; fn: позиция 1 -> 1
+    #   fp: позиция 3 -> 1   ; tn: позиция 4 -> 1
+    y_true = np.array([1, 1, 1, 0, 0])
+    y_pred = np.array([1, 0, 1, 1, 0])
+    assert confusion_counts(y_true, y_pred) == (2, 1, 1, 1)
+
+
+def test_confusion_counts_sum_equals_n():
+    y_true = np.array([1, 0, 1, 0, 1, 1, 0, 0])
+    y_pred = np.array([1, 1, 0, 0, 1, 0, 1, 0])
+    tp, fp, fn, tn = confusion_counts(y_true, y_pred)
+    assert tp + fp + fn + tn == len(y_true)
+
+
+def test_confusion_counts_returns_python_ints():
+    y_true = np.array([1, 0, 1, 0])
+    y_pred = np.array([1, 0, 0, 1])
+    counts = confusion_counts(y_true, y_pred)
+    assert all(type(c) is int for c in counts)  # питоновские int, не np.int64
+
+
+def test_confusion_counts_all_correct():
+    y = np.array([1, 0, 1, 1, 0])
+    tp, fp, fn, tn = confusion_counts(y, y)
+    assert fp == 0 and fn == 0
+    assert tp == 3 and tn == 2
+
+
+def test_confusion_counts_all_wrong():
+    y_true = np.array([1, 1, 0, 0])
+    y_pred = 1 - y_true  # всё перепутано
+    tp, fp, fn, tn = confusion_counts(y_true, y_pred)
+    assert tp == 0 and tn == 0
+    assert fn == 2 and fp == 2
+
+
+# --------------------------------------------------------------------------- #
+#  Задание 7: precision_recall_f1 — три скаляра из матрицы ошибок             #
+# --------------------------------------------------------------------------- #
+
+def test_prf_worked_example():
+    # tp=2, fp=1, fn=1 -> P = 2/3, R = 2/3, F1 = 2/3
+    y_true = np.array([1, 1, 1, 0, 0])
+    y_pred = np.array([1, 0, 1, 1, 0])
+    p, r, f1 = precision_recall_f1(y_true, y_pred)
+    assert np.isclose(p, 2 / 3)
+    assert np.isclose(r, 2 / 3)
+    assert np.isclose(f1, 2 / 3)
+
+
+def test_prf_perfect_prediction():
+    y = np.array([1, 0, 1, 1, 0, 1])
+    p, r, f1 = precision_recall_f1(y, y)
+    assert (p, r, f1) == (1.0, 1.0, 1.0)
+
+
+def test_prf_returns_python_floats():
+    y_true = np.array([1, 0, 1, 0])
+    y_pred = np.array([1, 1, 0, 0])
+    out = precision_recall_f1(y_true, y_pred)
+    assert all(type(v) is float for v in out)
+
+
+def test_prf_no_positive_predictions_precision_zero():
+    # модель никогда не говорит "1" -> TP+FP == 0 -> precision = 0.0 (по контракту)
+    y_true = np.array([1, 1, 0, 0])
+    y_pred = np.array([0, 0, 0, 0])
+    p, r, f1 = precision_recall_f1(y_true, y_pred)
+    assert p == 0.0
+    assert r == 0.0   # TP == 0 -> recall тоже 0
+    assert f1 == 0.0  # P + R == 0 -> F1 = 0.0
+
+
+def test_prf_no_positive_truths_recall_zero():
+    # в данных нет ни одной настоящей "1" -> TP+FN == 0 -> recall = 0.0 (по контракту)
+    y_true = np.array([0, 0, 0, 0])
+    y_pred = np.array([1, 0, 1, 0])
+    p, r, f1 = precision_recall_f1(y_true, y_pred)
+    assert r == 0.0
+    assert p == 0.0   # TP == 0 -> precision тоже 0
+    assert f1 == 0.0
+
+
+def test_prf_imbalanced_always_zero_classifier():
+    """Хук модуля 05: 'всегда 0' даёт высокую accuracy, но recall=0 по классу 1."""
+    y_true = np.array([0] * 19 + [1])      # 5% положительных
+    y_pred = np.zeros(20, dtype=int)       # модель всегда говорит 0
+    p, r, f1 = precision_recall_f1(y_true, y_pred)
+    # accuracy = 19/20 = 0.95, НО:
+    assert r == 0.0    # не поймала ни одной настоящей 1
+    assert f1 == 0.0   # метрика честно показывает полный провал по классу 1

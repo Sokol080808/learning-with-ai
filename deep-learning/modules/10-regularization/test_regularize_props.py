@@ -16,9 +16,12 @@ import torch
 import torch.nn.functional as F
 
 from regularize import (
+    confusion_counts,
     dropout_mask,
     l2_penalty,
+    precision_recall_f1,
     should_early_stop,
+    train_regularized,
     train_val_split,
 )
 
@@ -507,3 +510,248 @@ class TestIntegration:
         assert penalty >= 0.0
         assert X_tr.shape[1] == 6
         assert X_val.shape[1] == 6
+
+
+# ========================================================================== #
+#  train_regularized — oracle vs manual GD + loop invariants                  #
+# ========================================================================== #
+
+def _poly_data(seed):
+    """Маленький шумный полином высокой степени — лёгкая мишень для переобучения."""
+    rng = np.random.default_rng(seed)
+    n = 16
+    x = np.linspace(-1.0, 1.0, n)
+    y = 1.5 * x - 0.5 * x ** 2 + rng.normal(scale=0.25, size=n)
+    Phi = np.vander(x, 9 + 1, increasing=True)
+    return train_val_split(Phi, y, val_frac=0.4, seed=0)
+
+
+class TestTrainRegularizedProps:
+
+    def _manual_gd_best(self, X_tr, y_tr, X_val, y_val, w_init, lr, lam, epochs):
+        """Ручной эталон того же цикла: возвращает веса ЛУЧШЕЙ по val эпохи (как w_best)."""
+        w = w_init.astype(float).copy()
+        w_best = w.copy()
+        best_val = float("inf")
+        for _ in range(epochs):
+            err = X_tr @ w - y_tr
+            grad = (2.0 / len(y_tr)) * (X_tr.T @ err) + 2.0 * lam * w
+            w = w - lr * grad
+            val_mse = float(np.mean((X_val @ w - y_val) ** 2))
+            if val_mse < best_val:
+                best_val = val_mse
+                w_best = w.copy()
+        return w_best
+
+    def test_oracle_matches_manual_gd_no_reg(self):
+        """lam=0, dropout_p=0 — побитно (atol) совпадает с ручным numpy-GD на разных сидах/lr."""
+        for seed, lr, epochs in [(1, 0.02, 150), (2, 0.04, 120), (3, 0.05, 200)]:
+            X_tr, y_tr, X_val, y_val = _poly_data(seed)
+            w_init = np.full(X_tr.shape[1], 0.05)
+
+            w_best, _ = train_regularized(
+                X_tr, y_tr, X_val, y_val, w_init,
+                lam=0.0, dropout_p=0.0, lr=lr, patience=10_000, max_epochs=epochs,
+            )
+            w_manual = self._manual_gd_best(
+                X_tr, y_tr, X_val, y_val, w_init, lr=lr, lam=0.0, epochs=epochs
+            )
+            assert np.allclose(w_best, w_manual, atol=1e-6), f"seed={seed}, lr={lr}"
+
+    def test_l2_member_matches_manual_gd(self):
+        """С lam>0 (dropout_p=0) шаг включает L2-член 2*lam*w — сверяем с ручным GD+L2."""
+        for seed, lam in [(4, 0.05), (5, 0.1), (6, 0.2)]:
+            X_tr, y_tr, X_val, y_val = _poly_data(seed)
+            w_init = np.zeros(X_tr.shape[1])
+            lr, epochs = 0.03, 180
+
+            w_best, _ = train_regularized(
+                X_tr, y_tr, X_val, y_val, w_init,
+                lam=lam, dropout_p=0.0, lr=lr, patience=10_000, max_epochs=epochs,
+            )
+            w_manual = self._manual_gd_best(
+                X_tr, y_tr, X_val, y_val, w_init, lr=lr, lam=lam, epochs=epochs
+            )
+            assert np.allclose(w_best, w_manual, atol=1e-6), f"seed={seed}, lam={lam}"
+
+    def test_val_losses_length_within_max_epochs(self):
+        """Инвариант: число записанных val-loss никогда не превышает max_epochs."""
+        for seed in range(4):
+            X_tr, y_tr, X_val, y_val = _poly_data(seed)
+            w_init = np.zeros(X_tr.shape[1])
+            max_epochs = 100
+            _, val_losses = train_regularized(
+                X_tr, y_tr, X_val, y_val, w_init,
+                lam=0.01, dropout_p=0.1, lr=0.05, patience=8, max_epochs=max_epochs,
+            )
+            assert 1 <= len(val_losses) <= max_epochs
+
+    def test_w_best_is_argmin_of_val_losses(self):
+        """w_best должен соответствовать эпохе с минимальным val-loss, а не последней."""
+        for seed in [7, 8]:
+            X_tr, y_tr, X_val, y_val = _poly_data(seed)
+            w_init = np.zeros(X_tr.shape[1])
+            w_best, val_losses = train_regularized(
+                X_tr, y_tr, X_val, y_val, w_init,
+                lam=0.0, dropout_p=0.0, lr=0.05, patience=10_000, max_epochs=120,
+            )
+            best_val = float(np.mean((X_val @ w_best - y_val) ** 2))
+            # лучшее значение в истории совпадает с val по w_best (с точностью до float)
+            assert abs(best_val - min(val_losses)) < 1e-9
+
+    def test_determinism(self):
+        """Один и тот же вызов даёт бит-в-бит одинаковый результат (dropout сидируется эпохой)."""
+        X_tr, y_tr, X_val, y_val = _poly_data(0)
+        w_init = np.zeros(X_tr.shape[1])
+        args = dict(lam=0.05, dropout_p=0.3, lr=0.05, patience=20, max_epochs=80)
+        wa, la = train_regularized(X_tr, y_tr, X_val, y_val, w_init, **args)
+        wb, lb = train_regularized(X_tr, y_tr, X_val, y_val, w_init, **args)
+        assert np.array_equal(wa, wb)
+        assert la == lb
+
+    def test_early_stop_fires_on_overfit(self):
+        """Переобучение (val дипует и растёт) -> ранняя остановка обрывает до max_epochs."""
+        X_tr, y_tr, X_val, y_val = _poly_data(0)
+        w_init = np.zeros(X_tr.shape[1])
+        max_epochs = 5000
+        for lr in [0.2, 0.3, 0.5]:
+            _, val_losses = train_regularized(
+                X_tr, y_tr, X_val, y_val, w_init,
+                lam=0.0, dropout_p=0.0, lr=lr, patience=5, max_epochs=max_epochs,
+            )
+            assert len(val_losses) < max_epochs, f"lr={lr}: early stop не сработал"
+            # минимум раньше последней эпохи (после него — плато/рост, что и остановило)
+            assert int(np.argmin(val_losses)) < len(val_losses) - 1
+
+
+# ========================================================================== #
+#  confusion_counts / precision_recall_f1 — oracle vs sklearn + invariants    #
+# ========================================================================== #
+
+class TestMetricsProps:
+
+    def _ref_prf(self, y_true, y_pred):
+        """Чистый numpy-эталон P/R/F1 с теми же zero-division правилами (всегда доступен)."""
+        tp = int(((y_true == 1) & (y_pred == 1)).sum())
+        fp = int(((y_true == 0) & (y_pred == 1)).sum())
+        fn = int(((y_true == 1) & (y_pred == 0)).sum())
+        p = tp / (tp + fp) if (tp + fp) > 0 else 0.0
+        r = tp / (tp + fn) if (tp + fn) > 0 else 0.0
+        f1 = 2 * p * r / (p + r) if (p + r) > 0 else 0.0
+        return p, r, f1
+
+    def test_oracle_vs_numpy_reference(self):
+        """Seeded random 0/1 над многими формами: совпадение с чистым numpy-эталоном."""
+        rng = np.random.default_rng(2024)
+        for _ in range(200):
+            n = int(rng.integers(1, 60))
+            y_true = rng.integers(0, 2, size=n)
+            y_pred = rng.integers(0, 2, size=n)
+            got = precision_recall_f1(y_true, y_pred)
+            exp = self._ref_prf(y_true, y_pred)
+            assert np.allclose(got, exp, atol=1e-12)
+
+    def test_oracle_vs_sklearn(self):
+        """ORACLE-vs-library: совпадение с sklearn.metrics (zero_division=0), если установлен."""
+        sklearn_metrics = pytest.importorskip("sklearn.metrics")
+        confusion_matrix = sklearn_metrics.confusion_matrix
+        precision_score = sklearn_metrics.precision_score
+        recall_score = sklearn_metrics.recall_score
+        f1_score = sklearn_metrics.f1_score
+
+        rng = np.random.default_rng(7)
+        for _ in range(100):
+            n = int(rng.integers(2, 80))
+            y_true = rng.integers(0, 2, size=n)
+            y_pred = rng.integers(0, 2, size=n)
+
+            tp, fp, fn, tn = confusion_counts(y_true, y_pred)
+            # sklearn confusion_matrix с labels=[0,1] даёт [[tn, fp], [fn, tp]]
+            cm = confusion_matrix(y_true, y_pred, labels=[0, 1])
+            assert (tn, fp, fn, tp) == (
+                int(cm[0, 0]), int(cm[0, 1]), int(cm[1, 0]), int(cm[1, 1])
+            )
+
+            p, r, f1 = precision_recall_f1(y_true, y_pred)
+            assert abs(p - precision_score(y_true, y_pred, zero_division=0)) < 1e-9
+            assert abs(r - recall_score(y_true, y_pred, zero_division=0)) < 1e-9
+            assert abs(f1 - f1_score(y_true, y_pred, zero_division=0)) < 1e-9
+
+    def test_counts_sum_to_n(self):
+        """Инвариант: tp+fp+fn+tn == N для любых случайных входов."""
+        rng = np.random.default_rng(11)
+        for _ in range(100):
+            n = int(rng.integers(1, 50))
+            y_true = rng.integers(0, 2, size=n)
+            y_pred = rng.integers(0, 2, size=n)
+            assert sum(confusion_counts(y_true, y_pred)) == n
+
+    def test_perfect_prediction_all_ones(self):
+        """y_pred == y_true (и есть хоть одна 1) -> P=R=F1=1.0."""
+        rng = np.random.default_rng(12)
+        for _ in range(30):
+            n = int(rng.integers(2, 40))
+            y = rng.integers(0, 2, size=n)
+            if y.sum() == 0:
+                y[0] = 1  # гарантируем хотя бы одну положительную метку
+            assert precision_recall_f1(y, y) == (1.0, 1.0, 1.0)
+
+    def test_all_wrong_gives_zeros(self):
+        """Полностью инвертированное предсказание -> P=R=F1=0.0 (TP=0)."""
+        rng = np.random.default_rng(13)
+        for _ in range(30):
+            n = int(rng.integers(2, 40))
+            y = rng.integers(0, 2, size=n)
+            y_pred = 1 - y
+            assert precision_recall_f1(y, y_pred) == (0.0, 0.0, 0.0)
+
+    def test_f1_is_harmonic_mean_when_positive(self):
+        """Когда P,R > 0, F1 — ровно их гармоническое среднее 2PR/(P+R)."""
+        rng = np.random.default_rng(14)
+        checked = 0
+        for _ in range(500):
+            n = int(rng.integers(4, 60))
+            y_true = rng.integers(0, 2, size=n)
+            y_pred = rng.integers(0, 2, size=n)
+            p, r, f1 = precision_recall_f1(y_true, y_pred)
+            if p > 0 and r > 0:
+                assert abs(f1 - 2 * p * r / (p + r)) < 1e-12
+                checked += 1
+        assert checked > 0  # реально проверили непустую долю случаев
+
+    def test_f1_between_min_and_max_of_p_r(self):
+        """F1 (гармоническое среднее) лежит в [min(P,R), max(P,R)]."""
+        rng = np.random.default_rng(15)
+        for _ in range(300):
+            n = int(rng.integers(4, 60))
+            y_true = rng.integers(0, 2, size=n)
+            y_pred = rng.integers(0, 2, size=n)
+            p, r, f1 = precision_recall_f1(y_true, y_pred)
+            if p > 0 and r > 0:
+                assert min(p, r) - 1e-12 <= f1 <= max(p, r) + 1e-12
+
+    def test_swapping_fp_fn_changes_p_r(self):
+        """Кусачий тест: P и R не должны быть симметричны при асимметричных fp/fn.
+
+        Конструируем случай с fp != fn и убеждаемся, что precision != recall —
+        наивная реализация, перепутавшая FP и FN, провалится здесь.
+        """
+        # tp=2, fp=3, fn=0 -> P = 2/5 = 0.4, R = 2/2 = 1.0
+        y_true = np.array([1, 1, 0, 0, 0])
+        y_pred = np.array([1, 1, 1, 1, 1])
+        p, r, f1 = precision_recall_f1(y_true, y_pred)
+        assert np.isclose(p, 0.4)
+        assert np.isclose(r, 1.0)
+        assert p < r  # асимметрия налицо
+
+    def test_degenerate_zero_branches(self):
+        """EDGE: каждая вырожденная ветка (пустые предсказания / пустые истины) даёт 0.0."""
+        # ни одного предсказанного 1 -> precision-ветка делит на 0
+        p, r, f1 = precision_recall_f1(np.array([1, 0, 1]), np.array([0, 0, 0]))
+        assert (p, r, f1) == (0.0, 0.0, 0.0)
+        # ни одной настоящей 1 -> recall-ветка делит на 0
+        p, r, f1 = precision_recall_f1(np.array([0, 0, 0]), np.array([1, 0, 1]))
+        assert (p, r, f1) == (0.0, 0.0, 0.0)
+        # обе пустые (все нули) -> всё 0.0
+        p, r, f1 = precision_recall_f1(np.zeros(5, dtype=int), np.zeros(5, dtype=int))
+        assert (p, r, f1) == (0.0, 0.0, 0.0)

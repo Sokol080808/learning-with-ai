@@ -23,7 +23,15 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from mlp_np import relu, softmax, linear, forward2, cross_entropy
+from mlp_np import (
+    relu,
+    softmax,
+    linear,
+    forward2,
+    cross_entropy,
+    init_xavier,
+    init_he,
+)
 
 
 # ============================================================
@@ -638,3 +646,148 @@ class TestPipelineOracle:
             y = np.random.randint(0, C, size=N)
             loss = cross_entropy(forward2(x, W1, b1, W2, b2), y)
             assert np.isfinite(loss) and loss >= 0.0
+
+
+# ============================================================
+# init_xavier / init_he — variance oracle, shape/finite invariants,
+# symmetry-breaking, and the "dead network" integration experiment
+# ============================================================
+
+class TestWeightInitVarianceOracle:
+    """Empirical std of a large draw must match the theoretical target."""
+
+    # (fan_in, fan_out) configs spanning rectangular and square layers.
+    SHAPES = [(64, 64), (128, 32), (16, 256), (200, 50), (50, 200)]
+
+    def test_xavier_empirical_std_matches_theory(self):
+        """std of init_xavier draw ~ sqrt(2/(fan_in+fan_out)) within 10% (seeded)."""
+        for i, (fan_in, fan_out) in enumerate(self.SHAPES):
+            rng = np.random.default_rng(1000 + i)
+            W = init_xavier(fan_in, fan_out, rng=rng)
+            target = np.sqrt(2.0 / (fan_in + fan_out))
+            emp = float(W.std())
+            assert abs(emp - target) <= 0.10 * target, (
+                f"xavier std {emp:.5f} not within 10% of target {target:.5f} "
+                f"for ({fan_in},{fan_out})"
+            )
+
+    def test_he_empirical_std_matches_theory(self):
+        """std of init_he draw ~ sqrt(2/fan_in) within 10% (seeded)."""
+        for i, (fan_in, fan_out) in enumerate(self.SHAPES):
+            rng = np.random.default_rng(2000 + i)
+            W = init_he(fan_in, fan_out, rng=rng)
+            target = np.sqrt(2.0 / fan_in)
+            emp = float(W.std())
+            assert abs(emp - target) <= 0.10 * target, (
+                f"he std {emp:.5f} not within 10% of target {target:.5f} "
+                f"for ({fan_in},{fan_out})"
+            )
+
+    def test_xavier_std_over_10000_draws(self):
+        """Pooled std over 10000 small draws converges to the Xavier target."""
+        fan_in, fan_out = 5, 7
+        target = np.sqrt(2.0 / (fan_in + fan_out))
+        rng = np.random.default_rng(123)
+        draws = np.stack(
+            [init_xavier(fan_in, fan_out, rng=rng) for _ in range(10000)]
+        )
+        emp = float(draws.std())
+        assert abs(emp - target) <= 0.05 * target, (
+            f"pooled xavier std {emp:.5f} vs target {target:.5f}"
+        )
+
+    def test_he_mean_is_approximately_zero(self):
+        """He init is zero-centred (symmetric noise), so the mean ~ 0."""
+        rng = np.random.default_rng(7)
+        W = init_he(128, 128, rng=rng)
+        assert abs(float(W.mean())) < 0.02, "He init should be zero-centred"
+
+
+class TestWeightInitInvariants:
+    def test_shapes_are_exact(self):
+        """Both initialisers return exactly (fan_in, fan_out)."""
+        for fan_in, fan_out in [(1, 1), (3, 8), (10, 4), (64, 128)]:
+            rng = np.random.default_rng(0)
+            assert init_xavier(fan_in, fan_out, rng=rng).shape == (fan_in, fan_out)
+            assert init_he(fan_in, fan_out, rng=rng).shape == (fan_in, fan_out)
+
+    def test_all_values_finite(self):
+        """No nan/inf in either initialiser."""
+        rng = np.random.default_rng(11)
+        assert np.all(np.isfinite(init_xavier(50, 60, rng=rng)))
+        assert np.all(np.isfinite(init_he(60, 50, rng=rng)))
+
+    def test_random_init_breaks_symmetry_nonzero(self):
+        """Random init is non-degenerate: columns differ (symmetry broken)."""
+        rng = np.random.default_rng(42)
+        W = init_he(8, 5, rng=rng)
+        # Not all zeros, and no two columns identical (would mean tied neurons).
+        assert not np.allclose(W, 0.0)
+        for a in range(W.shape[1]):
+            for b in range(a + 1, W.shape[1]):
+                assert not np.allclose(W[:, a], W[:, b]), \
+                    "two hidden units initialised identically — symmetry not broken"
+
+    def test_reproducible_with_seeded_rng(self):
+        """Same seed => identical draw; different seed => different draw."""
+        a = init_xavier(20, 30, rng=np.random.default_rng(99))
+        b = init_xavier(20, 30, rng=np.random.default_rng(99))
+        c = init_xavier(20, 30, rng=np.random.default_rng(100))
+        assert np.allclose(a, b), "same seed must reproduce the same matrix"
+        assert not np.allclose(a, c), "different seed must give a different matrix"
+
+    def test_default_rng_runs_without_explicit_generator(self):
+        """rng=None path works (uses default_rng) and returns the right shape."""
+        W = init_he(16, 9)
+        assert W.shape == (16, 9)
+        assert np.all(np.isfinite(W))
+
+
+class TestDeadNetworkExperiment:
+    """
+    The pedagogical payoff: chain a deep stack of linear+ReLU layers and watch
+    the pre-activation std stay alive with He init but collapse to exactly 0
+    with all-zero weights.
+    """
+
+    def _deep_forward_std(self, W_list, x):
+        """Run x through len(W_list) linear+ReLU layers; return std of final pre-acts."""
+        h = x
+        for k, W in enumerate(W_list):
+            z = linear(h, W, np.zeros(W.shape[1]))   # pre-activation
+            if k == len(W_list) - 1:
+                return float(z.std())                # std BEFORE the last ReLU
+            h = relu(z)
+        return float(h.std())
+
+    def test_he_init_keeps_network_alive(self):
+        """10 layers, He init: final pre-activation std stays > 0.1 (signal survives)."""
+        rng = np.random.default_rng(2024)
+        N, width, depth = 256, 64, 10
+        x = rng.standard_normal((N, width))
+        W_list = [init_he(width, width, rng=rng) for _ in range(depth)]
+        std = self._deep_forward_std(W_list, x)
+        assert std > 0.1, f"He-init network is dead: final std={std:.4f}"
+        assert np.isfinite(std)
+
+    def test_zero_init_kills_network(self):
+        """10 layers, zero weights: final pre-activation std is exactly 0 (dead)."""
+        rng = np.random.default_rng(2025)
+        N, width, depth = 256, 64, 10
+        x = rng.standard_normal((N, width))
+        W_list = [np.zeros((width, width)) for _ in range(depth)]
+        std = self._deep_forward_std(W_list, x)
+        assert std == 0.0, f"zero-init network should be dead, got std={std:.4f}"
+
+    def test_he_alive_and_zero_dead_side_by_side(self):
+        """Same input: He stays alive, zero collapses — the contrast is the lesson."""
+        rng = np.random.default_rng(7)
+        N, width, depth = 128, 48, 10
+        x = rng.standard_normal((N, width))
+        he = self._deep_forward_std(
+            [init_he(width, width, rng=rng) for _ in range(depth)], x
+        )
+        dead = self._deep_forward_std(
+            [np.zeros((width, width)) for _ in range(depth)], x
+        )
+        assert he > 0.1 and dead == 0.0 and he > dead

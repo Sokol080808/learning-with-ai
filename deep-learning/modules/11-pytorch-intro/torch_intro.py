@@ -76,3 +76,28 @@ def mse_torch(pred: torch.Tensor, y: torch.Tensor) -> torch.Tensor:
         разности: [0, 0, -2]; квадраты: [0, 0, 4]; среднее: 4/3 ≈ 1.333
     """
     return torch.mean((pred - y) ** 2)
+
+
+def numpy_bridge(x: np.ndarray) -> np.ndarray:
+    """Мост torch ↔ numpy: numpy -> тензор -> +1.0 -> обратно в numpy.
+
+    Контракт:
+      - x — numpy-массив (любой формы);
+      - превратить его во float32-тензор через torch.from_numpy (ОБЩАЯ память);
+      - прибавить 1.0 ВНУТРИ torch.no_grad() (чтобы результат не отслеживал градиент);
+      - вернуть результат как numpy-массив через .numpy();
+      - на выходе: тот же shape, dtype == float32, массив на CPU, значения == x + 1.0.
+
+    ПОЧЕМУ так (Идея 8):
+      - from_numpy сохраняет dtype входа — поэтому вход приводим к float32;
+      - .numpy() падает с RuntimeError на тензоре с requires_grad=True, поэтому
+        безопасное «извлечение в numpy» оборачивают так, чтобы граф не строился
+        (здесь — no_grad).
+
+    Пример:
+        numpy_bridge(np.array([1.0, 2.0], dtype=np.float32))  -> array([2., 3.], float32)
+    """
+    t = torch.from_numpy(x.astype(np.float32))
+    with torch.no_grad():
+        out = t + 1.0
+    return out.numpy()

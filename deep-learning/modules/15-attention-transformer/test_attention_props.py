@@ -15,6 +15,8 @@ from attention import (
     causal_mask,
     MultiHeadAttention,
     TransformerBlock,
+    sinusoidal_positional_encoding,
+    LearnedPositionalEncoding,
 )
 
 # ---------------------------------------------------------------------------
@@ -580,3 +582,182 @@ class TestTransformerBlockProperties:
         final = loss_fn().item()
         assert final < initial * 0.7, \
             f"seed={seed}: loss barely decreased: {initial:.4f} -> {final:.4f}"
+
+
+# ===========================================================================
+# Positional encoding — extended property tests
+# ===========================================================================
+
+class TestPositionalEncodingProperties:
+    """Randomised / oracle checks for sinusoidal and learned positional encoding."""
+
+    # ------------------------------------------------------------------
+    # Shape contract across varied (T, d_model)
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("T,d_model", [
+        (1, 2), (3, 4), (5, 8), (10, 16), (7, 32), (20, 64),
+    ])
+    def test_sinusoidal_shape(self, T, d_model):
+        pe = sinusoidal_positional_encoding(T, d_model)
+        assert pe.shape == (T, d_model)
+
+    # ------------------------------------------------------------------
+    # Closed-form oracle: PE[pos,2i]=sin(.), PE[pos,2i+1]=cos(.) over a grid
+    # ------------------------------------------------------------------
+
+    def test_sinusoidal_matches_closed_form_grid(self):
+        for T, d_model in [(8, 16), (5, 8), (12, 32)]:
+            pe = sinusoidal_positional_encoding(T, d_model)
+            pos = torch.arange(T, dtype=torch.float32).unsqueeze(1)        # (T,1)
+            i2 = torch.arange(0, d_model, 2, dtype=torch.float32)          # (d/2,)
+            denom = torch.pow(torch.tensor(10000.0), i2 / d_model)        # (d/2,)
+            angles = pos / denom                                          # (T,d/2)
+            ref = torch.zeros(T, d_model)
+            ref[:, 0::2] = torch.sin(angles)
+            ref[:, 1::2] = torch.cos(angles)
+            assert torch.allclose(pe, ref, atol=1e-6), \
+                f"T={T}, d_model={d_model}: sinusoidal PE != closed form"
+
+    # ------------------------------------------------------------------
+    # Bounded: sin/cos values always live in [-1, 1]
+    # ------------------------------------------------------------------
+
+    def test_sinusoidal_values_bounded(self):
+        for T, d_model in [(16, 8), (32, 16), (50, 64)]:
+            pe = sinusoidal_positional_encoding(T, d_model)
+            assert (pe >= -1.0 - 1e-6).all() and (pe <= 1.0 + 1e-6).all()
+
+    # ------------------------------------------------------------------
+    # First channel (i=0, sin branch) strictly increasing in pos over a
+    # short prefix where sin argument stays within [0, pi/2]
+    # ------------------------------------------------------------------
+
+    def test_sinusoidal_first_sin_channel_increasing_on_prefix(self):
+        # channel 0 = sin(pos / 1) = sin(pos); strictly increasing for pos in [0,1]
+        T, d_model = 2, 8
+        pe = sinusoidal_positional_encoding(T, d_model)
+        col0 = pe[:, 0]
+        assert (col0[1:] > col0[:-1]).all(), "sin channel not increasing on [0,1]"
+
+    # ------------------------------------------------------------------
+    # Determinism: sinusoidal PE depends only on (T, d_model), no randomness
+    # ------------------------------------------------------------------
+
+    def test_sinusoidal_deterministic(self):
+        a = sinusoidal_positional_encoding(7, 16)
+        b = sinusoidal_positional_encoding(7, 16)
+        assert torch.equal(a, b)
+
+    # ------------------------------------------------------------------
+    # Odd d_model is rejected (cannot pair sin/cos channels)
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("d_model", [3, 5, 7, 15])
+    def test_sinusoidal_odd_d_model_raises(self, d_model):
+        with pytest.raises(ValueError):
+            sinusoidal_positional_encoding(4, d_model)
+
+    # ------------------------------------------------------------------
+    # Not trainable: returned tensor carries no gradient
+    # ------------------------------------------------------------------
+
+    def test_sinusoidal_no_grad(self):
+        pe = sinusoidal_positional_encoding(6, 8)
+        assert pe.requires_grad is False
+
+    # ------------------------------------------------------------------
+    # Broadcast-add onto (B, T, d_model) leaves shape unchanged
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("B,T,d_model", [(1, 5, 8), (4, 3, 16), (2, 10, 32)])
+    def test_sinusoidal_broadcast_add_preserves_shape(self, B, T, d_model):
+        torch.manual_seed(13)
+        x = torch.randn(B, T, d_model)
+        out = x + sinusoidal_positional_encoding(T, d_model)
+        assert out.shape == (B, T, d_model)
+
+    # ------------------------------------------------------------------
+    # Learned PE: shape (T, d_model), prefix of the embedding table
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("T,d_model", [(1, 4), (5, 8), (16, 16)])
+    def test_learned_shape(self, T, d_model):
+        torch.manual_seed(1)
+        pe = LearnedPositionalEncoding(max_T=16, d_model=d_model)
+        assert pe(T).shape == (T, d_model)
+
+    # ------------------------------------------------------------------
+    # Learned PE returns the first T rows of the embedding weight exactly
+    # ------------------------------------------------------------------
+
+    def test_learned_returns_prefix_of_weight(self):
+        torch.manual_seed(2)
+        pe = LearnedPositionalEncoding(max_T=16, d_model=8)
+        out = pe(5)
+        assert torch.allclose(out, pe.emb.weight[:5], atol=0)
+
+    # ------------------------------------------------------------------
+    # Learned PE is trainable: a gradient step moves the weights (many seeds)
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("seed", [0, 1, 2, 3])
+    def test_learned_is_trainable(self, seed):
+        torch.manual_seed(seed)
+        pe = LearnedPositionalEncoding(max_T=16, d_model=8)
+        before = pe.emb.weight.detach().clone()
+        opt = torch.optim.Adam(pe.parameters(), lr=1e-1)
+        out = pe(6)
+        loss = (out ** 2).mean()
+        opt.zero_grad()
+        loss.backward()
+        opt.step()
+        after = pe.emb.weight.detach().clone()
+        assert not torch.allclose(before, after, atol=1e-6), \
+            f"seed={seed}: learned PE weights did not change after step"
+
+    # ------------------------------------------------------------------
+    # Gradient actually flows to the embedding rows that were used
+    # ------------------------------------------------------------------
+
+    def test_learned_gradient_flows(self):
+        torch.manual_seed(5)
+        pe = LearnedPositionalEncoding(max_T=16, d_model=8)
+        out = pe(4)
+        out.sum().backward()
+        assert pe.emb.weight.grad is not None
+        # only the first 4 rows were used -> they must have non-zero grad
+        assert pe.emb.weight.grad[:4].abs().max() > 1e-8
+
+    # ------------------------------------------------------------------
+    # Asking for T > max_T must raise (no extrapolation)
+    # ------------------------------------------------------------------
+
+    def test_learned_exceeding_max_T_raises(self):
+        pe = LearnedPositionalEncoding(max_T=8, d_model=8)
+        with pytest.raises(ValueError):
+            pe(9)
+
+    # ------------------------------------------------------------------
+    # The two strategies disagree for the same (T, d_model)
+    # ------------------------------------------------------------------
+
+    @pytest.mark.parametrize("T,d_model", [(5, 8), (10, 16), (3, 32)])
+    def test_strategies_differ(self, T, d_model):
+        torch.manual_seed(7)
+        sin_pe = sinusoidal_positional_encoding(T, d_model)
+        learned = LearnedPositionalEncoding(max_T=32, d_model=d_model)(T)
+        assert not torch.allclose(sin_pe, learned, atol=1e-3), \
+            "sinusoidal and learned PE should not coincide"
+
+    # ------------------------------------------------------------------
+    # Learned PE broadcast-add onto (B, T, d_model) preserves shape
+    # ------------------------------------------------------------------
+
+    def test_learned_broadcast_add_preserves_shape(self):
+        torch.manual_seed(8)
+        B, T, d_model = 3, 6, 16
+        pe = LearnedPositionalEncoding(max_T=16, d_model=d_model)
+        x = torch.randn(B, T, d_model)
+        out = x + pe(T)
+        assert out.shape == (B, T, d_model)

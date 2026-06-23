@@ -16,7 +16,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 
-from trainingcraft import layernorm, init_scale, lr_at_step
+from trainingcraft import layernorm, init_scale, lr_at_step, clip_gradients
 
 
 # ===========================================================================
@@ -613,3 +613,150 @@ def test_init_scale_weights_have_correct_empirical_std():
         assert math.isclose(empirical_std, scale, rel_tol=0.20), (
             f"fan_in={fan_in}: empirical std={empirical_std:.4f}, scale={scale:.4f}"
         )
+
+
+# ===========================================================================
+# clip_gradients – randomised oracle (torch.nn.utils.clip_grad_norm_) + invariants
+# ===========================================================================
+
+_CLIP_SHAPE_SETS = [
+    [(3, 4), (5,)],
+    [(8,), (2, 2), (6, 3)],
+    [(10, 10)],
+    [(1,), (4, 5), (7,), (2, 2, 2)],
+    [(16, 4), (4,), (4, 16)],
+]
+
+
+def _build_grad_params(seed, shapes):
+    """Leaf tensors with deterministic .grad set from a seed."""
+    torch.manual_seed(seed)
+    params = []
+    for shp in shapes:
+        p = torch.randn(*shp, requires_grad=True)
+        # multiply by a random scale so norms vary widely across tests
+        p.grad = torch.randn(*shp) * (torch.rand(()).item() * 5 + 0.1)
+        params.append(p)
+    return params
+
+
+def test_clip_gradients_oracle_vs_torch_random_shapes():
+    """Across many seeds/shapes/thresholds, match torch.nn.utils.clip_grad_norm_
+    on BOTH the returned pre-clip norm and every post-clip gradient value."""
+    import random
+    random.seed(90)
+    seed = 100
+    for shapes in _CLIP_SHAPE_SETS:
+        for max_norm in [0.1, 0.5, 1.0, 3.0, 50.0]:
+            ours = _build_grad_params(seed, shapes)
+            ref = _build_grad_params(seed, shapes)   # identical grads
+            seed += 1
+
+            ret_ours = clip_gradients(ours, max_norm=max_norm)
+            ret_ref = torch.nn.utils.clip_grad_norm_(ref, max_norm=max_norm)
+
+            assert math.isclose(ret_ours, float(ret_ref), rel_tol=1e-5, abs_tol=1e-7), (
+                f"pre-clip norm mismatch (max_norm={max_norm}): {ret_ours} vs {float(ret_ref)}"
+            )
+            for a, b in zip(ours, ref):
+                assert torch.allclose(a.grad, b.grad, atol=1e-5), (
+                    f"post-clip grad mismatch (max_norm={max_norm})"
+                )
+
+
+def test_clip_gradients_returns_correct_global_norm():
+    """Returned value equals sqrt(sum of squared element-norms) over all grads."""
+    seed = 200
+    for shapes in _CLIP_SHAPE_SETS:
+        params = _build_grad_params(seed, shapes)
+        seed += 1
+        manual = math.sqrt(sum(float((p.grad ** 2).sum()) for p in params))
+        ret = clip_gradients(params, max_norm=1e9)   # huge threshold: pure measurement
+        assert isinstance(ret, float)
+        assert math.isclose(ret, manual, rel_tol=1e-6, abs_tol=1e-7), (
+            f"global norm wrong: got {ret}, expected {manual}"
+        )
+
+
+def test_clip_gradients_passthrough_invariant():
+    """If global norm <= max_norm, grads are bitwise unchanged."""
+    seed = 300
+    for shapes in _CLIP_SHAPE_SETS:
+        params = _build_grad_params(seed, shapes)
+        seed += 1
+        # compute the true norm, then set max_norm strictly above it
+        norm = math.sqrt(sum(float((p.grad ** 2).sum()) for p in params))
+        before = [p.grad.clone() for p in params]
+        clip_gradients(params, max_norm=norm * 2 + 1.0)
+        for p, g0 in zip(params, before):
+            assert torch.equal(p.grad, g0), "passthrough should not touch grads"
+
+
+def test_clip_gradients_norm_bound_invariant():
+    """After clipping with a small threshold, the new global norm <= max_norm."""
+    seed = 400
+    for shapes in _CLIP_SHAPE_SETS:
+        for max_norm in [0.05, 0.2, 1.0]:
+            params = _build_grad_params(seed, shapes)
+            seed += 1
+            clip_gradients(params, max_norm=max_norm)
+            new_norm = math.sqrt(sum(float((p.grad ** 2).sum()) for p in params))
+            assert new_norm <= max_norm + 1e-5, (
+                f"global norm {new_norm} exceeds max_norm {max_norm} after clip"
+            )
+
+
+def test_clip_gradients_direction_preserved_invariant():
+    """When clipping fires, each gradient's direction is unchanged (only length scaled)."""
+    seed = 500
+    for shapes in _CLIP_SHAPE_SETS:
+        params = _build_grad_params(seed, shapes)
+        seed += 1
+        before = [p.grad.clone() for p in params]
+        norm_before = math.sqrt(sum(float((g ** 2).sum()) for g in before))
+        # force clipping by choosing a threshold well below the current norm
+        max_norm = norm_before / 10.0
+        clip_gradients(params, max_norm=max_norm)
+        for p, g0 in zip(params, before):
+            if g0.norm() > 0:
+                d_after = p.grad / p.grad.norm()
+                d_before = g0 / g0.norm()
+                assert torch.allclose(d_after, d_before, atol=1e-5), (
+                    "clipping by norm must preserve direction of each gradient"
+                )
+
+
+def test_clip_gradients_scales_by_single_global_coef():
+    """All tensors are scaled by the SAME coefficient when clipping fires —
+    so the ratio g_after/g_before is constant across every parameter."""
+    seed = 600
+    for shapes in _CLIP_SHAPE_SETS:
+        params = _build_grad_params(seed, shapes)
+        seed += 1
+        before = [p.grad.clone() for p in params]
+        norm_before = math.sqrt(sum(float((g ** 2).sum()) for g in before))
+        max_norm = norm_before / 4.0          # ensure clipping fires
+        clip_gradients(params, max_norm=max_norm)
+        expected_coef = max_norm / (norm_before + 1e-6)
+        for p, g0 in zip(params, before):
+            # element-wise ratio should equal the single global coef everywhere g0 != 0
+            mask = g0.abs() > 1e-6
+            ratio = p.grad[mask] / g0[mask]
+            assert torch.allclose(
+                ratio, torch.full_like(ratio, expected_coef), atol=1e-5
+            ), "all grads must be scaled by the same global clip coefficient"
+
+
+def test_clip_gradients_skips_none_grad_params():
+    """Parameters with .grad is None are ignored, not crashed on."""
+    torch.manual_seed(700)
+    p_with = torch.randn(3, 4, requires_grad=True)
+    p_with.grad = torch.randn(3, 4) * 10.0      # large grad
+    p_none = torch.randn(5, requires_grad=True)  # .grad stays None
+    params = [p_with, p_none]
+    manual = math.sqrt(float((p_with.grad ** 2).sum()))
+    ret = clip_gradients(params, max_norm=1.0)
+    assert math.isclose(ret, manual, rel_tol=1e-6)
+    assert p_none.grad is None
+    # the one real grad got clipped to norm <= 1
+    assert p_with.grad.norm().item() <= 1.0 + 1e-5

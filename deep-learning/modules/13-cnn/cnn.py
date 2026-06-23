@@ -9,6 +9,7 @@ from typing import Callable
 
 import torch
 import torch.nn as nn
+import torch.nn.functional as F
 
 
 def conv_output_size(in_size: int, kernel: int, stride: int, pad: int) -> int:
@@ -107,3 +108,99 @@ def train_step(
     loss.backward()
     optimizer.step()
     return loss.item()
+
+
+def receptive_field(num_conv_layers: int, kernel_size: int) -> int:
+    """Рецептивное поле стопки СВЁРТОК (same-padding, stride=1, без пулинга).
+
+    Рецептивное поле (receptive field) одного выходного пикселя — это размер
+    окна во ВХОДНОЙ картинке, который вообще влияет на этот пиксель. Для одной
+    свёртки с ядром k это ровно k×k. Если поставить две такие свёртки подряд,
+    окна складываются с перекрытием в (k-1): каждый следующий слой расширяет
+    поле на (k-1) по каждой оси.
+
+    Контракт:
+      - num_conv_layers — сколько свёрток в стопке (>= 1);
+      - kernel_size     — размер ядра каждой свёртки (нечётный, same-padding);
+      - вернуть РЕБРО рецептивного поля (целое число пикселей по одной оси).
+
+    Формула (стопка same-padding свёрток, stride=1, без пулинга):
+        RF = 1 + (kernel_size - 1) * num_conv_layers
+
+    Примеры:
+        receptive_field(1, 3) -> 3     # одна 3×3 свёртка видит окно 3×3
+        receptive_field(2, 3) -> 5     # две 3×3 подряд видят 5×5
+        receptive_field(3, 3) -> 7     # три 3×3 -> 7×7
+        receptive_field(1, 5) -> 5
+        receptive_field(2, 5) -> 9
+
+    Замечание: каждый слой пулинга или stride>1 ДОМНОЖАЕТ рецептивное поле
+    (на коэффициент уменьшения), но здесь мы считаем чистую стопку свёрток.
+    """
+    return 1 + (kernel_size - 1) * num_conv_layers
+
+
+def augment_batch(
+    images: torch.Tensor,
+    seed: int,
+    noise_std: float = 0.1,
+    pad: int = 1,
+) -> torch.Tensor:
+    """Аугментация батча картинок: «бесплатные» примеры из инвариантностей.
+
+    Для КАЖДОЙ картинки независимо применяем три преобразования, сохраняющие
+    метку (caller держит y у себя — сюда метки НЕ передаются):
+      (a) с вероятностью 0.5 — горизонтальное отражение (mirror последней оси);
+      (b) random crop with pad — отражательно подбиваем по `pad` пикселей с
+          каждой стороны, затем берём СЛУЧАЙНОЕ окно H×W (имитирует малые сдвиги);
+      (c) аддитивный гауссов шум: img + noise_std * randn (имитирует сенсор).
+
+    Контракт:
+      - images — батч формы (N, 1, H, W), float32 (как _toy_images в тестах);
+      - seed   — один сид для ВСЕЙ случайности (детерминизм проверяется тестом);
+      - noise_std — масштаб шума (0.0 -> шум выключен);
+      - pad    — на сколько пикселей подбить перед кропом (0 -> кроп выключен);
+      - возвращает аугментированный батч ТОЙ ЖЕ формы (N, 1, H, W), float32.
+
+    Порядок розыгрышей из генератора зафиксирован (на нём держится детерминизм):
+    для каждой картинки сперва бросок флипа (torch.rand), затем смещения кропа
+    (два torch.randint), затем шум (torch.randn). Один и тот же seed -> битово
+    одинаковый выход; разные seed -> хотя бы одна картинка отличается.
+
+    ПОЧЕМУ это регуляризатор: каждое преобразование размножает обучающую выборку
+    известной инвариантностью, поэтому сеть не может запомнить точные пиксели
+    (меньше variance — тот же рычаг, что L2/dropout из модуля 10). Применяется
+    ТОЛЬКО на обучении; на валидации/тесте картинки чистые.
+    """
+    if images.dim() != 4:
+        raise ValueError(
+            f"augment_batch expects (N, 1, H, W), got shape {tuple(images.shape)}"
+        )
+    N, C, H, W = images.shape
+    rng = torch.Generator().manual_seed(int(seed))
+    out = torch.empty_like(images)
+
+    for i in range(N):
+        img = images[i]  # (C, H, W)
+
+        # (a) horizontal flip with probability 0.5
+        if float(torch.rand(1, generator=rng).item()) < 0.5:
+            img = torch.flip(img, dims=[-1])
+
+        # (b) random crop with reflect-pad: pad by `pad`, take a random H×W window
+        if pad > 0:
+            padded = F.pad(
+                img.unsqueeze(0), (pad, pad, pad, pad), mode="reflect"
+            ).squeeze(0)  # (C, H+2p, W+2p)
+            top = int(torch.randint(0, 2 * pad + 1, (1,), generator=rng).item())
+            left = int(torch.randint(0, 2 * pad + 1, (1,), generator=rng).item())
+            img = padded[:, top : top + H, left : left + W]
+        else:
+            # keep the draw count stable is unnecessary here; with pad=0 crop is a no-op
+            img = img
+
+        # (c) additive Gaussian noise
+        noise = noise_std * torch.randn(img.shape, generator=rng)
+        out[i] = img + noise
+
+    return out

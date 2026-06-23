@@ -8,6 +8,7 @@
 
 import torch
 import torch.nn as nn
+from torch.utils.data import TensorDataset, DataLoader
 
 
 class MLP(nn.Module):
@@ -70,6 +71,53 @@ def train_step(
     loss.backward()
     optimizer.step()
     return loss.item()
+
+
+def train_epoch(
+    model: nn.Module,
+    optimizer: torch.optim.Optimizer,
+    loss_fn: nn.Module,
+    X: torch.Tensor,
+    y: torch.Tensor,
+    batch_size: int = 32,
+) -> float:
+    """Одна ЭПОХА обучения мини-батчами. Возвращает СРЕДНИЙ loss по всем мини-батчам.
+
+    Эпоха — это один полный проход по всем данным, нарезанным на мини-батчи
+    (в отличие от train_step, который делает один шаг на одном батче).
+
+    Схема:
+        1. dataset = TensorDataset(X, y)                  — склеить признаки и метки
+        2. loader  = DataLoader(dataset, batch_size, shuffle=True)
+        3. для каждого (X_batch, y_batch) из loader: loss = train_step(...)
+        4. вернуть среднее значение loss по числу мини-батчей
+
+    Формы:
+      - X: (N, in_dim);
+      - y: (N,) — целочисленные метки классов 0..C-1.
+      - batch_size: размер мини-батча; последний батч может быть меньше, если N
+        не делится на batch_size нацело.
+
+    Возврат: float — средний loss по мини-батчам этой эпохи (среднее ПО БАТЧАМ,
+    а не по объектам).
+
+    ПОЧЕМУ мини-батчи: один объект даёт шумный градиент, весь датасет — точный, но
+    дорогой и редкий шаг; мини-батч усредняет шум и даёт ceil(N/batch_size) обновлений
+    за эпоху вместо одного. ПОЧЕМУ shuffle=True: ломает порядок данных, чтобы батчи не
+    оказались из одного класса и обучение не перекосило.
+
+    Оракул для самопроверки: при batch_size == len(X) и shuffle=False DataLoader выдаёт
+    ровно один батч со всеми данными — тогда эта функция совпадает с одним train_step на
+    полном X, y.
+    """
+    dataset = TensorDataset(X, y)
+    loader = DataLoader(dataset, batch_size=batch_size, shuffle=True)
+    total_loss = 0.0
+    num_batches = 0
+    for X_batch, y_batch in loader:
+        total_loss += train_step(model, optimizer, loss_fn, X_batch, y_batch)
+        num_batches += 1
+    return total_loss / num_batches
 
 
 def accuracy(model: nn.Module, X: torch.Tensor, y: torch.Tensor) -> float:

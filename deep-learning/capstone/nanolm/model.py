@@ -122,18 +122,33 @@ class TransformerLM(nn.Module):
       Верни logits. Лосс (кросс-энтропию) считаем СНАРУЖИ, в обучении:
         F.cross_entropy(logits.view(B*T, vocab_size), targets.view(B*T)).
 
-    generate(idx, max_new_tokens) -> idx:
+    generate(idx, max_new_tokens, temperature=1.0, top_k=None) -> idx:
       Авторегрессионная генерация. Вход idx: (B, T0) — затравка. На каждом из
       max_new_tokens шагов:
         1) если контекст длиннее block_size, обрежь его справа:
            idx_cond = idx[:, -self.block_size:]
         2) logits = self(idx_cond)                       # (B, t, vocab_size)
         3) возьми логиты ПОСЛЕДНЕЙ позиции: logits[:, -1, :]  # (B, vocab_size)
-        4) probs = softmax(этих логитов, dim=-1)
-        5) next_id = torch.multinomial(probs, num_samples=1)  # (B, 1) — сэмплируем
-        6) idx = torch.cat([idx, next_id], dim=1)        # дописали символ
+        4) temperature: подели логиты на temperature ПЕРЕД softmax
+           (T<1 — острее/жаднее, T>1 — ровнее/разнообразнее; T->0 = argmax).
+        5) top_k: оставь только k наибольших логитов в строке, остальные -> -inf
+           ПЕРЕД softmax (обрезаем «хвост» маловероятных символов).
+        6) probs = softmax(этих логитов, dim=-1)
+        7) next_id = torch.multinomial(probs, num_samples=1)  # (B, 1) — сэмплируем
+        8) idx = torch.cat([idx, next_id], dim=1)        # дописали символ
       Верни итоговый idx формы (B, T0 + max_new_tokens).
       На инференсе генерацию оборачивают в torch.no_grad().
+
+      Управление выборкой (см. README, майлстоун 4):
+        - temperature (float > 0): делит логиты ДО softmax. Дефолт 1.0 — без
+          изменений. <1 заостряет распределение к жадному argmax, >1 сглаживает
+          к равномерному, ->0+ вырождается в детерминированный argmax.
+        - top_k (Optional[int]): если задан, оставляем только top_k самых
+          больших логитов (остальные -> -inf, их вероятность = 0). Дефолт None —
+          без обрезки. top_k=1 == жадный argmax. k безопасно ограничен размером
+          словаря. Если оба заданы — сперва top_k-маска, затем деление на T.
+      ВАЖНО: дефолты (temperature=1.0, top_k=None) обязаны воспроизводить прежнее
+      поведение бит-в-бит, иначе детерминированные приёмочные тесты покраснеют.
 
     Формы (B — батч, T — длина, d_model, V = vocab_size):
       idx: (B, T) -> logits: (B, T, V);  generate: (B, T0) -> (B, T0 + max_new_tokens).
@@ -181,11 +196,29 @@ class TransformerLM(nn.Module):
         return logits
 
     @torch.no_grad()
-    def generate(self, idx: torch.Tensor, max_new_tokens: int) -> torch.Tensor:
+    def generate(
+        self,
+        idx: torch.Tensor,
+        max_new_tokens: int,
+        temperature: float = 1.0,
+        top_k: Optional[int] = None,
+    ) -> torch.Tensor:
         for _ in range(max_new_tokens):
             idx_cond = idx[:, -self.block_size:]                   # обрезаем контекст
             logits = self(idx_cond)                               # (B, t, vocab_size)
             logits = logits[:, -1, :]                             # (B, vocab_size)
+
+            # top_k: оставляем только k наибольших логитов в строке, остальные -inf.
+            if top_k is not None:
+                k = min(top_k, logits.size(-1))                   # k не больше словаря
+                kth_vals = torch.topk(logits, k, dim=-1).values   # (B, k), отсортированы
+                threshold = kth_vals[:, [-1]]                     # (B, 1) — k-й по величине
+                logits = logits.masked_fill(logits < threshold, float("-inf"))
+
+            # temperature: делим логиты ДО softmax (1.0 — точный no-op).
+            if temperature != 1.0:
+                logits = logits / temperature
+
             probs = F.softmax(logits, dim=-1)
             next_id = torch.multinomial(probs, num_samples=1)     # (B, 1)
             idx = torch.cat([idx, next_id], dim=1)

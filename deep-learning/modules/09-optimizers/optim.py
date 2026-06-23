@@ -123,3 +123,37 @@ def adam_step(
     v_hat = v_new / (1 - b2 ** t)
     params_new = params - lr * m_hat / (np.sqrt(v_hat) + eps)
     return params_new, m_new, v_new
+
+
+def sgd_step_with_wd(
+    params: np.ndarray,
+    grads: np.ndarray,
+    lr: float,
+    wd: float,
+) -> np.ndarray:
+    """Один шаг SGD с *развязанным* затуханием весов (decoupled weight decay).
+
+    Идея: помимо обычного шага против градиента, мы на каждом шаге чуть-чуть стягиваем
+    параметры к нулю — отдельным слагаемым `wd * params`. Это L2-регуляризация, но
+    применённая ПРЯМО В ШАГЕ оптимизатора, а не подмешанная в loss. Эффект «усадки»
+    (shrinkage): даже при нулевом градиенте параметры тянутся к нулю, что мешает им
+    бесконтрольно расти и борется с переобучением.
+
+    Формула:
+        params_new = params - lr * (grads + wd * params)
+
+    Эквивалентная запись (видно «усадку» отдельным множителем):
+        params_new = (1 - lr * wd) * params - lr * grads
+
+    Связь с обычным SGD: при `wd == 0` это в точности `sgd_step(params, grads, lr)`.
+
+    Аргументы:
+        params: текущие параметры, numpy-массив формы (...,).
+        grads:  градиент loss по params, той же формы, что и params.
+        lr:     learning rate, положительное число.
+        wd:     weight decay (коэффициент затухания весов), >= 0. Типично 1e-4..1e-2.
+
+    Возвращает:
+        Новый массив params (той же формы). Вход не мутируется.
+    """
+    return params - lr * (grads + wd * params)

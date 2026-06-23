@@ -8,7 +8,7 @@
 
 import numpy as np
 
-from optim import sgd_step, momentum_step, adam_step
+from optim import sgd_step, momentum_step, adam_step, sgd_step_with_wd
 
 
 # ---------- игрушечная квадратичная задача ----------
@@ -97,6 +97,51 @@ def test_adam_step_formula_first_step():
     np.testing.assert_allclose(new_m, exp_m, atol=1e-12)
     np.testing.assert_allclose(new_v, exp_v, atol=1e-12)
     np.testing.assert_allclose(new_params, exp_params, atol=1e-12)
+
+
+# ---------- 4. SGD + weight decay: проверка формулы ----------
+
+def test_sgd_with_wd_formula():
+    params = np.array([1.0, 2.0, 3.0])
+    grads = np.array([0.5, -1.0, 2.0])
+    lr = 0.1
+    wd = 0.01
+    out = sgd_step_with_wd(params, grads, lr, wd)
+    expected = params - lr * (grads + wd * params)
+    assert out.shape == params.shape
+    np.testing.assert_allclose(out, expected, atol=1e-12)
+
+
+def test_sgd_with_wd_zero_wd_equals_sgd():
+    # wd == 0 -> добавка затухания исчезает -> ровно обычный SGD.
+    params = np.array([1.0, -2.0, 0.5])
+    grads = np.array([0.3, 0.7, -0.1])
+    lr = 0.05
+    out = sgd_step_with_wd(params, grads, lr, wd=0.0)
+    np.testing.assert_allclose(out, sgd_step(params, grads, lr), atol=1e-12)
+
+
+def test_sgd_with_wd_shrinks_params_when_grad_zero():
+    # При нулевом градиенте затухание тянет параметры к нулю (shrinkage).
+    params = np.array([4.0, -3.0, 2.0])
+    grads = np.zeros_like(params)
+    lr, wd = 0.1, 0.1
+    out = sgd_step_with_wd(params, grads, lr, wd)
+    # каждый компонент по модулю стал меньше, но знак сохранился
+    assert np.all(np.abs(out) < np.abs(params))
+    assert np.all(np.sign(out) == np.sign(params))
+    # точная формула усадки: out = (1 - lr*wd) * params
+    np.testing.assert_allclose(out, (1 - lr * wd) * params, atol=1e-12)
+
+
+def test_sgd_with_wd_does_not_mutate_inputs():
+    params = np.array([1.0, 2.0, 3.0])
+    grads = np.array([0.5, -1.0, 2.0])
+    params_copy = params.copy()
+    grads_copy = grads.copy()
+    sgd_step_with_wd(params, grads, 0.1, 0.01)
+    np.testing.assert_array_equal(params, params_copy)
+    np.testing.assert_array_equal(grads, grads_copy)
 
 
 # ---------- паттерн «обучение снижает loss»: каждый оптимизатор сходится к target ----------

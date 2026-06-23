@@ -13,6 +13,8 @@ from logreg import (
     predict_proba,
     accuracy,
     logreg_gradients,
+    softmax,
+    cce_loss,
 )
 
 
@@ -209,6 +211,113 @@ def test_training_reduces_loss():
     )
     # на линейно разделимой задаче accuracy должна стать высокой
     assert accuracy(p_end, y) > 0.9
+
+
+# ---------- softmax ----------
+
+def test_softmax_known_values_1d():
+    # z = (2, 1, 0): e^2≈7.389, e^1≈2.718, e^0=1, сумма≈11.107
+    z = np.array([2.0, 1.0, 0.0])
+    p = softmax(z)
+    expected = np.array([0.66524096, 0.24472847, 0.09003057])
+    assert np.allclose(p, expected, atol=1e-7)
+    assert np.allclose(np.sum(p), 1.0, atol=1e-12)
+
+
+def test_softmax_uniform_when_equal_logits():
+    # одинаковые логиты → равномерное распределение 1/K
+    z = np.array([5.0, 5.0, 5.0, 5.0])
+    p = softmax(z)
+    assert np.allclose(p, 0.25, atol=1e-12)
+
+
+def test_softmax_rows_sum_to_one_2d():
+    z = np.array([[1.0, 2.0, 3.0], [0.0, 0.0, 0.0]])
+    p = softmax(z)
+    assert p.shape == (2, 3)
+    assert np.allclose(np.sum(p, axis=-1), 1.0, atol=1e-12)
+
+
+def test_softmax_shift_invariance():
+    # softmax(z + c) == softmax(z): прибавление константы ко всем логитам ничего не меняет
+    z = np.array([1.0, 2.0, 3.0])
+    assert np.allclose(softmax(z), softmax(z + 100.0), atol=1e-12)
+
+
+def test_softmax_numerically_stable():
+    # главная проверка стабильности: огромные логиты не дают inf/nan,
+    # и ответ совпадает с softmax от сдвинутых логитов (−2, −1, 0)
+    z_big = np.array([[1000.0, 1001.0, 1002.0]])
+    p = softmax(z_big)
+    assert np.all(np.isfinite(p)), "softmax переполнился (inf/nan) на больших логитах"
+    assert np.allclose(np.sum(p, axis=-1), 1.0, atol=1e-12)
+    expected = softmax(np.array([[-2.0, -1.0, 0.0]]))
+    assert np.allclose(p, expected, atol=1e-12)
+
+
+def test_softmax_reduces_to_sigmoid_binary():
+    # бинарный softmax(z_1 − z_0) == сигмоида разности логитов
+    z = np.array([0.3, 1.1])  # (z_0, z_1)
+    p = softmax(z)
+    assert np.allclose(p[1], sigmoid(np.array([z[1] - z[0]]))[0], atol=1e-12)
+
+
+# ---------- cce_loss ----------
+
+def test_cce_perfect_vs_wrong():
+    # один объект, истинный класс 0. «Уверенно правильный» логит → loss мал,
+    # «уверенно неправильный» → loss велик.
+    logits_good = np.array([[10.0, 0.0, 0.0]])
+    logits_bad = np.array([[0.0, 0.0, 10.0]])
+    y = np.array([0])
+    loss_good = cce_loss(logits_good, y)
+    loss_bad = cce_loss(logits_bad, y)
+    assert loss_good < 0.01
+    assert loss_bad > 5.0
+    assert loss_good < loss_bad
+
+
+def test_cce_uniform_logits_equals_log_k():
+    # при равных логитах p = 1/K, loss = −log(1/K) = log(K) независимо от метки
+    K = 4
+    logits = np.zeros((3, K))
+    y = np.array([0, 2, 3])
+    assert np.allclose(cce_loss(logits, y), np.log(K), atol=1e-12)
+
+
+def test_cce_returns_float():
+    logits = np.array([[1.0, 2.0]])
+    y = np.array([1])
+    out = cce_loss(logits, y)
+    assert isinstance(out, float)
+
+
+def test_cce_stable_on_large_logits():
+    # log-sum-exp защищает от переполнения: гигантские логиты не дают inf/nan
+    logits = np.array([[1000.0, 1001.0, 1002.0]])
+    y = np.array([2])
+    loss = cce_loss(logits, y)
+    assert np.isfinite(loss), "cce_loss дала inf/nan: нужна стабильность через log-sum-exp"
+
+
+def test_cce_matches_manual_log_softmax():
+    # сверяем с явной (стабильной) формулой −log(softmax)_y
+    rng = np.random.default_rng(0)
+    logits = rng.normal(0, 2, size=(6, 5))
+    y = rng.integers(0, 5, size=6)
+    p = softmax(logits)
+    expected = float(np.mean(-np.log(p[np.arange(6), y])))
+    assert np.allclose(cce_loss(logits, y), expected, atol=1e-9)
+
+
+def test_cce_binary_matches_bce():
+    # бинарная CCE (2 логита) численно совпадает с BCE того же предсказания
+    rng = np.random.default_rng(1)
+    z1 = rng.normal(0, 2, size=8)              # логит класса 1, класс 0 фиксируем нулём
+    logits = np.stack([np.zeros_like(z1), z1], axis=1)  # (8, 2)
+    y_int = rng.integers(0, 2, size=8)
+    p1 = sigmoid(z1)                            # P(class 1) = σ(z1 − 0)
+    assert np.allclose(cce_loss(logits, y_int), bce_loss(p1, y_int.astype(float)), atol=1e-9)
 
 
 if __name__ == "__main__":

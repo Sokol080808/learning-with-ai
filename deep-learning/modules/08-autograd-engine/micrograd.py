@@ -5,7 +5,8 @@
 from __future__ import annotations
 
 import math
-from typing import Callable, Iterable, Set, Tuple, Union
+import random
+from typing import Callable, Iterable, List, Set, Tuple, Union
 
 # Чему разрешаем участвовать в арифметике с Value: либо другой Value, либо обычное число.
 Number = Union[int, float]
@@ -181,3 +182,158 @@ class Value:
 
     def __repr__(self) -> str:
         return f"Value(data={self.data}, grad={self.grad})"
+
+
+# =========================================================================== #
+# Задание 7 — сеть поверх Value: Neuron → Layer → MLP.
+#
+# Это «вершина» лекции Карпатого про micrograd: сам движок (Value) уже готов,
+# и теперь мы строим на нём НАСТОЯЩУЮ нейросеть. Ничего нового в автограде не
+# нужно — Neuron/Layer/MLP это просто УДОБНЫЕ КОНТЕЙНЕРЫ из Value-узлов.
+# Forward строит граф, .backward() от loss заполняет .grad у всех весов,
+# и тот же цикл «обнули .grad → backward → шаг по -grad», что и в одном нейроне,
+# обучает уже многослойную сеть.
+# =========================================================================== #
+
+
+class Module:
+    """Общий родитель Neuron/Layer/MLP: умеет обнулять и перечислять параметры.
+
+    parameters() возвращает ПЛОСКИЙ список всех обучаемых Value (веса + смещения).
+    zero_grad() ставит .grad = 0.0 каждому параметру — это и есть ручной аналог
+    optimizer.zero_grad() из PyTorch. В цикле обучения его вызывают ПЕРЕД backward(),
+    иначе градиенты с прошлых шагов накопятся (backward делает +=, а не =).
+    """
+
+    def parameters(self) -> List["Value"]:
+        return []
+
+    def zero_grad(self) -> None:
+        for p in self.parameters():
+            p.grad = 0.0
+
+
+class Neuron(Module):
+    """Один нейрон: out = activation( w·x + b ).
+
+    Хранит:
+      - w : list[Value]   — по одному весу на каждый вход (n_in штук);
+      - b : Value         — смещение (bias), один на нейрон;
+      - nonlin : str      — 'tanh', 'relu' или 'linear' (без активации).
+
+    __call__(x) принимает список входов (числа или Value), считает взвешенную
+    сумму  act = b + Σ w_i * x_i,  затем применяет нелинейность и возвращает Value.
+
+    Веса инициализируются маленькими случайными числами; если передан rng
+    (random.Random), берём числа из него — так тесты делаются детерминированными.
+    """
+
+    def __init__(
+        self,
+        n_in: int,
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        r = rng if rng is not None else random
+        self.w: List[Value] = [Value(r.uniform(-1.0, 1.0)) for _ in range(n_in)]
+        self.b: Value = Value(0.0)
+        self.nonlin = nonlin
+
+    def __call__(self, x: Iterable[Union["Value", Number]]) -> "Value":
+        # act = b + w·x. Начинаем с b и аккумулируем — граф строится сам.
+        act = self.b
+        for wi, xi in zip(self.w, x):
+            act = act + wi * xi
+        if self.nonlin == "tanh":
+            return act.tanh()
+        if self.nonlin == "relu":
+            return act.relu()
+        if self.nonlin == "linear":
+            return act
+        raise ValueError(f"unknown nonlin: {self.nonlin!r}")
+
+    def parameters(self) -> List["Value"]:
+        return self.w + [self.b]
+
+    def __repr__(self) -> str:
+        return f"{self.nonlin.capitalize()}Neuron(n_in={len(self.w)})"
+
+
+class Layer(Module):
+    """Слой = список из n_out независимых нейронов, каждый видит все n_in входов.
+
+    __call__(x) возвращает СПИСОК из n_out Value (выход каждого нейрона).
+    Параметры слоя — это все параметры всех его нейронов, сплющенные в один список.
+    """
+
+    def __init__(
+        self,
+        n_in: int,
+        n_out: int,
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        self.neurons: List[Neuron] = [
+            Neuron(n_in, nonlin=nonlin, rng=rng) for _ in range(n_out)
+        ]
+
+    def __call__(self, x: Iterable[Union["Value", Number]]) -> List["Value"]:
+        x = list(x)  # переиспользуем один и тот же вход для всех нейронов
+        return [n(x) for n in self.neurons]
+
+    def parameters(self) -> List["Value"]:
+        return [p for n in self.neurons for p in n.parameters()]
+
+    def __repr__(self) -> str:
+        return f"Layer of [{', '.join(str(n) for n in self.neurons)}]"
+
+
+class MLP(Module):
+    """Многослойный перцептрон: цепочка Layer'ов.
+
+    layer_sizes = [n_in, h1, h2, ..., n_out] задаёт размеры:
+      первый элемент — число входов, остальные — ширины слоёв.
+    Например MLP([2, 3, 1]) — вход 2 признака, скрытый слой из 3 нейронов, выход 1.
+
+    Скрытые слои получают активацию nonlin (по умолчанию 'tanh'); ПОСЛЕДНИЙ слой
+    делается линейным ('linear') — типичный приём, чтобы выход не зажимался tanh'ом
+    в (-1, 1). Это удобный дефолт; при желании можно собрать слои вручную.
+
+    __call__(x): прогоняем x через все слои по очереди. Если на выходе ровно один
+    Value (n_out == 1), возвращаем его одного, а не список из одного элемента —
+    так с одиночным выходом удобнее работать (loss = (pred - y)**2).
+    """
+
+    def __init__(
+        self,
+        layer_sizes: List[int],
+        nonlin: str = "tanh",
+        rng: random.Random | None = None,
+    ) -> None:
+        sizes = list(layer_sizes)
+        self.layers: List[Layer] = []
+        for i in range(len(sizes) - 1):
+            is_last = i == len(sizes) - 2
+            self.layers.append(
+                Layer(
+                    sizes[i],
+                    sizes[i + 1],
+                    nonlin="linear" if is_last else nonlin,
+                    rng=rng,
+                )
+            )
+
+    def __call__(
+        self, x: Iterable[Union["Value", Number]]
+    ) -> Union["Value", List["Value"]]:
+        out: Union[List["Value"], Iterable[Union["Value", Number]]] = list(x)
+        for layer in self.layers:
+            out = layer(out)
+        out = list(out)  # type: ignore[arg-type]
+        return out[0] if len(out) == 1 else out
+
+    def parameters(self) -> List["Value"]:
+        return [p for layer in self.layers for p in layer.parameters()]
+
+    def __repr__(self) -> str:
+        return f"MLP of [{', '.join(str(layer) for layer in self.layers)}]"

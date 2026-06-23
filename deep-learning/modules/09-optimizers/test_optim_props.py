@@ -17,7 +17,7 @@ import pytest
 import torch
 import torch.optim
 
-from optim import adam_step, momentum_step, sgd_step
+from optim import adam_step, momentum_step, sgd_step, sgd_step_with_wd
 
 # ---------------------------------------------------------------------------
 # Helpers
@@ -144,6 +144,111 @@ class TestSGDOracle:
             g = _rand(shape, rng)
             out = sgd_step(p, g, lr=0.1)
             assert out.shape == p.shape, f"Expected shape {p.shape}, got {out.shape}"
+
+
+# ---------------------------------------------------------------------------
+# SGD + weight decay – oracle vs torch.optim.SGD(weight_decay=wd)
+# ---------------------------------------------------------------------------
+
+class TestSGDWeightDecayOracle:
+    """Compare sgd_step_with_wd against torch.optim.SGD with weight_decay.
+
+    For plain SGD (no momentum) coupled L2 (torch's weight_decay, which adds
+    wd*params to the gradient) and decoupled weight decay coincide exactly:
+        params - lr*(grads + wd*params) == params - lr*grads - lr*wd*params.
+    So torch.optim.SGD(weight_decay=wd) is an exact single-step oracle.
+    """
+
+    def _torch_sgd_wd_step(self, p_np, g_np, lr, wd):
+        """One real torch.optim.SGD(weight_decay=wd) step with .grad set manually."""
+        p_t = torch.tensor(p_np.copy(), dtype=torch.float64, requires_grad=True)
+        opt = torch.optim.SGD([p_t], lr=lr, weight_decay=wd)
+        p_t.grad = torch.tensor(g_np.copy(), dtype=torch.float64)
+        opt.step()
+        return p_t.detach().numpy()
+
+    def test_sgd_wd_matches_torch_random_shapes(self):
+        rng = np.random.RandomState(50)
+        torch.manual_seed(50)
+        for shape in _SHAPES:
+            for _ in range(4):
+                lr = float(rng.uniform(1e-3, 0.3))
+                wd = float(rng.uniform(0.0, 0.1))
+                p_np = _rand(shape, rng)
+                g_np = _rand(shape, rng)
+
+                p_new_np = sgd_step_with_wd(p_np, g_np, lr, wd)
+                p_ref = self._torch_sgd_wd_step(p_np, g_np, lr, wd)
+
+                assert p_new_np.shape == p_np.shape, "shape mismatch"
+                np.testing.assert_allclose(
+                    p_new_np, p_ref, atol=1e-12,
+                    err_msg=f"SGD+wd oracle mismatch shape={shape} lr={lr:.4f} wd={wd:.4f}",
+                )
+
+    def test_sgd_wd_zero_recovers_plain_sgd(self):
+        """wd=0 must reproduce sgd_step exactly across random shapes."""
+        rng = np.random.RandomState(51)
+        for shape in _SHAPES:
+            for _ in range(5):
+                lr = float(rng.uniform(1e-3, 0.3))
+                p = _rand(shape, rng)
+                g = _rand(shape, rng)
+                out_wd = sgd_step_with_wd(p, g, lr, wd=0.0)
+                out_plain = sgd_step(p, g, lr)
+                np.testing.assert_allclose(
+                    out_wd, out_plain, atol=1e-12,
+                    err_msg="wd=0 did not recover plain SGD",
+                )
+
+    def test_sgd_wd_shrinks_toward_zero_when_grad_zero(self):
+        """Shrinkage: with zero gradient and wd>0, every nonzero param moves
+        strictly closer to zero (|p_new| < |p|) while keeping its sign."""
+        rng = np.random.RandomState(52)
+        for shape in _SHAPES:
+            for _ in range(5):
+                p = _rand(shape, rng, scale=3.0)
+                # avoid exact zeros so |p_new| < |p| is well defined
+                p = np.where(np.abs(p) < 1e-3, 0.5, p)
+                g = np.zeros(shape)
+                lr = float(rng.uniform(0.01, 0.3))
+                wd = float(rng.uniform(1e-3, 0.5))
+                # keep the shrinkage factor (1 - lr*wd) strictly in (0, 1)
+                assert 0.0 < 1 - lr * wd < 1.0
+                p_new = sgd_step_with_wd(p, g, lr, wd)
+                assert np.all(np.abs(p_new) < np.abs(p)), "weight decay did not shrink params"
+                assert np.all(np.sign(p_new) == np.sign(p)), "weight decay flipped a sign"
+                # exact closed form when grad is zero
+                np.testing.assert_allclose(p_new, (1 - lr * wd) * p, atol=1e-12)
+
+    def test_sgd_wd_does_not_mutate_inputs_random(self):
+        rng = np.random.RandomState(53)
+        for shape in _SHAPES:
+            p = _rand(shape, rng)
+            g = _rand(shape, rng)
+            p_orig = p.copy()
+            g_orig = g.copy()
+            sgd_step_with_wd(p, g, lr=0.05, wd=0.01)
+            np.testing.assert_array_equal(p, p_orig, err_msg="sgd_step_with_wd mutated params")
+            np.testing.assert_array_equal(g, g_orig, err_msg="sgd_step_with_wd mutated grads")
+
+    def test_sgd_wd_output_shape_matches_input(self):
+        rng = np.random.RandomState(54)
+        for shape in _SHAPES:
+            p = _rand(shape, rng)
+            g = _rand(shape, rng)
+            out = sgd_step_with_wd(p, g, lr=0.1, wd=0.01)
+            assert out.shape == p.shape, f"Expected shape {p.shape}, got {out.shape}"
+
+    def test_sgd_wd_large_magnitudes_no_nan(self):
+        """Numerical stability: huge grads/params + wd must not produce nan/inf."""
+        rng = np.random.RandomState(55)
+        for _ in range(10):
+            shape = (rng.randint(2, 20),)
+            p = _rand(shape, rng, scale=1e3)
+            g = _rand(shape, rng, scale=1e6)
+            out = sgd_step_with_wd(p, g, lr=1e-7, wd=1e-2)
+            assert np.all(np.isfinite(out)), "sgd_step_with_wd produced nan/inf on large inputs"
 
 
 # ---------------------------------------------------------------------------

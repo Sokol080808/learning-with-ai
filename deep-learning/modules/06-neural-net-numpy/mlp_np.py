@@ -89,3 +89,40 @@ def cross_entropy(logits: np.ndarray, y: np.ndarray) -> float:
     lse = m.ravel() + np.log(np.exp(logits - m).sum(axis=1))
     correct = logits[np.arange(N), y]
     return float(np.mean(lse - correct))
+
+
+def init_xavier(fan_in: int, fan_out: int, rng: np.random.Generator = None) -> np.ndarray:
+    """Инициализация весов Xavier (Glorot): масштаб под симметричные активации.
+
+    Возвращает матрицу формы (fan_in, fan_out) из нормального шума со стандартным
+    отклонением sqrt(2 / (fan_in + fan_out)). Усреднение fan_in и fan_out балансирует
+    дисперсию и прямого, и обратного потока (см. README, Идея 6).
+
+    Контракт:
+      - fan_in, fan_out: положительные целые (число входов / выходов слоя).
+      - rng: опциональный np.random.Generator для воспроизводимости. Если None —
+        создаётся np.random.default_rng() (несидированный).
+      - Возвращает np.ndarray формы (fan_in, fan_out); эмпирическое std ≈ целевому.
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    std = np.sqrt(2.0 / (fan_in + fan_out))
+    return rng.standard_normal((fan_in, fan_out)) * std
+
+
+def init_he(fan_in: int, fan_out: int, rng: np.random.Generator = None) -> np.ndarray:
+    """Инициализация весов He (Kaiming): масштаб под ReLU.
+
+    Возвращает матрицу формы (fan_in, fan_out) из нормального шума со стандартным
+    отклонением sqrt(2 / fan_in). Множитель 2 компенсирует то, что ReLU обнуляет
+    примерно половину входов, теряя половину дисперсии (см. README, Идея 6).
+
+    Контракт:
+      - fan_in, fan_out: положительные целые.
+      - rng: опциональный np.random.Generator. Если None — np.random.default_rng().
+      - Возвращает np.ndarray формы (fan_in, fan_out); эмпирическое std ≈ целевому.
+    """
+    if rng is None:
+        rng = np.random.default_rng()
+    std = np.sqrt(2.0 / fan_in)
+    return rng.standard_normal((fan_in, fan_out)) * std

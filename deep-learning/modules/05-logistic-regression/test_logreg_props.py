@@ -20,6 +20,8 @@ from logreg import (
     predict_proba,
     accuracy,
     logreg_gradients,
+    softmax,
+    cce_loss,
 )
 
 # ──────────────────────────────────────────────────────────────────────────────
@@ -563,6 +565,209 @@ def test_loss_decreases_monotonically_small_lr():
             f"loss increased at step {step}: {prev_loss:.6f} → {curr_loss:.6f}"
         )
         prev_loss = curr_loss
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# softmax — PyTorch oracle + invariants
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_softmax_vs_torch_2d():
+    """softmax(z) matches torch.softmax(dim=-1) on random (N, K) logit matrices."""
+    rng = _rng(70)
+    for seed in range(6):
+        N, K = rng.integers(2, 12), rng.integers(2, 8)
+        z_np = rng.normal(0, 3, size=(N, K))
+        expected = torch.softmax(torch.tensor(z_np, dtype=torch.float64), dim=-1).numpy()
+        got = softmax(z_np)
+        assert got.shape == (N, K), f"shape {got.shape} != {(N, K)}"
+        assert np.allclose(got, expected, atol=1e-6), (
+            f"softmax mismatch (seed={seed}): max diff={np.abs(got - expected).max():.2e}"
+        )
+
+
+def test_softmax_vs_torch_1d():
+    """softmax matches torch.softmax for 1-D (K,) input."""
+    rng = _rng(71)
+    for _ in range(5):
+        K = rng.integers(2, 10)
+        z_np = rng.normal(0, 2, size=K)
+        expected = torch.softmax(torch.tensor(z_np, dtype=torch.float64), dim=-1).numpy()
+        got = softmax(z_np)
+        assert got.shape == (K,)
+        assert np.allclose(got, expected, atol=1e-6)
+
+
+def test_softmax_rows_sum_to_one_random():
+    """Every row of softmax sums to exactly 1 (up to float64)."""
+    rng = _rng(72)
+    for _ in range(10):
+        N, K = rng.integers(1, 20), rng.integers(2, 12)
+        z = rng.normal(0, 5, size=(N, K))
+        p = softmax(z)
+        assert np.allclose(np.sum(p, axis=-1), 1.0, atol=1e-12)
+        assert np.all(p > 0.0) and np.all(p <= 1.0)
+
+
+def test_softmax_stable_on_large_logits():
+    """log-sum-exp shift keeps softmax finite on |logit| up to ~1000; matches torch."""
+    z_np = np.array([[1000.0, 1001.0, 1002.0], [-1000.0, -999.0, -998.0]])
+    p = softmax(z_np)
+    assert np.all(np.isfinite(p)), "softmax produced inf/nan on large logits"
+    assert np.allclose(np.sum(p, axis=-1), 1.0, atol=1e-12)
+    expected = torch.softmax(torch.tensor(z_np, dtype=torch.float64), dim=-1).numpy()
+    assert np.allclose(p, expected, atol=1e-6)
+
+
+def test_softmax_shift_invariance_random():
+    """softmax(z + c) == softmax(z) for random per-row constants c."""
+    rng = _rng(73)
+    z = rng.normal(0, 3, size=(5, 6))
+    c = rng.normal(0, 50, size=(5, 1))  # one constant per row
+    assert np.allclose(softmax(z), softmax(z + c), atol=1e-10)
+
+
+def test_softmax_reduces_to_sigmoid_random():
+    """Binary softmax([0, z])_1 == sigmoid(z) for random z."""
+    rng = _rng(74)
+    z = rng.normal(0, 4, size=50)
+    logits = np.stack([np.zeros_like(z), z], axis=1)  # (50, 2)
+    p1 = softmax(logits)[:, 1]
+    assert np.allclose(p1, sigmoid(z), atol=1e-10)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# cce_loss — PyTorch oracle (F.cross_entropy consumes logits)
+# ──────────────────────────────────────────────────────────────────────────────
+
+def test_cce_vs_torch_random():
+    """cce_loss(logits, y) matches F.cross_entropy(logits, y) on random data."""
+    rng = _rng(80)
+    for seed in range(8):
+        N, K = rng.integers(2, 20), rng.integers(2, 10)
+        logits = rng.normal(0, 3, size=(N, K))
+        y = rng.integers(0, K, size=N)
+
+        expected = float(F.cross_entropy(
+            torch.tensor(logits, dtype=torch.float64),
+            torch.tensor(y, dtype=torch.long),
+        ))
+        got = cce_loss(logits, y)
+        assert np.allclose(got, expected, atol=1e-6), (
+            f"cce mismatch (seed={seed}, N={N}, K={K}): got={got:.8f}, exp={expected:.8f}"
+        )
+
+
+def test_cce_vs_torch_large_logits():
+    """cce_loss is stable and matches torch even with huge logits (log-sum-exp)."""
+    logits = np.array([[1000.0, 1001.0, 1002.0], [-500.0, 500.0, 0.0]])
+    y = np.array([0, 1])
+    expected = float(F.cross_entropy(
+        torch.tensor(logits, dtype=torch.float64),
+        torch.tensor(y, dtype=torch.long),
+    ))
+    got = cce_loss(logits, y)
+    assert np.isfinite(got), "cce_loss produced inf/nan on large logits"
+    assert np.allclose(got, expected, atol=1e-6)
+
+
+def test_cce_returns_python_float():
+    """cce_loss return type is python float, not np.float64."""
+    rng = _rng(81)
+    logits = rng.normal(0, 1, size=(5, 4))
+    y = rng.integers(0, 4, size=5)
+    result = cce_loss(logits, y)
+    assert type(result) is float, f"expected python float, got {type(result)}"
+
+
+def test_cce_non_negative_and_below_logk_when_confident():
+    """CCE >= 0 always; near-perfect confident predictions give tiny loss."""
+    rng = _rng(82)
+    N, K = 12, 5
+    y = rng.integers(0, K, size=N)
+    # build logits with a huge margin on the correct class → loss ~ 0
+    logits = np.zeros((N, K))
+    logits[np.arange(N), y] = 30.0
+    loss = cce_loss(logits, y)
+    assert loss >= 0.0
+    assert loss < 1e-6, f"confident-correct CCE should be ~0, got {loss}"
+
+
+def test_cce_binary_matches_bce_random():
+    """Binary CCE (2 logits, class-0 logit = 0) equals BCE of sigmoid(z1)."""
+    rng = _rng(83)
+    z1 = rng.normal(0, 3, size=30)
+    logits = np.stack([np.zeros_like(z1), z1], axis=1)  # (30, 2)
+    y = rng.integers(0, 2, size=30)
+    cce = cce_loss(logits, y)
+    bce = bce_loss(sigmoid(z1), y.astype(float))
+    assert np.allclose(cce, bce, atol=1e-9)
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# softmax + CCE gradient — finite-difference grad-check
+#
+# The gradient of mean-CCE w.r.t. the logits is the canonical "prediction minus
+# truth" form:  dL/dz = (softmax(z) - one_hot(y)) / N.  We verify it numerically
+# (central differences on cce_loss) and against the closed form.
+# ──────────────────────────────────────────────────────────────────────────────
+
+def _one_hot(y_int, K):
+    oh = np.zeros((y_int.shape[0], K))
+    oh[np.arange(y_int.shape[0]), y_int] = 1.0
+    return oh
+
+
+def softmax_cce_gradient(logits, y_int):
+    """Closed-form gradient of mean cross-entropy w.r.t. the logits.
+
+    dL/dz = (softmax(logits) - one_hot(y)) / N   — the K-class analogue of (p - y).
+    """
+    N, K = logits.shape
+    return (softmax(logits) - _one_hot(y_int, K)) / N
+
+
+def test_softmax_cce_gradient_finite_difference():
+    """Closed-form softmax+CCE gradient matches central finite differences on cce_loss."""
+    rng = _rng(90)
+    eps = 1e-5
+    for seed in range(6):
+        N, K = rng.integers(2, 8), rng.integers(2, 6)
+        logits = rng.normal(0, 2, size=(N, K))
+        y = rng.integers(0, K, size=N)
+
+        grad_an = softmax_cce_gradient(logits, y)
+
+        grad_num = np.zeros_like(logits)
+        for i in range(N):
+            for k in range(K):
+                lp = logits.copy(); lp[i, k] += eps
+                lm = logits.copy(); lm[i, k] -= eps
+                grad_num[i, k] = (cce_loss(lp, y) - cce_loss(lm, y)) / (2 * eps)
+
+        assert np.allclose(grad_an, grad_num, atol=1e-4), (
+            f"softmax+CCE grad FD check failed (seed={seed}, N={N}, K={K}): "
+            f"max diff={np.abs(grad_an - grad_num).max():.2e}"
+        )
+
+
+def test_softmax_cce_gradient_vs_torch_autograd():
+    """Closed-form softmax+CCE gradient matches torch autograd through F.cross_entropy."""
+    rng = _rng(91)
+    for seed in range(5):
+        N, K = rng.integers(2, 10), rng.integers(2, 7)
+        logits_np = rng.normal(0, 2, size=(N, K))
+        y_np = rng.integers(0, K, size=N)
+
+        logits_t = torch.tensor(logits_np, dtype=torch.float64, requires_grad=True)
+        loss_t = F.cross_entropy(logits_t, torch.tensor(y_np, dtype=torch.long))
+        loss_t.backward()
+        grad_ref = logits_t.grad.numpy()
+
+        grad_got = softmax_cce_gradient(logits_np, y_np)
+        assert np.allclose(grad_got, grad_ref, atol=1e-6), (
+            f"grad vs autograd mismatch (seed={seed}): "
+            f"max diff={np.abs(grad_got - grad_ref).max():.2e}"
+        )
 
 
 if __name__ == "__main__":
