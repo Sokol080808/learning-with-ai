@@ -75,3 +75,14 @@ jobs:
           python -m pip install -U torch --index-url https://download.pytorch.org/whl/cpu
       - name: Импорт-проверка (collect-only)
         run: python -m pytest deep-learning -p no:cacheprovider --collect-only -q
+
+  docs:
+    name: Docs (ссылки и ссылки на модули)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Проверка doc-staleness (битые ссылки, ссылки на несуществующие модули, счётчики)
+        run: python tools/check_docs.py
